@@ -13,7 +13,10 @@
     "test": "vitest run",
     "lint": "eslint src tests",
     "format": "prettier --write .",
-    "check": "tsc --noEmit && npm run lint && prettier --check . && npm test && vite build"
+    "check": "tsc --noEmit && npm run lint && prettier --check . && npm test && vite build",
+    "test:browser": "node tests/smoke.mjs && node tests/runtime.mjs && node tests/bonus.mjs && node tests/mobile.mjs",
+    "test:routes": "node tests/traverse.mjs",
+    "test:offline": "node tests/offline.mjs"
   },
   "keywords": [],
   "author": "",
