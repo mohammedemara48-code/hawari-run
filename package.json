@@ -1,6 +1,6 @@
 {
   "name": "hawari-run",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "بلبل في الحواري — لعبة منصات مصرية أصلية",
   "main": "index.js",
   "directories": {

@@ -31,7 +31,7 @@ An original Egyptian side-scrolling platformer. Race through lantern-lit alleys 
 
 ## Character artwork revision
 
-بلبل now has a clear three-quarter face, embroidered teal waistcoat, cream shirt, amber scarf, courier satchel and two-tone sneakers. Small form has a 32×40 visible silhouette; powered form is 32×48. Both use consistent 32×48 canvases with no fractional sprite scaling. There are 23 poses per form (46 drawings), with a strictly opaque/transparent palette and top-left highlights. Enemy artwork was redrawn to the same palette and outline treatment.
+بلبل now has a single-eye side profile, saturated cobalt waistcoat, bright white shirt, red scarf, courier satchel and two-tone sneakers. Small form has a 40×52 visible silhouette; powered form is 40×60. Both use consistent 40×64 canvases with no fractional sprite scaling. There are 23 poses per form (46 drawings), with a strictly opaque/transparent palette and top-left highlights. Legs and torso are longer, the head is proportionally smaller, and larger hands, a dark one-pixel rim and a compact foot shadow improve readability against the warm alley. Enemy artwork was redrawn to the same palette and outline treatment.
 
 ![New hero animation sheet at 4×](docs/screenshots/04-hero-sheet.png)
 ![New hero in gameplay](docs/screenshots/05-gameplay-new.png)
@@ -71,7 +71,7 @@ For browser tests: `npx playwright install chromium`. Screenshots are saved unde
 ```text
 src/
   art.ts       Egyptian scenery and environment tiles
-  characters.ts Hand-pixelled 32×48 character frames, shaded outfits and expressive enemies
+  characters.ts Hand-pixelled 40×64 character frames, shaded outfits and expressive enemies
   hero-state.ts Pure animation selection and foot-aligned collision metrics
   audio.ts     Original Web Audio synthesizer and score
   game.ts      Platforming, collisions, enemies, rooms and game states

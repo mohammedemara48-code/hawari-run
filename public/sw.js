@@ -1,4 +1,4 @@
-const CACHE = 'hawari-v1.1';
+const CACHE = 'hawari-v1.2';
 const FILES = /* PRECACHE */ ['/', '/icon.svg', '/manifest.webmanifest'];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)));

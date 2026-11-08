@@ -49,7 +49,7 @@ console.log('PASS: enemy stomp');
 // Jump into the first arabesque block, then take its sandwich.
 await setup(() => {
   const s = window.hawari.scene.getScene('alley');
-  s.hero.body.reset(408, 294);
+  s.hero.body.reset(408, 312 - s.hero.height / 2);
   s.hero.setVelocity(0, 0);
 });
 await page.waitForTimeout(120);
@@ -83,7 +83,7 @@ console.log('PASS: block bump and sandwich pickup');
 // Powered-up bricks break rather than turning into used blocks.
 await setup(() => {
   const s = window.hawari.scene.getScene('alley');
-  s.hero.body.reset(384, 294);
+  s.hero.body.reset(384, 312 - s.hero.height / 2);
   s.hero.setVelocity(0, 0);
 });
 await page.waitForTimeout(120);
@@ -104,7 +104,7 @@ console.log('PASS: powered brick break');
 await setup(() => {
   const s = window.hawari.scene.getScene('alley');
   s.enemies.clear(true, true);
-  s.hero.body.reset(170, 294);
+  s.hero.body.reset(170, 312 - s.hero.height / 2);
   s.setPower(2, false);
   s.facing = 1;
   s.enemy(250, 'bug');
@@ -183,13 +183,11 @@ for (const size of [192, 512]) {
     ctx.fillStyle = '#19333b';
     ctx.fillRect(0, 0, size, size);
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(
-      s.textures.get('hero0').getSourceImage(),
-      size * 0.2,
-      size * 0.07,
-      size * 0.6,
-      size * 0.83,
-    );
+    const source = s.textures.get('hero0').getSourceImage(),
+      height = size * 0.88,
+      width = (height * source.width) / source.height;
+    ctx.drawImage(source, (size - width) / 2, size * 0.06, width, height);
+
     return c.toDataURL().split(',')[1];
   }, size);
   await writeFile(`public/icon-${size}.png`, Buffer.from(encoded, 'base64'));

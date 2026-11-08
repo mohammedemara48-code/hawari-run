@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { makeArt } from './art';
-import { heroBody, heroPose } from './hero-state';
+import { HERO_FRAME, heroBody, heroPose } from './hero-state';
 import { approach, jumpAllowed, stomped, levelSpec, tally } from './rules';
 import { sound } from './audio';
 import { bindUI, screen, hud, toast, touch } from './ui';
@@ -304,7 +304,7 @@ export class Alley extends Phaser.Scene {
       : this.returnX || (this.checkpoint ? this.spec.checkpoint + 24 : 96);
     this.returnX = 0;
     this.hero = this.physics.add
-      .sprite(spawn, 288, 'hero-small-idle0')
+      .sprite(spawn, 312 - HERO_FRAME.height / 2, 'hero-small-idle0')
       .setDepth(10)
       .setCollideWorldBounds(false);
     body(this.hero).setMaxVelocity(280, 650);
@@ -315,7 +315,7 @@ export class Alley extends Phaser.Scene {
     this.heroShadow = this.add
       .image(spawn, 312, 'hero-shadow')
       .setDepth(4)
-      .setAlpha(0.18);
+      .setAlpha(0.24);
     this.setPower(this.power, false);
     this.cameras.main.startFollow(this.hero, true, 0.12, 1, -100, 0);
     this.cameras.main.setDeadzone(100, 360);
@@ -425,8 +425,8 @@ export class Alley extends Phaser.Scene {
     let crouch = grounded && down;
     if (this.heroCrouched && !crouch) {
       const m = heroBody(this.power > 0, false),
-        left = this.hero.x - 16 + m.x,
-        top = this.hero.y - 24 + m.y;
+        left = this.hero.x - HERO_FRAME.width / 2 + m.x,
+        top = this.hero.y - HERO_FRAME.height / 2 + m.y;
       crouch = (this.solids.getChildren() as Sprite[]).some((s) => {
         const b = s.body as Phaser.Physics.Arcade.StaticBody;
         return (
@@ -454,7 +454,7 @@ export class Alley extends Phaser.Scene {
     this.hero.setTexture(`hero-${form}-${pose}`).setData('pose', pose);
     this.heroShadow
       .setPosition(this.hero.x, grounded ? body(this.hero).bottom + 1 : 313)
-      .setAlpha(grounded ? 0.18 : 0.07)
+      .setAlpha(grounded ? 0.24 : 0.07)
       .setVisible(this.mode !== 'dead');
   }
   updateHud() {
@@ -832,7 +832,7 @@ export class Alley extends Phaser.Scene {
         e.getData('kind') + (Math.floor(time / (rolling ? 45 : 150)) % 4),
       );
     }
-    if (this.hero.x < 12) this.hero.x = 12;
+    if (this.hero.x < HERO_FRAME.width / 2) this.hero.x = HERO_FRAME.width / 2;
     if (this.hero.y > 410) this.die();
     if (!this.bonus && !this.checkpoint && this.hero.x > this.spec.checkpoint) {
       this.checkpoint = true;

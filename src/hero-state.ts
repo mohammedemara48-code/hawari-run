@@ -36,10 +36,21 @@ export interface HeroState {
   hurtUntil: number;
   dead: boolean;
 }
+export const HERO_FRAME = {
+  width: 40,
+  height: 64,
+  smallHeight: 52,
+  bigHeight: 60,
+};
 export function heroBody(big: boolean, crouch: boolean) {
-  const height = crouch ? (big ? 30 : 24) : big ? 42 : 34,
-    width = big ? 22 : 20;
-  return { width, height, x: (32 - width) / 2, y: 48 - height };
+  const height = crouch ? (big ? 38 : 32) : big ? 54 : 46,
+    width = big ? 26 : 24;
+  return {
+    width,
+    height,
+    x: (HERO_FRAME.width - width) / 2,
+    y: HERO_FRAME.height - height,
+  };
 }
 export function heroPose(s: HeroState): HeroPose {
   if (s.dead) return 'dead';

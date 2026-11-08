@@ -34,15 +34,15 @@ describe('original character animation and silhouette', () => {
     expect(heroPose({ ...still, growUntil: 1300 })).toMatch(/^grow/);
     expect(heroPose({ ...still, dead: true })).toBe('dead');
   });
-  it('keeps collision feet at exactly frame row 48 through growth and crouch', () => {
+  it('keeps collision feet at exactly frame row 64 through growth and crouch', () => {
     for (const big of [false, true])
       for (const crouch of [false, true]) {
         const b = heroBody(big, crouch);
-        expect(b.height + b.y).toBe(48);
-        expect(b.width + 2 * b.x).toBe(32);
+        expect(b.height + b.y).toBe(64);
+        expect(b.width + 2 * b.x).toBe(40);
       }
-    expect(heroBody(false, false).height).toBe(34);
-    expect(heroBody(true, false).height).toBe(42);
-    expect(heroBody(true, true).height).toBeLessThan(42);
+    expect(heroBody(false, false).height).toBe(46);
+    expect(heroBody(true, false).height).toBe(54);
+    expect(heroBody(true, true).height).toBeLessThan(54);
   });
 });

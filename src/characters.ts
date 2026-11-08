@@ -1,29 +1,32 @@
 import Phaser from 'phaser';
-import { HERO_POSES, type HeroPose } from './hero-state';
+import { HERO_POSES, HERO_FRAME, type HeroPose } from './hero-state';
 type Point = [number, number];
 const P = {
-  ink: '#263142',
+  ink: '#0b1125',
   skin: '#d99568',
   skinLight: '#f6c28a',
   skinShade: '#aa654e',
   skinGlow: '#ffe2a5',
   hair: '#4a3839',
   hairLight: '#77504a',
-  teal: '#277f82',
-  tealLight: '#63b7a8',
-  tealShade: '#205367',
-  cream: '#e5d7b2',
-  creamLight: '#fff3cf',
-  creamShade: '#aaad97',
-  navy: '#3d556c',
-  navyLight: '#78949c',
-  navyShade: '#293b54',
+  cobalt: '#244de0',
+  cobaltLight: '#739bff',
+  cobaltShade: '#142e8b',
+  cream: '#edf2ff',
+  creamLight: '#ffffff',
+  creamShade: '#a3b6d2',
+  navy: '#252b43',
+  navyLight: '#596888',
+  navyShade: '#12182e',
   orange: '#d68a49',
   orangeLight: '#ffd082',
   orangeShade: '#a15c40',
-  shoe: '#d6e4d7',
-  shoeLight: '#fff7d8',
-  shoeShade: '#729b9a',
+  scarf: '#e6324e',
+  scarfLight: '#ff8692',
+  scarfShade: '#9e1538',
+  shoe: '#e7eeff',
+  shoeLight: '#ffffff',
+  shoeShade: '#8495bd',
 };
 // Integer rasterizer: all generated pixels are opaque palette entries or transparent.
 // No antialiasing, fractional transforms, vector strokes, or scaled-up source art.
@@ -108,7 +111,25 @@ function make(
   paint(new Pixels(t.context));
   t.refresh();
 }
-function hero(p: Pixels, big: boolean, pose: HeroPose) {
+function heroBrush(raw: Pixels): Pick<Pixels, 'r' | 'box' | 'poly' | 'line'> {
+  const point = ([x, y]: Point): Point => [Math.round(1 + x * 1.2), y];
+  return {
+    r(x, y, w, h, c) {
+      raw.r(Math.round(1 + x * 1.2), y, Math.max(1, Math.round(w * 1.2)), h, c);
+    },
+    box(x, y, w, h, c) {
+      raw.box(Math.round(1 + x * 1.2), y, Math.round(w * 1.2), h, c);
+    },
+    poly(points, c, outline = false) {
+      raw.poly(points.map(point), c, outline);
+    },
+    line(a, b, w, c, outline = false) {
+      raw.line(point(a), point(b), w * 1.15, c, outline);
+    },
+  };
+}
+function hero(raw: Pixels, big: boolean, pose: HeroPose) {
+  const p = heroBrush(raw);
   const run = pose.startsWith('run'),
     f = run ? Number(pose.slice(3)) : 0,
     crouch = pose === 'crouch',
@@ -123,9 +144,9 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
         ? -2
         : 0;
   const lean = skid ? -2 : run ? 1 : throwing ? -1 : 0;
-  const head = (big ? 0 : 8) + (crouch ? (big ? 12 : 9) : 0) + bob;
-  const top = (big ? 22 : 30) + (crouch ? (big ? 12 : 9) : 0) + bob,
-    waist = crouch ? 44 : big ? 36 : 39;
+  const head = (big ? 4 : 12) + (crouch ? (big ? 18 : 12) : 0) + bob;
+  const top = (big ? 26 : 34) + (crouch ? (big ? 18 : 12) : 0) + bob,
+    waist = crouch ? 58 : big ? 46 : 48;
   const x = (n: number) => n + lean;
   // Far arm, trousers and sneakers: silhouettes are posed rather than image-scaled.
   const runHands: Point[] = [
@@ -138,8 +159,8 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
     [23, 5],
     [12, 7],
   ];
-  let farHand: Point = [x(7), top + 7],
-    nearHand: Point = [x(25), top + 8];
+  let farHand: Point = [x(7), top + (big ? 12 : 10)],
+    nearHand: Point = [x(25), top + (big ? 13 : 11)];
   if (run) {
     farHand = [runHands[f][0], top + runHands[f][1]];
     const a = runHands[(f + 4) % 8];
@@ -154,8 +175,8 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
     nearHand = [28, top + 1];
   }
   if (crouch) {
-    farHand = [7, 43];
-    nearHand = [26, 43];
+    farHand = [7, 57];
+    nearHand = [26, 57];
   }
   if (skid) {
     farHand = [6, top - 1];
@@ -182,69 +203,71 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
       1,
       P.creamLight,
     );
-    p.box(hand[0] - 2, hand[1] - 1, 4, 4, P.skin);
+    p.box(hand[0] - 2, hand[1] - 1, 5, 5, P.skin);
     p.r(hand[0] - 2, hand[1] - 1, 3, 1, P.skinLight);
-    p.r(hand[0] + 1, hand[1] + 1, 1, 2, P.skinShade);
+    p.r(hand[0] + 2, hand[1] + 1, 1, 2, P.skinShade);
+    p.r(hand[0] - 1, hand[1] + 2, 2, 1, P.skinShade);
+    p.r(hand[0] + 2, hand[1], 1, 1, P.skinLight);
   };
   arm([x(11), top + 2], farHand, false);
-  let backFoot: Point = [11, 46],
-    frontFoot: Point = [21, 46];
+  let backFoot: Point = [11, 62],
+    frontFoot: Point = [21, 62];
   if (run) {
     const steps: Point[][] = [
       [
-        [7, 44],
-        [25, 46],
+        [7, 60],
+        [25, 62],
       ],
       [
-        [11, 41],
-        [23, 46],
+        [11, 57],
+        [23, 62],
       ],
       [
-        [16, 41],
-        [19, 46],
+        [16, 57],
+        [19, 62],
       ],
       [
-        [22, 43],
-        [13, 46],
+        [22, 59],
+        [13, 62],
       ],
       [
-        [25, 46],
-        [7, 44],
+        [25, 62],
+        [7, 60],
       ],
       [
-        [23, 46],
-        [11, 41],
+        [23, 62],
+        [11, 57],
       ],
       [
-        [19, 46],
-        [16, 41],
+        [19, 62],
+        [16, 57],
       ],
       [
-        [13, 46],
-        [22, 43],
+        [13, 62],
+        [22, 59],
       ],
     ];
     [backFoot, frontFoot] = steps[f];
   }
   if (pose === 'rise') {
-    backFoot = [8, 43];
-    frontFoot = [22, 41];
+    backFoot = [8, 59];
+    frontFoot = [22, 57];
   }
   if (pose === 'fall') {
-    backFoot = [10, 46];
-    frontFoot = [23, 45];
+    backFoot = [10, 62];
+    frontFoot = [23, 61];
   }
   if (skid) {
-    backFoot = [11, 46];
-    frontFoot = [26, 46];
+    backFoot = [11, 62];
+    frontFoot = [26, 62];
   }
   if (crouch) {
-    backFoot = [8, 46];
-    frontFoot = [24, 46];
+    backFoot = [8, 62];
+    frontFoot = [24, 62];
   }
   if (pose === 'dead') {
-    backFoot = [7, 43];
-    frontFoot = [25, 45];
+    backFoot = [7, 59];
+    frontFoot = [25, 61];
   }
   const leg = (hip: Point, foot: Point, near: boolean) => {
     const knee: Point = [
@@ -262,19 +285,19 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
     p.box(foot[0] - 3, foot[1] - 2, 8, 3, near ? P.shoe : P.shoeShade);
     p.r(foot[0] - 3, foot[1] - 2, 5, 1, near ? P.shoeLight : P.shoe);
     p.r(foot[0] - 3, foot[1] + 1, 9, 1, P.ink);
-    p.r(foot[0] + 1, foot[1] - 1, 2, 1, P.teal);
+    p.r(foot[0] + 1, foot[1] - 1, 2, 1, P.cobalt);
   };
   leg([x(13), waist - 1], backFoot, false);
   leg([x(19), waist - 1], frontFoot, true);
-  // Kurta and embroidered waistcoat: cream centre, teal side panels, ochre piping.
+  // Kurta and embroidered waistcoat: bright white centre, royal-blue side panels, ochre piping.
   p.poly(
     [
       [x(11), top],
       [x(20), top - 1],
-      [x(24), top + 3],
+      [x(25), top + 3],
       [x(22), waist],
-      [x(9), waist],
-      [x(9), top + 3],
+      [x(8), waist],
+      [x(8), top + 3],
     ],
     P.cream,
     true,
@@ -284,10 +307,10 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
       [x(11), top],
       [x(14), top + 1],
       [x(14), waist - 1],
-      [x(9), waist - 1],
-      [x(9), top + 3],
+      [x(8), waist - 1],
+      [x(8), top + 3],
     ],
-    P.teal,
+    P.cobalt,
     true,
   );
   p.poly(
@@ -297,18 +320,18 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
       [x(22), waist - 1],
       [x(19), waist - 1],
     ],
-    P.tealShade,
+    P.cobaltShade,
     true,
   );
-  p.line([x(10), top + 3], [x(10), waist - 2], 1, P.tealLight);
+  p.line([x(10), top + 3], [x(10), waist - 2], 1, P.cobaltLight);
   p.line([x(13), top + 2], [x(13), waist - 2], 1, P.orangeLight);
-  p.line([x(20), top + 2], [x(20), waist - 2], 1, P.tealLight);
+  p.line([x(20), top + 2], [x(20), waist - 2], 1, P.cobaltLight);
   p.r(x(16), top + 4, 1, Math.max(1, waist - top - 5), P.creamLight);
   p.r(x(16), top + 3, 1, 1, P.orangeShade);
   if (big) {
     p.r(x(16), top + 7, 1, 1, P.orangeShade);
     p.r(x(16), top + 11, 1, 1, P.orangeShade);
-    p.r(x(21), waist - 4, 2, 1, P.tealLight);
+    p.r(x(21), waist - 4, 2, 1, P.cobaltLight);
   }
   p.line([x(21), top + 1], [x(11), waist - 2], 2, P.orangeShade);
   p.line([x(20), top + 1], [x(10), waist - 2], 1, P.orangeLight);
@@ -319,7 +342,7 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
   p.r(x(10), waist - 1, 12, 1, P.navyShade);
   p.r(x(16), waist - 1, 3, 1, P.orangeLight);
   arm([x(22), top + 2], nearHand, true);
-  // Head, scarf and face are hand-pixelled in three-quarter view.
+  // Head, scarf and face are hand-pixelled in side profile with one visible eye.
   p.box(x(14), head + 20, 6, 3, P.skinShade);
   p.poly(
     [
@@ -328,10 +351,10 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
       [x(20), head + 24],
       [x(15), head + 25],
     ],
-    P.orange,
+    P.scarf,
     true,
   );
-  p.r(x(13), head + 21, 5, 1, P.orangeLight);
+  p.r(x(13), head + 21, 5, 1, P.scarfLight);
   p.poly(
     [
       [x(18), head + 23],
@@ -339,7 +362,7 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
       [x(20), head + 29],
       [x(17), head + 27],
     ],
-    P.orangeShade,
+    P.scarfShade,
   );
   p.poly(
     [
@@ -423,7 +446,7 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
       [x(9), head + 7],
       [x(8), head + 5],
     ],
-    P.teal,
+    P.cobalt,
     true,
   );
   p.poly(
@@ -434,7 +457,7 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
       [x(20), head + 4],
       [x(10), head + 5],
     ],
-    P.tealLight,
+    P.cobaltLight,
   );
   p.poly(
     [
@@ -443,15 +466,15 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
       [x(23), head + 7],
       [x(21), head + 6],
     ],
-    P.tealShade,
+    P.cobaltShade,
   );
-  p.r(x(9), head + 6, 16, 2, P.tealShade);
-  p.r(x(10), head + 6, 12, 1, P.tealLight);
+  p.r(x(9), head + 6, 16, 2, P.cobaltShade);
+  p.r(x(10), head + 6, 12, 1, P.cobaltLight);
   p.r(x(22), head + 5, 2, 2, P.orangeLight);
   p.r(x(23), head + 5, 1, 1, P.creamLight);
   const blink = pose === 'idle3';
   if (hurt) {
-    for (const ex of [15, 23]) {
+    for (const ex of [23]) {
       p.r(x(ex), head + 11, 1, 1, P.ink);
       p.r(x(ex + 1), head + 12, 1, 1, P.ink);
       p.r(x(ex), head + 13, 1, 1, P.ink);
@@ -460,17 +483,12 @@ function hero(p: Pixels, big: boolean, pose: HeroPose) {
     }
     p.box(x(21), head + 17, 3, 2, P.hair);
   } else if (blink) {
-    p.r(x(14), head + 13, 4, 1, P.hair);
     p.r(x(22), head + 13, 4, 1, P.hair);
     p.r(x(21), head + 18, 3, 1, P.hair);
   } else {
-    p.r(x(14), head + 11, 4, 1, P.hair);
     p.r(x(22), head + 10, 4, 1, P.hair);
-    p.r(x(14), head + 12, 4, 3, P.creamLight);
     p.r(x(22), head + 11, 4, 4, P.creamLight);
-    p.r(x(16), head + 12, 2, 3, P.ink);
     p.r(x(24), head + 12, 2, 3, P.ink);
-    p.r(x(16), head + 12, 1, 1, '#ffffff');
     p.r(x(24), head + 12, 1, 1, '#ffffff');
     p.r(x(21), head + 18, 4, 1, P.hair);
     p.r(x(24), head + 17, 1, 1, P.hair);
@@ -671,10 +689,16 @@ function bug(p: Pixels, f: number) {
 export function makeCharacters(scene: Phaser.Scene) {
   for (const big of [false, true])
     for (const pose of HERO_POSES)
-      make(scene, `hero-${big ? 'big' : 'small'}-${pose}`, 32, 48, (p) =>
-        hero(p, big, pose),
+      make(
+        scene,
+        `hero-${big ? 'big' : 'small'}-${pose}`,
+        HERO_FRAME.width,
+        HERO_FRAME.height,
+        (p) => hero(p, big, pose),
       );
-  make(scene, 'hero0', 32, 48, (p) => hero(p, false, 'idle0'));
+  make(scene, 'hero0', HERO_FRAME.width, HERO_FRAME.height, (p) =>
+    hero(p, false, 'idle0'),
+  );
   for (let f = 0; f < 4; f++) {
     make(scene, 'cat' + f, 32, 28, (p) => cat(p, f));
     make(scene, 'basket' + f, 32, 28, (p) => basket(p, f));
@@ -690,7 +714,7 @@ export function makeCharacters(scene: Phaser.Scene) {
         [4, 5],
         [0, 3],
       ],
-      '#283542',
+      '#0b1125',
     );
   });
 }
