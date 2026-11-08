@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 — 2026-11-09
+
+### Changed
+
+- Completely redrawn, larger بلبل with an expressive face, three-tone clothing, satchel and crisp one-pixel contours.
+- Added 46 small/powered character drawings, eight-frame running, breathing/blinking, skid, rise/fall, crouch, hurt/death, growth and throwing.
+- Redrawn cats, insects and baskets to match; resized collision bodies with fixed foot alignment.
+
 ## 1.0.0 — 2026-11-09
 
 ### Added

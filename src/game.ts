@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { makeArt } from './art';
+import { heroBody, heroPose } from './hero-state';
 import { approach, jumpAllowed, stomped, levelSpec, tally } from './rules';
 import { sound } from './audio';
 import { bindUI, screen, hud, toast, touch } from './ui';
@@ -8,6 +9,11 @@ type Mode = 'title' | 'play' | 'pause' | 'dead' | 'clear' | 'over' | 'win';
 const body = (s: Sprite) => s.body as Phaser.Physics.Arcade.Body;
 export class Alley extends Phaser.Scene {
   hero!: Sprite;
+  heroShadow!: Phaser.GameObjects.Image;
+  growUntil = 0;
+  throwUntil = 0;
+  hurtPoseUntil = 0;
+  heroCrouched = false;
   solids!: Phaser.Physics.Arcade.StaticGroup;
   coins!: Phaser.Physics.Arcade.Group;
   enemies!: Phaser.Physics.Arcade.Group;
@@ -298,10 +304,18 @@ export class Alley extends Phaser.Scene {
       : this.returnX || (this.checkpoint ? this.spec.checkpoint + 24 : 96);
     this.returnX = 0;
     this.hero = this.physics.add
-      .sprite(spawn, 290, 'hero0')
+      .sprite(spawn, 288, 'hero-small-idle0')
       .setDepth(10)
       .setCollideWorldBounds(false);
-    body(this.hero).setSize(18, 31).setOffset(4, 5).setMaxVelocity(280, 650);
+    body(this.hero).setMaxVelocity(280, 650);
+    this.growUntil = 0;
+    this.throwUntil = 0;
+    this.hurtPoseUntil = 0;
+    this.heroCrouched = false;
+    this.heroShadow = this.add
+      .image(spawn, 312, 'hero-shadow')
+      .setDepth(4)
+      .setAlpha(0.18);
     this.setPower(this.power, false);
     this.cameras.main.startFollow(this.hero, true, 0.12, 1, -100, 0);
     this.cameras.main.setDeadzone(100, 360);
@@ -363,8 +377,8 @@ export class Alley extends Phaser.Scene {
   enemy(x: number, type: string) {
     const e = this.enemies.create(x, 295, type + '0') as Sprite;
     body(e)
-      .setSize(type === 'bug' ? 20 : 23, type === 'bug' ? 13 : 20)
-      .setOffset(2, type === 'bug' ? 5 : 3);
+      .setSize(type === 'bug' ? 22 : 24, type === 'bug' ? 12 : 22)
+      .setOffset(type === 'bug' ? 5 : 4, type === 'bug' ? 9 : 5);
     e.setData('kind', type)
       .setData('direction', -1)
       .setData('sleep', false)
@@ -373,8 +387,13 @@ export class Alley extends Phaser.Scene {
     return e;
   }
   setPower(power: number, announce = true) {
+    const previous = this.power;
     this.power = power;
-    this.hero.setScale(power > 0 ? 1.12 : 1, power > 0 ? 1.2 : 1);
+    this.hero
+      .setScale(1)
+      .setTexture(`hero-${power > 0 ? 'big' : 'small'}-idle0`);
+    this.fitHeroBody(false);
+    if (announce && power > previous) this.growUntil = this.time.now + 420;
     if (announce) {
       toast(
         power === 2 ? 'شطة نار! دوس X وارمي الشطة' : 'سندوتش فول… بقيت أقوى!',
@@ -382,6 +401,61 @@ export class Alley extends Phaser.Scene {
       this.burst(this.hero.x, this.hero.y, 0xffc879, 16);
     }
     this.updateHud();
+  }
+  fitHeroBody(crouch: boolean) {
+    const metrics = heroBody(this.power > 0, crouch),
+      b = body(this.hero);
+    if (
+      b.width !== metrics.width ||
+      b.height !== metrics.height ||
+      b.offset.y !== metrics.y
+    )
+      b.setSize(metrics.width, metrics.height, false).setOffset(
+        metrics.x,
+        metrics.y,
+      );
+    this.heroCrouched = crouch;
+  }
+  animateHero(
+    now: number,
+    grounded: boolean,
+    direction: number,
+    down: boolean,
+  ) {
+    let crouch = grounded && down;
+    if (this.heroCrouched && !crouch) {
+      const m = heroBody(this.power > 0, false),
+        left = this.hero.x - 16 + m.x,
+        top = this.hero.y - 24 + m.y;
+      crouch = (this.solids.getChildren() as Sprite[]).some((s) => {
+        const b = s.body as Phaser.Physics.Arcade.StaticBody;
+        return (
+          left < b.right &&
+          left + m.width > b.left &&
+          top < b.bottom &&
+          top + m.height > b.top + 0.5
+        );
+      });
+    }
+    this.fitHeroBody(crouch);
+    const pose = heroPose({
+      now,
+      grounded,
+      vx: body(this.hero).velocity.x,
+      vy: body(this.hero).velocity.y,
+      direction,
+      down: crouch,
+      growUntil: this.growUntil,
+      throwUntil: this.throwUntil,
+      hurtUntil: this.hurtPoseUntil,
+      dead: this.mode === 'dead',
+    });
+    const form = pose === 'grow0' ? 'small' : this.power > 0 ? 'big' : 'small';
+    this.hero.setTexture(`hero-${form}-${pose}`).setData('pose', pose);
+    this.heroShadow
+      .setPosition(this.hero.x, grounded ? body(this.hero).bottom + 1 : 313)
+      .setAlpha(grounded ? 0.18 : 0.07)
+      .setVisible(this.mode !== 'dead');
   }
   updateHud() {
     hud(
@@ -549,6 +623,7 @@ export class Alley extends Phaser.Scene {
     if (this.power > 0) {
       this.setPower(0, false);
       this.hurtUntil = this.time.now + 1800;
+      this.hurtPoseUntil = this.time.now + 240;
       this.burst(this.hero.x, this.hero.y, 0xe6b17a, 14);
     } else this.die();
   }
@@ -556,7 +631,12 @@ export class Alley extends Phaser.Scene {
     if (this.mode !== 'play') return;
     this.mode = 'dead';
     this.lives--;
-    this.hero.setTexture('hero8').setTint(0xe8c5a3);
+    this.hero
+      .setTexture(`hero-${this.power > 0 ? 'big' : 'small'}-dead`)
+      .setData('pose', 'dead')
+      .clearTint()
+      .setAlpha(1);
+    this.heroShadow.setVisible(false);
     this.hero.setVelocity(0, -250);
     this.hero.setDepth(30);
     body(this.hero).checkCollision.none = true;
@@ -652,7 +732,7 @@ export class Alley extends Phaser.Scene {
         'coin' + (Math.floor(time / 100 + obj.getData('phase')) % 6),
       );
     if (this.mode === 'title') {
-      this.hero.setTexture('hero' + (time % 3200 > 3000 ? 9 : 0));
+      this.animateHero(time, true, 0, false);
       return;
     }
     if (this.mode !== 'play') return;
@@ -692,16 +772,11 @@ export class Alley extends Phaser.Scene {
       dir * speed,
       (dir ? 1000 : grounded ? 1400 : 450) * dt,
     );
-    if (dir) this.facing = dir;
+    const skid =
+      dir && Math.sign(b.velocity.x) !== dir && Math.abs(b.velocity.x) > 50;
+    if (dir && !skid) this.facing = dir;
     this.hero.setFlipX(this.facing < 0);
-    const frame = !grounded
-      ? 7
-      : Math.abs(b.velocity.x) > 12
-        ? 1 + (Math.floor(time / (action ? 65 : 95)) % 6)
-        : time % 3200 > 3000
-          ? 9
-          : 0;
-    this.hero.setTexture('hero' + frame);
+    this.animateHero(time, grounded, dir, down);
     if (time < this.invincible) {
       this.hero.setTint(
         [0xffcc79, 0x8ee9cb, 0xffffff][Math.floor(time / 100) % 3],
@@ -718,6 +793,7 @@ export class Alley extends Phaser.Scene {
       time - this.lastShot > 280
     ) {
       this.lastShot = time;
+      this.throwUntil = time + 220;
       const shot = this.shots.create(
         this.hero.x + this.facing * 18,
         this.hero.y - 3,

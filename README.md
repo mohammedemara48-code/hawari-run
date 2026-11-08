@@ -21,13 +21,20 @@ An original Egyptian side-scrolling platformer. Race through lantern-lit alleys 
 - Foul sandwiches for growth, chili for bouncing pepper shots, lucky beads for nine-second invulnerability.
 - Angry alley cats, scuttling insects and baskets that stop when stomped and roll when kicked.
 - Four to five pits per route, rooftop terraces, checkpoint lanterns, a secret treasure room and end lanterns.
-- Three-layer parallax, shaded pixel sprites, six-frame running animation and a death pose.
+- Three-layer parallax, shaded pixel sprites, eight-frame running, four idle drawings, skid, rise/fall, crouch, hurt/death, growth and chili-throw poses.
 - Original two-voice chiptune scores and synthesized effects; mute and fullscreen controls.
 - Three lives, 50-coin extra lives, countdown timer, detailed level-clear tally and a final result.
 - Arabic RTL UI. Offline PWA with locally hosted fonts; no accounts, analytics or server required.
 
 ![Alley gameplay](docs/screenshots/02-alley.png)
 ![Underground market](docs/screenshots/03-market.png)
+
+## Character artwork revision
+
+بلبل now has a clear three-quarter face, embroidered teal waistcoat, cream shirt, amber scarf, courier satchel and two-tone sneakers. Small form has a 32×40 visible silhouette; powered form is 32×48. Both use consistent 32×48 canvases with no fractional sprite scaling. There are 23 poses per form (46 drawings), with a strictly opaque/transparent palette and top-left highlights. Enemy artwork was redrawn to the same palette and outline treatment.
+
+![New hero animation sheet at 4×](docs/screenshots/04-hero-sheet.png)
+![New hero in gameplay](docs/screenshots/05-gameplay-new.png)
 
 ## Local development
 
@@ -63,7 +70,9 @@ For browser tests: `npx playwright install chromium`. Screenshots are saved unde
 
 ```text
 src/
-  art.ts       Hand-authored pixel sprites and Egyptian scenery
+  art.ts       Egyptian scenery and environment tiles
+  characters.ts Hand-pixelled 32×48 character frames, shaded outfits and expressive enemies
+  hero-state.ts Pure animation selection and foot-aligned collision metrics
   audio.ts     Original Web Audio synthesizer and score
   game.ts      Platforming, collisions, enemies, rooms and game states
   rules.ts     Pure, unit-tested movement and scoring rules

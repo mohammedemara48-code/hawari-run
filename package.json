@@ -1,6 +1,6 @@
 {
   "name": "hawari-run",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "بلبل في الحواري — لعبة منصات مصرية أصلية",
   "main": "index.js",
   "directories": {
@@ -16,7 +16,9 @@
     "check": "tsc --noEmit && npm run lint && prettier --check . && npm test && vite build",
     "test:browser": "node tests/smoke.mjs && node tests/runtime.mjs && node tests/bonus.mjs && node tests/mobile.mjs",
     "test:routes": "node tests/traverse.mjs",
-    "test:offline": "node tests/offline.mjs"
+    "test:offline": "node tests/offline.mjs",
+    "test:hero": "node tests/hero-runtime.mjs",
+    "shots:hero": "node tests/hero-shots.mjs"
   },
   "keywords": [],
   "author": "",

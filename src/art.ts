@@ -1,8 +1,8 @@
 import Phaser from 'phaser';
+import { makeCharacters } from './characters';
 type C = CanvasRenderingContext2D;
 const ink = '#24283c',
   gold = '#f9c86b',
-  teal = '#346d70',
   cream = '#ffe2ad';
 function rect(c: C, x: number, y: number, w: number, h: number, color: string) {
   c.fillStyle = color;
@@ -177,144 +177,7 @@ function lantern(c: C, x: number, y: number) {
 }
 export function makeArt(scene: Phaser.Scene) {
   if (scene.textures.exists('hero0')) return;
-  for (let f = 0; f < 10; f++)
-    texture(scene, 'hero' + f, 26, 36, (c) => {
-      const run = f >= 1 && f <= 6,
-        dy = run ? (f % 3 === 0 ? -1 : 0) : 0;
-      c.translate(0, dy);
-      // dark outlined silhouette, original blue-cap courier
-      rect(c, 7, 1, 12, 3, ink);
-      rect(c, 5, 4, 17, 4, ink);
-      rect(c, 7, 2, 11, 5, '#1c797e');
-      rect(c, 9, 2, 8, 2, '#54b4a2');
-      rect(c, 17, 6, 7, 2, ink);
-      rect(c, 17, 5, 6, 2, '#efb94e');
-      rect(c, 7, 8, 14, 10, ink);
-      rect(c, 9, 8, 11, 9, '#c98256');
-      rect(c, 11, 8, 9, 5, '#f2b47b');
-      rect(c, 18, 10, 2, 3, ink);
-      rect(c, 21, 12, 2, 3, '#e4a270');
-      rect(c, 8, 8, 3, 6, '#523d37');
-      rect(c, 12, 16, 6, 3, '#b86d4b');
-      rect(c, 6, 18, 14, 11, ink);
-      rect(c, 7, 19, 12, 9, '#f3d5a0');
-      rect(c, 7, 18, 4, 11, teal);
-      rect(c, 15, 18, 4, 11, '#20505b');
-      rect(c, 8, 20, 2, 7, '#64a49a');
-      rect(c, 11, 18, 4, 3, '#e07d44');
-      rect(c, 11, 21, 3, 4, '#ce643d');
-      rect(c, 6, 28, 14, 3, ink);
-      rect(c, 7, 28, 12, 2, '#b67e55');
-      const swing = run ? [0, 2, 4, 1, -2, -3][f - 1] : 0;
-      if (f === 7) {
-        rect(c, 4, 13, 4, 9, ink);
-        rect(c, 4, 12, 4, 4, '#f5bb83');
-        rect(c, 19, 18, 4, 8, ink);
-        rect(c, 19, 23, 4, 4, '#d28e61');
-      } else {
-        rect(c, 4, 19 + swing, 4, 8, ink);
-        rect(c, 4, 24 + swing, 4, 4, '#e9aa76');
-        rect(c, 19, 19 - swing, 4, 8, ink);
-        rect(c, 19, 24 - swing, 4, 4, '#cc8459');
-      }
-      const stride = run ? [0, 2, 4, 1, -2, -4][f - 1] : 0;
-      rect(c, 7 - stride, 30, 5, 4, ink);
-      rect(c, 8 - stride, 30, 3, 3, '#d9bf94');
-      rect(c, 14 + stride, 30, 5, 4, ink);
-      rect(c, 15 + stride, 30, 3, 3, '#b69e7c');
-      rect(c, 5 - stride, 33, 8, 3, ink);
-      rect(c, 13 + stride, 33, 8, 3, ink);
-      rect(c, 6 - stride, 33, 5, 1, '#83594b');
-      rect(c, 15 + stride, 33, 5, 1, '#a46d4e');
-      if (f === 9) {
-        rect(c, 18, 10, 2, 3, '#f2b47b');
-        rect(c, 18, 11, 2, 1, ink);
-      }
-      if (f === 8) {
-        rect(c, 15, 10, 6, 2, ink);
-        rect(c, 17, 8, 2, 6, ink);
-      }
-    });
-  for (let f = 0; f < 4; f++)
-    texture(scene, 'cat' + f, 28, 24, (c) => {
-      const dy = f % 2;
-      rect(c, 5, 10 + dy, 18, 10, ink);
-      rect(c, 6, 11 + dy, 16, 7, '#ad7357');
-      rect(c, 8, 9 + dy, 13, 8, '#cf976c');
-      poly(
-        c,
-        [
-          [7, 10 + dy],
-          [6, 1 + dy],
-          [13, 7 + dy],
-        ],
-        ink,
-      );
-      poly(
-        c,
-        [
-          [17, 7 + dy],
-          [24, 1 + dy],
-          [23, 12 + dy],
-        ],
-        ink,
-      );
-      poly(
-        c,
-        [
-          [8, 9 + dy],
-          [8, 5 + dy],
-          [11, 8 + dy],
-        ],
-        '#d29177',
-      );
-      poly(
-        c,
-        [
-          [19, 8 + dy],
-          [22, 5 + dy],
-          [21, 10 + dy],
-        ],
-        '#d29177',
-      );
-      rect(c, 8, 10 + dy, 5, 3, '#f9d47f');
-      rect(c, 18, 10 + dy, 5, 3, '#f9d47f');
-      rect(c, 11, 10 + dy, 2, 3, ink);
-      rect(c, 18, 10 + dy, 2, 3, ink);
-      rect(c, 14, 14 + dy, 3, 2, '#71464a');
-      rect(c, 6 + (f % 2) * 3, 20, 5, 3, ink);
-      rect(c, 18 - (f % 2) * 3, 20, 5, 3, ink);
-      rect(c, 2, 9 + dy, 4, 8, '#8b5b4e');
-      rect(c, 0, 5 + dy, 3, 7, ink);
-    });
-  for (let f = 0; f < 4; f++)
-    texture(scene, 'basket' + f, 26, 24, (c) => {
-      ellipse(c, 13, 13, 12, 10, ink);
-      ellipse(c, 13, 12, 10, 8, '#b47b4b');
-      ellipse(c, 13, 11, 9, 7, '#e1af65');
-      for (let y = 6; y < 19; y += 4) rect(c, 5, y, 16, 1, '#815b47');
-      for (let x = 7; x < 22; x += 5) rect(c, x, 5 + (f % 2), 1, 14, '#f1c775');
-      rect(c, 5, 2, 16, 4, ink);
-      rect(c, 6, 2, 14, 2, '#eac87b');
-      rect(c, 7, 20, 5, 3, ink);
-      rect(c, 17, 20, 5, 3, ink);
-      rect(c, 8, 9, 3, 3, ink);
-      rect(c, 16, 9, 3, 3, ink);
-    });
-  for (let f = 0; f < 4; f++)
-    texture(scene, 'bug' + f, 26, 20, (c) => {
-      for (let x = 4; x < 24; x += 7) {
-        line(c, x, 12, x - 3, 18 - (f % 2) * 2, ink, 2);
-        line(c, x, 9, x - 3, 4 + (f % 2) * 2, ink, 2);
-      }
-      ellipse(c, 14, 11, 10, 7, ink);
-      ellipse(c, 14, 10, 8, 5, '#8d5f64');
-      ellipse(c, 13, 9, 5, 3, '#bf8377');
-      rect(c, 14, 6, 1, 10, '#5d485a');
-      rect(c, 4, 8, 5, 5, '#d4a25f');
-      rect(c, 4, 9, 2, 2, ink);
-      line(c, 5, 8, 0, 2, ink);
-    });
+  makeCharacters(scene);
   for (let f = 0; f < 6; f++)
     texture(scene, 'coin' + f, 16, 20, (c) => {
       const w = [6, 10, 14, 10, 6, 3][f];
