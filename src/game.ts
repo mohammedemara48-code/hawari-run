@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { makeArt } from './art';
 import { HERO_FRAME, heroBody, heroPose } from './hero-state';
 import { approach, jumpAllowed, stomped, levelSpec, tally } from './rules';
+import { PHYSICS, levelLayout } from './levels';
 import { sound } from './audio';
 import { bindUI, screen, hud, toast, touch } from './ui';
 type Sprite = Phaser.Physics.Arcade.Sprite;
@@ -33,6 +34,7 @@ export class Alley extends Phaser.Scene {
   lastGround = -1000;
   lastPress = -1000;
   lastShot = 0;
+  lastBump = 0;
   invincible = 0;
   hurtUntil = 0;
   elapsed = 0;
@@ -171,7 +173,7 @@ export class Alley extends Phaser.Scene {
       immovable: true,
     });
     this.enemies = this.physics.add.group();
-    this.items = this.physics.add.group({ allowGravity: false });
+    this.items = this.physics.add.group();
     this.shots = this.physics.add.group({ allowGravity: false });
     const gaps = this.bonus ? [] : this.spec.gaps;
     for (let x = 12; x < width; x += 24) {
@@ -203,58 +205,14 @@ export class Alley extends Phaser.Scene {
       this.add.image(56, 312, 'flowers').setOrigin(0.5, 1);
     } else {
       // Original level routes: alternating rooftop terraces and ground passages.
-      const platforms =
-        this.level === 0
-          ? [
-              [552, 264, 4],
-              [1248, 264, 3],
-              [1392, 216, 4],
-              [2400, 264, 4],
-              [2808, 252, 4],
-              [3552, 264, 4],
-              [3696, 216, 3],
-              [4368, 264, 4],
-            ]
-          : [
-              [504, 264, 4],
-              [1152, 264, 4],
-              [1320, 216, 3],
-              [2088, 264, 4],
-              [2832, 264, 4],
-              [3288, 264, 3],
-              [3456, 216, 4],
-              [4224, 264, 4],
-              [4752, 264, 4],
-            ];
-      for (const [x, y, n] of platforms) {
+      const layout = levelLayout(this.level);
+      for (const [x, y, n] of layout.platforms) {
         for (let i = 0; i < n; i++) this.solid(x + i * 24, y, 'platform');
         for (let i = 0; i < n; i++) this.coin(x + i * 24, y - 39);
       }
-      const sets =
-        this.level === 0
-          ? [408, 816, 1536, 1920, 2592, 3024, 3840, 4512]
-          : [360, 768, 1536, 2160, 2592, 3624, 4128, 4872];
-      sets.forEach((x, i) => {
-        this.solid(x - 24, 216, 'brick');
-        this.solid(
-          x,
-          216,
-          'box',
-          i === 0
-            ? 'food'
-            : i === 2
-              ? 'chili'
-              : i === 4
-                ? 'invincible'
-                : 'coin',
-        );
-        this.solid(x + 24, 216, 'brick');
-        if (i % 2 === 1) {
-          this.coin(x - 24, 171);
-          this.coin(x, 152);
-          this.coin(x + 24, 171);
-        }
-      });
+      for (const [x, y] of layout.steps) this.solid(x, y, 'platform');
+      for (const b of layout.blocks) this.solid(b.x, b.y, b.kind, b.content);
+      for (const [x, y] of layout.rowCoins) this.coin(x, y);
       for (let x = 276; x < width - 350; x += 156)
         if (!gaps.some(([a, b]) => x > a - 12 && x < b + 12)) this.coin(x, 284);
       const enemyList =
@@ -319,9 +277,7 @@ export class Alley extends Phaser.Scene {
     this.setPower(this.power, false);
     this.cameras.main.startFollow(this.hero, true, 0.12, 1, -100, 0);
     this.cameras.main.setDeadzone(100, 360);
-    this.physics.add.collider(this.hero, this.solids, (_p: any, b: any) =>
-      this.hitBlock(b),
-    );
+    this.physics.add.collider(this.hero, this.solids, () => this.headBump());
     this.physics.add.collider(this.enemies, this.solids);
     this.physics.add.collider(this.items, this.solids);
     this.physics.add.overlap(this.hero, this.coins, (_p: any, c: any) => {
@@ -478,14 +434,28 @@ export class Alley extends Phaser.Scene {
     sound.fx('coin');
     this.updateHud();
   }
+  /** Bump the block most centred over the hero's head, never a neighbour. */
+  headBump() {
+    const hb = body(this.hero);
+    if (!hb.blocked.up || this.time.now - this.lastBump < 120) return;
+    let best: Sprite | undefined,
+      bestOverlap = 0;
+    for (const s of this.solids.getChildren() as Sprite[]) {
+      if (!s.active) continue;
+      const sb = s.body as Phaser.Physics.Arcade.StaticBody;
+      if (Math.abs(sb.bottom - hb.top) > 3) continue;
+      const overlap = Math.min(sb.right, hb.right) - Math.max(sb.left, hb.left);
+      if (overlap > bestOverlap) {
+        bestOverlap = overlap;
+        best = s;
+      }
+    }
+    if (!best) return;
+    this.lastBump = this.time.now;
+    this.hitBlock(best);
+  }
   hitBlock(block: Sprite) {
-    if (
-      !block.active ||
-      !body(this.hero).blocked.up ||
-      this.hero.y < block.y ||
-      block.getData('busy')
-    )
-      return;
+    if (!block.active || this.hero.y < block.y || block.getData('busy')) return;
     const kind = block.getData('kind');
     if (kind !== 'brick' && kind !== 'box') return;
     block.setData('busy', true);
@@ -509,36 +479,79 @@ export class Alley extends Phaser.Scene {
     });
     if (kind === 'box') {
       block.setData('kind', 'used').setTexture('used');
-      const content = block.getData('content');
+      const content = block.getData('content') || 'coin';
       if (content === 'coin') {
         this.collect();
-        const c = this.add.image(block.x, block.y - 26, 'coin1');
+        const c = this.add.image(block.x, block.y - 20, 'coin1').setDepth(15);
         this.tweens.add({
           targets: c,
-          y: c.y - 26,
+          y: c.y - 46,
+          duration: 260,
+          yoyo: true,
+          ease: 'Quad.easeOut',
+          onComplete: () => {
+            this.burst(c.x, c.y, 0xffd474, 6);
+            c.destroy();
+          },
+        });
+        const label = this.add
+          .text(block.x, block.y - 34, '+١٠٠', {
+            fontFamily: 'Tahoma',
+            fontSize: '12px',
+            color: '#fff2c4',
+            stroke: '#3a2a22',
+            strokeThickness: 3,
+          })
+          .setOrigin(0.5)
+          .setDepth(16);
+        this.tweens.add({
+          targets: label,
+          y: label.y - 30,
           alpha: 0,
-          duration: 450,
-          onComplete: () => c.destroy(),
+          delay: 200,
+          duration: 600,
+          onComplete: () => label.destroy(),
         });
-      } else {
-        this.time.delayedCall(140, () => {
-          if (!block.active) return;
-          const item = this.items.create(
-            block.x,
-            block.y - 29,
-            content,
-          ) as Sprite;
-          item.setData('kind', content);
-          this.tweens.add({
-            targets: item,
-            y: item.y - 6,
-            duration: 500,
-            yoyo: true,
-            repeat: -1,
-          });
-        });
-      }
+      } else this.spawnItem(block, content);
     }
+  }
+  /** A power-up rises out of its box, then slides off the row to the ground. */
+  spawnItem(block: Sprite, content: string) {
+    const top = block.y - 12;
+    const item = this.items.create(block.x, top, content) as Sprite;
+    item.setData('kind', content).setDepth(5).setScale(0.3);
+    const ib = body(item);
+    ib.setAllowGravity(false).enable = false;
+    this.tweens.add({
+      targets: item,
+      y: top - item.height / 2 - 1,
+      scale: 1,
+      duration: 380,
+      ease: 'Sine.easeOut',
+      onComplete: () => {
+        if (!item.active) return;
+        ib.enable = true;
+        ib.reset(item.x, item.y);
+        ib.setAllowGravity(true);
+        // Slide away from the hero, unless that side drops onto a terrace,
+        // the secret tank or a gap — then use the open street side.
+        const away = this.hero.x <= block.x ? 1 : -1;
+        const dir = this.streetClear(block.x, away) ? away : -away;
+        item.setData('direction', dir).setData('spawnY', item.y);
+        item.setVelocity(dir * 70, 0);
+      },
+    });
+  }
+  streetClear(x: number, dir: number) {
+    const from = x + dir * 36,
+      to = x + dir * 110,
+      lo = Math.min(from, to),
+      hi = Math.max(from, to);
+    if (this.spec.gaps.some(([a, b]) => a < hi && b > lo)) return false;
+    return !(this.solids.getChildren() as Sprite[]).some((s) => {
+      const b = s.body as Phaser.Physics.Arcade.StaticBody;
+      return b.top > 228 && b.top < 312 && b.left < hi && b.right > lo;
+    });
   }
   burst(x: number, y: number, color: number, count = 7) {
     for (let i = 0; i < count; i++) {
@@ -757,7 +770,7 @@ export class Alley extends Phaser.Scene {
     if (grounded) this.lastGround = time;
     if (jump && !this.jumpWas) this.lastPress = time;
     if (jumpAllowed(time - this.lastGround, time - this.lastPress)) {
-      this.hero.setVelocityY(action ? -485 : -470);
+      this.hero.setVelocityY(action ? -PHYSICS.runJump : -PHYSICS.jump);
       this.lastGround = -1000;
       this.lastPress = -1000;
       sound.fx('jump');
@@ -831,6 +844,31 @@ export class Alley extends Phaser.Scene {
       e.setTexture(
         e.getData('kind') + (Math.floor(time / (rolling ? 45 : 150)) % 4),
       );
+    }
+    // Power-ups slide off their row, then settle where they land so they can
+    // never drift under a low terrace or into a gap.
+    for (const item of this.items.getChildren() as Sprite[]) {
+      const ib = body(item);
+      if (!ib.enable) continue;
+      if (item.y > 390) {
+        item.destroy();
+        continue;
+      }
+      if (item.getData('settled')) {
+        item.setVelocityX(0);
+        if (item.getData('kind') === 'invincible' && ib.blocked.down)
+          item.setVelocityY(-160);
+        continue;
+      }
+      if (item.y > item.getData('spawnY') + 12) item.setData('airborne', true);
+      if (item.getData('airborne') && ib.blocked.down) {
+        item.setData('settled', true).setVelocityX(0);
+        continue;
+      }
+      let dir = item.getData('direction') || 1;
+      if (ib.blocked.left) dir = 1;
+      if (ib.blocked.right) dir = -1;
+      item.setData('direction', dir).setVelocityX(dir * 70);
     }
     if (this.hero.x < HERO_FRAME.width / 2) this.hero.x = HERO_FRAME.width / 2;
     if (this.hero.y > 410) this.die();

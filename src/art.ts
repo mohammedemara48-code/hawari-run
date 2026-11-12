@@ -217,14 +217,36 @@ export function makeArt(scene: Phaser.Scene) {
         key === 'box'
           ? '#f1b94c'
           : key === 'used'
-            ? '#7a6a58'
+            ? '#4a3f37'
             : key === 'platform'
               ? '#568782'
               : '#ac6955',
       );
-      rect(c, 2, 2, 20, 2, key === 'box' ? '#ffe298' : '#df9b70');
-      rect(c, 2, 3, 2, 18, key === 'box' ? '#fbd577' : '#c68462');
-      rect(c, 2, 20, 20, 2, key === 'box' ? '#bc8038' : '#775349');
+      const spent = key === 'used';
+      rect(
+        c,
+        2,
+        2,
+        20,
+        2,
+        key === 'box' ? '#ffe298' : spent ? '#6a5b4f' : '#df9b70',
+      );
+      rect(
+        c,
+        2,
+        3,
+        2,
+        18,
+        key === 'box' ? '#fbd577' : spent ? '#5d5046' : '#c68462',
+      );
+      rect(
+        c,
+        2,
+        20,
+        20,
+        2,
+        key === 'box' ? '#bc8038' : spent ? '#2c2522' : '#775349',
+      );
       rect(c, 21, 4, 1, 16, '#694c45');
       if (key === 'box') {
         poly(
@@ -264,8 +286,16 @@ export function makeArt(scene: Phaser.Scene) {
         rect(c, 2, 6, 20, 2, '#2f5a65');
         rect(c, 10, 8, 4, 14, '#355963');
       } else {
-        rect(c, 6, 6, 12, 10, '#8d7a5d');
-        rect(c, 7, 7, 10, 1, '#b8a27b');
+        // Spent block: dark, flat, four rivets — clearly emptied.
+        rect(c, 6, 7, 12, 10, '#3a312b');
+        rect(c, 7, 8, 10, 1, '#5b4d42');
+        for (const [x, y] of [
+          [4, 4],
+          [18, 4],
+          [4, 17],
+          [18, 17],
+        ])
+          rect(c, x, y, 2, 2, '#241e1b');
       }
     });
   texture(scene, 'food', 24, 20, (c) => {
