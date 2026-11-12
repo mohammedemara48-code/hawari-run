@@ -527,65 +527,195 @@ footer {
   color: #bda97f;
 }
 .touch-controls {
+  --stick: clamp(96px, 30vh, 128px);
+  --knob: calc(var(--stick) * 0.44);
+  --jump: clamp(66px, 21vh, 88px);
+  --chili: clamp(52px, 16vh, 66px);
+  --safe-l: max(10px, env(safe-area-inset-left));
+  --safe-r: max(10px, env(safe-area-inset-right));
+  --safe-b: max(8px, env(safe-area-inset-bottom));
   display: none;
   position: absolute;
   z-index: 18;
-  inset: auto 0 8px;
-  justify-content: space-between;
-  padding: 0 14px;
+  inset: 0;
   direction: ltr;
   pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.touch-directions,
-.touch-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* Left: floating analog stick. The whole lower-left area is the touch zone. */
+.stick-zone {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 44%;
+  height: 72%;
   pointer-events: auto;
+  touch-action: none;
+}
+.stick-base {
+  position: absolute;
+  left: calc(var(--safe-l) + var(--stick) / 2 + 8px);
+  top: calc(100% - var(--safe-b) - var(--stick) / 2 - 6px);
+  width: var(--stick);
+  height: var(--stick);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, #0e242a55 0 55%, #0e242a88 56% 100%);
+  border: 2px solid #fff0be55;
+  box-shadow:
+    inset 0 0 0 6px #ffffff0d,
+    0 4px 14px #0005;
+  opacity: 0.55;
+  transition: opacity 0.15s;
+}
+.stick-ring {
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  border: 1px dashed #fff0be33;
+}
+.stick-arrow {
+  position: absolute;
+  color: #ffe7af99;
+  font-size: calc(var(--stick) * 0.11);
+  line-height: 1;
+}
+.stick-arrow.l {
+  left: 8%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.stick-arrow.r {
+  right: 8%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.stick-arrow.u {
+  top: 7%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.stick-zone.jumping .stick-arrow.u {
+  color: #fff3cf;
+}
+.stick-arrow.d {
+  bottom: 7%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.stick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--knob);
+  height: var(--knob);
+  margin: calc(var(--knob) / -2) 0 0 calc(var(--knob) / -2);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff3cf, #e8bd6e 45%, #b9853f);
+  border: 2px solid #3a2a22aa;
+  box-shadow:
+    0 3px 0 #6d4b2b,
+    0 6px 12px #0006;
+  will-change: transform;
+  transition: transform 0.12s ease-out;
+}
+.stick-zone.active .stick-base {
+  opacity: 0.92;
+}
+.stick-zone.active .stick-knob {
+  transition: none;
+}
+.stick-zone.jumping .stick-knob {
+  box-shadow:
+    0 3px 0 #6d4b2b,
+    0 0 16px #ffe7afcc;
+}
+.stick-zone.running .stick-knob {
+  background: radial-gradient(circle at 35% 30%, #fff, #ffb75e 45%, #d9712f);
+}
+/* Right: big jump and a dedicated chili throw button. */
+.touch-actions {
+  position: absolute;
+  right: var(--safe-r);
+  bottom: var(--safe-b);
+  width: calc(var(--jump) + var(--chili) + 10px);
+  height: calc(var(--jump) + var(--chili) * 0.55);
+  pointer-events: none;
 }
 .touch-controls button {
+  position: absolute;
+  pointer-events: auto;
   touch-action: none;
   user-select: none;
-  width: 45px;
-  height: 45px;
-  border: 1px solid #fff0be77;
-  border-bottom: 3px solid #fff0be55;
-  background: #24474b99;
-  color: #ffe7af;
-  border-radius: 8px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1px;
+  border-radius: 50%;
+  border: 2px solid #fff0be77;
+  border-bottom-width: 4px;
   backdrop-filter: blur(3px);
-  font-size: 15px;
+  font-family: Changa, Tahoma, sans-serif;
   font-weight: 700;
-}
-.touch-controls button.held {
-  background: #e8bd6e;
-  color: #20383f;
+  line-height: 1;
+  transition:
+    transform 0.06s,
+    opacity 0.15s,
+    filter 0.15s;
 }
 .touch-controls .jump-touch {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #dba859dd;
+  right: 0;
+  bottom: 0;
+  width: var(--jump);
+  height: var(--jump);
+  background: radial-gradient(
+    circle at 40% 30%,
+    #f6d48add,
+    #dba859dd 55%,
+    #b07c35dd
+  );
   color: #193037;
-  font-family: Changa;
-  font-size: 20px;
+  font-size: calc(var(--jump) * 0.22);
 }
-.touch-controls .run-touch {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  font-size: 12px;
+.jump-glyph {
+  font-size: calc(var(--jump) * 0.24);
 }
-.touch-controls [data-touch='down'] {
-  width: 32px;
-  height: 32px;
+.touch-controls .chili-touch {
+  left: 0;
+  top: 0;
+  width: var(--chili);
+  height: var(--chili);
+  background: radial-gradient(circle at 40% 30%, #7c3a2bdd, #4e2019dd);
+  border-color: #ffb08a99;
+  color: #ffe1c8;
+  font-size: calc(var(--chili) * 0.19);
+}
+.chili-touch svg {
+  width: calc(var(--chili) * 0.5);
+  height: calc(var(--chili) * 0.5);
+}
+.touch-controls .chili-touch.off {
+  opacity: 0.38;
+  filter: grayscale(1);
+}
+.touch-controls button.held {
+  transform: translateY(2px) scale(0.94);
+  border-bottom-width: 2px;
+  filter: brightness(1.18);
 }
 .playing .touch-controls {
   display: none;
 }
 @media (pointer: coarse) {
   .playing .touch-controls {
-    display: flex;
+    display: block;
+  }
+  .playing {
+    touch-action: none;
+    overscroll-behavior: none;
   }
   .toast {
     bottom: 72px;
@@ -897,10 +1027,6 @@ footer {
   .title-stamp {
     width: 75px;
     height: 75px;
-  }
-  .touch-controls button {
-    width: 48px;
-    height: 48px;
   }
   .title-screen {
     padding-top: 35px;

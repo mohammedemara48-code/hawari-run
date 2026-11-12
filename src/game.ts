@@ -800,8 +800,13 @@ export class Alley extends Phaser.Scene {
       this.keys.Z.isDown ||
       this.keys.UP.isDown ||
       this.keys.W.isDown ||
-      touch.jump;
-    const action = this.keys.X.isDown || this.keys.SHIFT.isDown || touch.action,
+      touch.jump ||
+      touch.stickJump;
+    // Keyboard X/Shift both runs and throws; on touch the stick runs when
+    // pushed far and the chili button throws.
+    const keyAction = this.keys.X.isDown || this.keys.SHIFT.isDown,
+      action = keyAction || touch.run,
+      throwing = keyAction || touch.throw,
       down = this.keys.DOWN.isDown || this.keys.S.isDown || touch.down;
     const b = body(this.hero);
     const grounded = b.blocked.down;
@@ -838,7 +843,7 @@ export class Alley extends Phaser.Scene {
       this.hero.setAlpha(Math.floor(time / 90) % 2 === 0 ? 0.45 : 1);
     else this.hero.clearTint().setAlpha(1);
     if (
-      action &&
+      throwing &&
       !this.actionWas &&
       this.power === 2 &&
       time - this.lastShot > 280
@@ -922,7 +927,7 @@ export class Alley extends Phaser.Scene {
     if (down && !this.downWas) this.portal();
     this.riseVy = body(this.hero).velocity.y;
     this.jumpWas = jump;
-    this.actionWas = action;
+    this.actionWas = throwing;
     this.downWas = down;
     this.updateHud();
   }

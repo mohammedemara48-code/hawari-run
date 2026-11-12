@@ -11,7 +11,7 @@ An original Egyptian side-scrolling platformer. Race through lantern-lit alleys 
 - **Run / throw chili:** Shift or X. Shooting needs the chili pickup; press again for another throw.
 - **Secret cistern:** stand on the turquoise tank and press ↓ / S. Use the far tank to leave.
 - **Pause:** Escape or the pause button. Enter starts the game or advances after world 1.
-- Touch controls appear automatically on touchscreen devices. Landscape is recommended.
+- Touch controls appear automatically on touchscreen devices (landscape recommended): a floating analog stick on the left (push to walk, push far to run, up or up-diagonal to jump, down to crouch/enter the tank), a dedicated chili (شطة) throw button that lights up only with the chili power, and an optional big jump button. Multi-touch is supported.
 
 ## What's inside
 
