@@ -16,7 +16,6 @@ export const touch = {
 };
 type Flag = 'left' | 'right' | 'run' | 'jump' | 'stickJump' | 'throw' | 'down';
 export const STICK = {
-  radius: 46,
   deadzone: 0.24,
   run: 0.78,
   down: 0.55,
@@ -64,32 +63,31 @@ let resetStick: (() => void) | undefined;
 function bindStick(zone: HTMLElement) {
   const base = zone.querySelector<HTMLElement>('.stick-base')!,
     knob = zone.querySelector<HTMLElement>('.stick-knob')!;
+  // The visible stick stays anchored in the bottom-left corner. Input is
+  // relative to where the thumb lands in the low touch zone, so touching
+  // anywhere there never makes the hero jump or crouch by itself.
   let id: number | null = null,
     cx = 0,
     cy = 0;
+  const radius = () => Math.max(24, base.offsetWidth * 0.4);
   const place = (dx: number, dy: number) => {
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
   };
   resetStick = () => {
     id = null;
-    zone.classList.remove('active');
-    base.style.removeProperty('left');
-    base.style.removeProperty('top');
+    zone.classList.remove('active', 'running', 'jumping');
     place(0, 0);
   };
   const move = (e: PointerEvent) => {
     let dx = e.clientX - cx,
       dy = e.clientY - cy;
-    const r = STICK.radius,
+    const r = radius(),
       d = Math.hypot(dx, dy);
-    // Floating base follows a thumb that drifts far past the rim.
+    // The input origin trails a thumb that drifts far past the rim.
     if (d > r * 1.6) {
       const k = (d - r * 1.6) / d;
       cx += dx * k;
       cy += dy * k;
-      const box = zone.getBoundingClientRect();
-      base.style.left = `${cx - box.left}px`;
-      base.style.top = `${cy - box.top}px`;
       dx = e.clientX - cx;
       dy = e.clientY - cy;
     }
@@ -107,12 +105,8 @@ function bindStick(zone: HTMLElement) {
     e.preventDefault();
     id = e.pointerId;
     zone.setPointerCapture(id);
-    const box = zone.getBoundingClientRect();
-    // Floating: the base appears under the thumb, kept inside the zone.
-    cx = Math.min(Math.max(e.clientX, box.left + 58), box.right - 58);
-    cy = Math.min(Math.max(e.clientY, box.top + 58), box.bottom - 58);
-    base.style.left = `${cx - box.left}px`;
-    base.style.top = `${cy - box.top}px`;
+    cx = e.clientX;
+    cy = e.clientY;
     zone.classList.add('active');
     move(e);
   });
@@ -125,7 +119,6 @@ function bindStick(zone: HTMLElement) {
       touch.left = touch.right = touch.run = touch.down = false;
       touch.stickJump = false;
       touch.x = touch.y = 0;
-      zone.classList.remove('running', 'jumping');
       resetStick?.();
     });
 }

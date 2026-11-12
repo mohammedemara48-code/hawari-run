@@ -527,13 +527,14 @@ footer {
   color: #bda97f;
 }
 .touch-controls {
-  --stick: clamp(96px, 30vh, 128px);
-  --knob: calc(var(--stick) * 0.44);
-  --jump: clamp(66px, 21vh, 88px);
-  --chili: clamp(52px, 16vh, 66px);
-  --safe-l: max(10px, env(safe-area-inset-left));
-  --safe-r: max(10px, env(safe-area-inset-right));
-  --safe-b: max(8px, env(safe-area-inset-bottom));
+  /* ~80px stick, ~62px jump, ~48px chili on a 390px-tall landscape phone. */
+  --stick: clamp(60px, 20.5vh, 84px);
+  --knob: calc(var(--stick) * 0.46);
+  --jump: clamp(50px, 16vh, 66px);
+  --chili: clamp(40px, 12.4vh, 52px);
+  --safe-l: max(8px, env(safe-area-inset-left));
+  --safe-r: max(8px, env(safe-area-inset-right));
+  --safe-b: max(6px, env(safe-area-inset-bottom));
   display: none;
   position: absolute;
   z-index: 18;
@@ -550,15 +551,15 @@ footer {
   position: absolute;
   left: 0;
   bottom: 0;
-  width: 44%;
-  height: 72%;
+  width: 42%;
+  height: 40%;
   pointer-events: auto;
   touch-action: none;
 }
 .stick-base {
   position: absolute;
-  left: calc(var(--safe-l) + var(--stick) / 2 + 8px);
-  top: calc(100% - var(--safe-b) - var(--stick) / 2 - 6px);
+  left: calc(var(--safe-l) + var(--stick) / 2);
+  top: calc(100% - var(--safe-b) - var(--stick) / 2);
   width: var(--stick);
   height: var(--stick);
   transform: translate(-50%, -50%);
@@ -568,7 +569,7 @@ footer {
   box-shadow:
     inset 0 0 0 6px #ffffff0d,
     0 4px 14px #0005;
-  opacity: 0.55;
+  opacity: 0.25;
   transition: opacity 0.15s;
 }
 .stick-ring {
@@ -608,8 +609,9 @@ footer {
 }
 .stick-knob {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  left: calc(var(--safe-l) + var(--stick) / 2);
+  top: calc(100% - var(--safe-b) - var(--stick) / 2);
+  opacity: 0.6;
   width: var(--knob);
   height: var(--knob);
   margin: calc(var(--knob) / -2) 0 0 calc(var(--knob) / -2);
@@ -623,7 +625,11 @@ footer {
   transition: transform 0.12s ease-out;
 }
 .stick-zone.active .stick-base {
-  opacity: 0.92;
+  opacity: 0.42;
+}
+/* The knob sits outside the faded base so it keeps its own ~0.6 alpha. */
+.stick-zone.active .stick-knob {
+  opacity: 0.85;
 }
 .stick-zone.active .stick-knob {
   transition: none;
@@ -642,7 +648,7 @@ footer {
   right: var(--safe-r);
   bottom: var(--safe-b);
   width: calc(var(--jump) + var(--chili) + 10px);
-  height: calc(var(--jump) + var(--chili) * 0.55);
+  height: var(--jump);
   pointer-events: none;
 }
 .touch-controls button {
@@ -661,6 +667,7 @@ footer {
   font-family: Changa, Tahoma, sans-serif;
   font-weight: 700;
   line-height: 1;
+  opacity: 0.82;
   transition:
     transform 0.06s,
     opacity 0.15s,
@@ -685,7 +692,7 @@ footer {
 }
 .touch-controls .chili-touch {
   left: 0;
-  top: 0;
+  bottom: 0;
   width: var(--chili);
   height: var(--chili);
   background: radial-gradient(circle at 40% 30%, #7c3a2bdd, #4e2019dd);
@@ -991,6 +998,11 @@ footer {
   }
 }
 @media (max-height: 500px) and (orientation: landscape) {
+  /* Phones in landscape: anchor controls to the screen corners, so on wide
+     screens they sit in the bars beside the game instead of over it. */
+  .touch-controls {
+    position: fixed;
+  }
   .cabinet {
     max-width: 900px;
     padding: 0;

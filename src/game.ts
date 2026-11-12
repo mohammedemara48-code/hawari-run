@@ -8,6 +8,7 @@ import { bindUI, screen, hud, toast, touch } from './ui';
 type Sprite = Phaser.Physics.Arcade.Sprite;
 type Mode = 'title' | 'play' | 'pause' | 'dead' | 'clear' | 'over' | 'win';
 const body = (s: Sprite) => s.body as Phaser.Physics.Arcade.Body;
+const EDGE = 144;
 export class Alley extends Phaser.Scene {
   hero!: Sprite;
   heroShadow!: Phaser.GameObjects.Image;
@@ -151,7 +152,9 @@ export class Alley extends Phaser.Scene {
     this.hurtUntil = this.time.now + 1200;
     const width = this.bonus ? 960 : this.spec.width;
     this.physics.world.setBounds(0, -100, width, 650);
-    this.cameras.main.setBounds(0, 0, width, 360);
+    // The camera may look a little past both ends of the street so the hero is
+    // never pinned to a screen edge, where touch controls sit.
+    this.cameras.main.setBounds(-EDGE, 0, width + EDGE * 2, 360);
     this.cameras.main.setRoundPixels(true);
     this.cameras.main.setBackgroundColor('#edc093');
     const variant = this.bonus ? 1 : this.level;
@@ -177,7 +180,17 @@ export class Alley extends Phaser.Scene {
     this.items = this.physics.add.group();
     this.shots = this.physics.add.group({ allowGravity: false });
     const gaps = this.bonus ? [] : this.spec.gaps;
-    for (let x = 12; x < width; x += 24) {
+    // A stack of crates closes the alley behind the start line.
+    for (const [cx, cy] of [
+      [-16, 312],
+      [-16, 282],
+      [-16, 252],
+      [-48, 312],
+      [-48, 282],
+      [-80, 312],
+    ])
+      this.add.image(cx, cy, 'crate').setOrigin(0.5, 1).setDepth(3);
+    for (let x = 12 - EDGE; x < width + EDGE; x += 24) {
       if (gaps.some(([a, b]) => x >= a && x < b)) continue;
       for (const y of [324, 348])
         this.solid(x, y, variant ? 'metro' : 'ground');

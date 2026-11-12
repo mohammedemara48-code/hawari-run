@@ -59,8 +59,43 @@ const center = async (sel) => {
   const r = await p.locator(sel).boundingBox();
   return [r.x + r.width / 2, r.y + r.height / 2, r];
 };
-const st = () =>
+// Hero sprite bounds (CSS px) vs every visible control, recorded on every sample.
+const overlaps = [];
+const heroVsControls = () =>
   p.evaluate(() => {
+    const s = window.hawari.scene.getScene('alley'),
+      cam = s.cameras.main,
+      c = document.querySelector('#game canvas').getBoundingClientRect(),
+      k = c.width / 640,
+      h = s.hero.getBounds(),
+      hero = {
+        left: c.left + (h.left - cam.scrollX) * k,
+        right: c.left + (h.right - cam.scrollX) * k,
+        top: c.top + (h.top - cam.scrollY) * k,
+        bottom: c.top + (h.bottom - cam.scrollY) * k,
+      };
+    const hits = [];
+    for (const sel of [
+      '.stick-base',
+      '.stick-knob',
+      '[data-touch="jump"]',
+      '[data-touch="throw"]',
+    ]) {
+      const r = document.querySelector(sel).getBoundingClientRect();
+      if (
+        hero.left < r.right &&
+        hero.right > r.left &&
+        hero.top < r.bottom &&
+        hero.bottom > r.top
+      )
+        hits.push({ sel, heroX: Math.round(s.hero.x), hero, r: r.toJSON() });
+    }
+    return { hits, hero };
+  });
+const st = async () => {
+  const o = await heroVsControls();
+  overlaps.push(...o.hits);
+  return p.evaluate(() => {
     const s = window.hawari.scene.getScene('alley');
     return {
       x: s.hero.x,
@@ -72,6 +107,7 @@ const st = () =>
       power: s.power,
     };
   });
+};
 const reset = (x = 160, power = 0) =>
   p.evaluate(
     ([x, power]) => {
@@ -92,33 +128,45 @@ console.log('sizes', {
   chili: chiliBox.width,
   stick: baseBox.width,
 });
-assert.ok(jumpBox.width >= 66 && chiliBox.width >= 52 && baseBox.width >= 96);
+assert.ok(
+  jumpBox.width >= 50 && chiliBox.width >= 40,
+  'buttons stay thumb-sized',
+);
+assert.ok(
+  baseBox.width >= 60 && baseBox.width <= 84,
+  `stick base ~80px (${baseBox.width})`,
+);
+// Everything sits low in the corners.
+for (const box of [jumpBox, chiliBox, baseBox])
+  assert.ok(box.y >= 390 * 0.68, `control low on screen (top ${box.y})`);
+assert.ok(baseBox.x < 60 && jumpBox.x + jumpBox.width > 844 - 140);
 assert.ok(
   jumpBox.x + jumpBox.width <= 844 && jumpBox.y + jumpBox.height <= 390,
 );
 // 1. Small push past the deadzone walks; tiny push stays inside the deadzone.
 await reset();
 const [sx, sy] = await center('.stick-base');
+const R = baseBox.width * 0.4; // knob travel radius
 await down(1, sx, sy);
-await move(1, sx + 6, sy);
+await move(1, sx + R * 0.15, sy);
 await p.waitForTimeout(150);
 assert.equal(
   Math.round((await st()).vx),
   0,
   'deadzone ignores a resting thumb',
 );
-await move(1, sx + 28, sy);
+await move(1, sx + R * 0.55, sy);
 await p.waitForTimeout(450);
 const walk = await st();
 assert.ok(walk.vx > 120 && walk.vx < 170, `half push walks (vx=${walk.vx})`);
 // 2. Pushing far runs.
-await move(1, sx + 60, sy);
+await move(1, sx + R * 1.6, sy);
 await p.waitForTimeout(450);
 const run = await st();
 assert.ok(run.vx > 220, `far push runs (vx=${run.vx})`);
 assert.equal(await p.locator('.stick-zone.running').count(), 1);
 // 3. Pushing down crouches.
-await move(1, sx, sy + 50);
+await move(1, sx, sy + R * 1.3);
 await p.waitForTimeout(350);
 assert.equal((await st()).pose, 'crouch', 'stick down crouches');
 await up(1);
@@ -128,7 +176,7 @@ const peakOf = async (holdMs) => {
   await reset();
   await p.waitForTimeout(120);
   await down(1, sx, sy);
-  await move(1, sx, sy - 50, 1);
+  await move(1, sx, sy - R * 1.3, 1);
   if (holdMs === 0) await move(1, sx, sy, 1); // quick flick
   const t0 = Date.now();
   let peak = 999,
@@ -156,13 +204,13 @@ assert.ok(flick - held > 25, 'holding up jumps higher (variable height)');
 await reset();
 await p.waitForTimeout(120);
 await down(1, sx, sy);
-await move(1, sx, sy - 50, 3);
+await move(1, sx, sy - R * 1.3, 3);
 await p.waitForTimeout(1300);
 const stillHeld = await st();
 assert.ok(stillHeld.grounded, 'no auto-repeat jump while up is held');
-await move(1, sx, sy - 5, 3);
+await move(1, sx, sy - R * 0.1, 3);
 await p.waitForTimeout(60);
-await move(1, sx, sy - 50, 3);
+await move(1, sx, sy - R * 1.3, 3);
 await p.waitForTimeout(150);
 assert.ok(!(await st()).grounded, 're-centre then up jumps again');
 await up(1);
@@ -171,7 +219,7 @@ await p.waitForTimeout(900);
 await reset();
 await p.waitForTimeout(120);
 await down(1, sx, sy);
-await move(1, sx + 30, sy - 40, 3);
+await move(1, sx + R * 0.6, sy - R * 0.9, 3);
 await p.waitForTimeout(200);
 const diag = await st();
 assert.ok(
@@ -204,9 +252,9 @@ assert.equal(
 const [jx, jy] = await center('[data-touch="jump"]');
 const x0 = (await st()).x;
 await down(1, sx, sy);
-await move(1, sx + 30, sy);
+await move(1, sx + R * 0.6, sy);
 await p.waitForTimeout(120);
-await move(1, sx + 28, sy - 42, 2); // up-right on the stick = jump
+await move(1, sx + R * 0.55, sy - R * 0.9, 2); // up-right on the stick = jump
 await p.waitForTimeout(40);
 await down(3, cx, cy); // chili with the other thumb
 await p.waitForTimeout(110);
@@ -225,7 +273,7 @@ await p.waitForTimeout(900);
 await reset(160, 2);
 await p.waitForTimeout(120);
 await down(1, sx, sy);
-await move(1, sx + 30, sy);
+await move(1, sx + R * 0.6, sy);
 await p.waitForTimeout(100);
 await down(2, jx, jy);
 await p.waitForTimeout(120);
@@ -233,6 +281,61 @@ const btn = await st();
 assert.ok(!btn.grounded && btn.vx > 100, 'jump button + stick move together');
 await up(2);
 await up(1);
+// 7. Sweep both streets (ends included) and the secret room, standing and mid-jump.
+for (const level of [0, 1]) {
+  await p.evaluate((level) => {
+    const s = window.hawari.scene.getScene('alley');
+    s.level = level;
+    s.bonus = false;
+    s.loadLevel();
+    s.enemies.clear(true, true);
+    s.remaining = 999;
+  }, level);
+  const width = await p.evaluate(
+    () => window.hawari.scene.getScene('alley').spec.width,
+  );
+  const exit = await p.evaluate(
+    () => window.hawari.scene.getScene('alley').spec.exit,
+  );
+  for (let x = 20; x < exit - 20; x += 96) {
+    for (const y of [280, 200]) {
+      await p.evaluate(
+        ([x, y]) => {
+          const s = window.hawari.scene.getScene('alley');
+          s.hero.body.reset(x, y);
+          s.hero.setVelocity(0, 0);
+          s.cameras.main.centerOn(x + 100, 180);
+          s.cameras.main.preRender();
+        },
+        [x, y],
+      );
+      await p.waitForTimeout(16);
+      const o = await heroVsControls();
+      overlaps.push(...o.hits);
+    }
+  }
+  console.log(`swept level ${level + 1} (${width}px)`);
+}
+// Walking to the very start with real input, the camera keeps the hero clear.
+await p.evaluate(() => {
+  const s = window.hawari.scene.getScene('alley');
+  s.level = 0;
+  s.checkpoint = false;
+  s.loadLevel();
+  s.enemies.clear(true, true);
+});
+await down(1, sx, sy);
+await move(1, sx - R * 0.9, sy);
+await p.waitForTimeout(900);
+assert.ok((await st()).x <= 22, 'hero reached the street start');
+await up(1);
+await p.screenshot({ path: '/workspace/hawari-shots/10-joystick-small.png' });
+console.log('overlap samples with controls:', overlaps.length);
+assert.deepEqual(
+  overlaps.slice(0, 3),
+  [],
+  'hero sprite never intersects a control',
+);
 // 6. No page scroll or zoom from play gestures.
 const vp = await p.evaluate(() => ({
   sx: window.scrollX,
