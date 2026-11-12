@@ -14,11 +14,12 @@
     "lint": "eslint src tests",
     "format": "prettier --write .",
     "check": "tsc --noEmit && npm run lint && prettier --check . && npm test && vite build",
-    "test:browser": "node tests/smoke.mjs && node tests/runtime.mjs && node tests/bonus.mjs && node tests/mobile.mjs",
+    "test:browser": "node tests/smoke.mjs && node tests/runtime.mjs && node tests/bonus.mjs && node tests/mobile.mjs && node tests/boxes-runtime.mjs",
     "test:routes": "node tests/traverse.mjs",
     "test:offline": "node tests/offline.mjs",
     "test:hero": "node tests/hero-runtime.mjs",
-    "shots:hero": "node tests/hero-shots.mjs"
+    "shots:hero": "node tests/hero-shots.mjs",
+    "test:boxes": "vitest run tests/boxes.test.ts && node tests/boxes-runtime.mjs"
   },
   "keywords": [],
   "author": "",

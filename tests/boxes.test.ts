@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { heroBody } from '../src/hero-state';
-import { levelSpec } from '../src/rules';
+import { jumpAllowed, levelSpec } from '../src/rules';
 import { GROUND_TOP, PHYSICS, TILE, levelLayout } from '../src/levels';
 
 interface Rect {
@@ -76,6 +76,20 @@ function surfaces(solids: Rect[]) {
   return out;
 }
 
+/** Horizontal distance covered by a flat jump at a given run speed. */
+function flatJump(v0: number, speed: number) {
+  let v = -v0,
+    y = 0,
+    t = 0;
+  do {
+    v += PHYSICS.gravity * PHYSICS.step;
+    y += v * PHYSICS.step;
+    t += PHYSICS.step;
+  } while (y < 0);
+  return speed * t;
+}
+const WALK = 157,
+  RUN = 245;
 const SMALL_JUMP = apex(PHYSICS.jump);
 const RUN_JUMP = apex(PHYSICS.runJump);
 
@@ -89,6 +103,11 @@ describe('jump physics', () => {
         `big ${(GROUND_TOP - big.height - SMALL_JUMP).toFixed(1)}`,
     );
     expect(SMALL_JUMP).toBeGreaterThan(95);
+  });
+  it('keeps coyote time and jump buffering forgiving', () => {
+    expect(jumpAllowed(100, 0)).toBe(true); // just walked off a ledge
+    expect(jumpAllowed(0, 110)).toBe(true); // pressed slightly before landing
+    expect(jumpAllowed(130, 0)).toBe(false);
   });
 });
 
@@ -153,6 +172,91 @@ for (const index of [0, 1]) {
           expect(ok, `box at x=${box.x} unreachable`).toBe(true);
         }
       });
+    it('every pit can be cleared with a walking jump', () => {
+      const hero = heroBody(true, false);
+      const walk = flatJump(PHYSICS.jump, WALK),
+        run = flatJump(PHYSICS.runJump, RUN);
+      for (const [a, b] of spec.gaps) {
+        expect(
+          walk,
+          `pit ${a}-${b} vs walk jump ${walk.toFixed(0)}`,
+        ).toBeGreaterThan(b - a + hero.width + 8);
+        expect(run).toBeGreaterThan(b - a + 60);
+        // Nothing hangs over a pit or its edges to clip a jump.
+        expect(
+          solids.some(
+            (s) =>
+              s.kind !== 'ground' &&
+              s.right > a - 48 &&
+              s.left < b + 48 &&
+              s.bottom > 150,
+          ),
+          `obstacle over pit ${a}-${b}`,
+        ).toBe(false);
+      }
+    });
+    it('floating solids never form head-height walls on the street', () => {
+      const big = heroBody(true, false);
+      for (const s of solids.filter(
+        (s) => s.bottom < GROUND_TOP && s.kind !== 'tank',
+      ))
+        expect(s.bottom, `${s.kind}@${s.left},${s.top}`).toBeLessThanOrEqual(
+          GROUND_TOP - big.height,
+        );
+    });
+    it('enemies leave readable approach space', () => {
+      const respawn = [96, spec.checkpoint + 24];
+      for (const e of layout.enemies) {
+        for (const r of respawn)
+          // Ahead of a (re)spawn: 200px to read it; behind: 120px.
+          expect(
+            e.x - r < -120 || e.x - r > 200,
+            `enemy ${e.x} near spawn`,
+          ).toBe(true);
+        for (const [a, b] of spec.gaps) {
+          expect(
+            e.x < a - 90 || e.x > b + 120,
+            `enemy ${e.x} crowds pit ${a}-${b}`,
+          ).toBe(true);
+        }
+        expect(Math.abs(e.x - spec.portal)).toBeGreaterThan(60);
+      }
+      const xs = layout.enemies.map((e) => e.x).sort((a, b) => a - b);
+      for (let i = 1; i < xs.length; i++)
+        expect(xs[i] - xs[i - 1]).toBeGreaterThanOrEqual(120);
+    });
+    it('every coin is reachable and none sits inside a solid or another coin', () => {
+      const floors = surfaces(solids);
+      for (const [i, [x, y]] of layout.coins.entries()) {
+        const c = tile(x, y, 'coin', 11, 17);
+        expect(
+          solids.some(
+            (s) =>
+              s.left < c.right &&
+              s.right > c.left &&
+              s.top < c.bottom &&
+              s.bottom > c.top,
+          ),
+          `coin ${x},${y} embedded`,
+        ).toBe(false);
+        for (const [j, [x2, y2]] of layout.coins.entries())
+          if (j > i)
+            expect(
+              Math.hypot(x - x2, y - y2),
+              `coins ${x},${y} / ${x2},${y2}`,
+            ).toBeGreaterThan(14);
+        const floor = floors
+          .filter(
+            (f) => f.left <= x + 6 && f.right >= x - 6 && f.top >= c.bottom,
+          )
+          .sort((a, b) => a.top - b.top)[0];
+        expect(floor, `coin ${x},${y} over a pit`).toBeTruthy();
+        expect(
+          floor!.top - heroBody(false, false).height - SMALL_JUMP,
+          `coin ${x},${y} too high`,
+        ).toBeLessThan(c.bottom);
+      }
+    });
     it('a spawned power-up has free space above its box', () => {
       for (const box of boxes) {
         const item = tile(box.x, box.y - 24, 'item');

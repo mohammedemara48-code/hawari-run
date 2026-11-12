@@ -1,3 +1,4 @@
+import { levelSpec } from './rules';
 // Pure level layout data shared by the scene and the reachability checks.
 export const PHYSICS = {
   gravity: 1100,
@@ -22,7 +23,12 @@ export interface LevelLayout {
   blocks: BlockDef[];
   /** Coins resting on top of block rows. */
   rowCoins: [number, number][];
+  /** Every coin in the level (terraces, rows, guiding trails, street). */
+  coins: [number, number][];
+  enemies: { x: number; kind: 'cat' | 'bug' | 'basket' }[];
 }
+/** Low terraces float high enough for the powered hero to walk underneath. */
+const LOW = 240;
 const ROW_Y = 216;
 const CONTENTS: BoxContent[] = [
   'food',
@@ -38,25 +44,25 @@ export function levelLayout(index: number): LevelLayout {
   const platforms: [number, number, number][] =
     index === 0
       ? [
-          [552, 264, 4],
-          [1248, 264, 3],
+          [552, LOW, 4],
+          [1248, LOW, 3],
           [1392, 216, 4],
-          [2400, 264, 4],
-          [2808, 252, 4],
-          [3552, 264, 4],
+          [2400, LOW, 4],
+          [2808, LOW, 4],
+          [3552, LOW, 4],
           [3696, 216, 3],
-          [4368, 264, 4],
+          [4368, LOW, 4],
         ]
       : [
-          [504, 264, 4],
-          [1152, 264, 4],
+          [504, LOW, 4],
+          [1152, LOW, 4],
           [1320, 216, 3],
-          [2088, 264, 4],
-          [2832, 264, 4],
-          [3288, 264, 3],
+          [2088, LOW, 4],
+          [2832, LOW, 4],
+          [3288, LOW, 3],
           [3456, 216, 4],
-          [4224, 264, 4],
-          [4752, 264, 4],
+          [4224, LOW, 4],
+          [4752, LOW, 4],
         ];
   // Block rows: brick · gold box · brick. Every row sits over open ground.
   const sets =
@@ -67,13 +73,13 @@ export function levelLayout(index: number): LevelLayout {
   const steps: [number, number][] =
     index === 0
       ? [
-          [720, 264],
-          [1824, 264],
+          [720, LOW],
+          [1824, LOW],
         ]
       : [
-          [672, 264],
-          [1440, 264],
-          [2496, 264],
+          [672, LOW],
+          [1440, LOW],
+          [2496, LOW],
         ];
   const blocks: BlockDef[] = [];
   const rowCoins: [number, number][] = [];
@@ -83,5 +89,45 @@ export function levelLayout(index: number): LevelLayout {
     blocks.push({ x: x + TILE, y: ROW_Y, kind: 'brick' });
     if (i % 2 === 1) rowCoins.push([x - TILE, 171], [x, 152], [x + TILE, 171]);
   });
-  return { platforms, steps, blocks, rowCoins };
+  const spec = levelSpec(index);
+  const coins: [number, number][] = [];
+  for (const [x, y, n] of platforms)
+    for (let i = 0; i < n; i++) coins.push([x + i * TILE, y - 39]);
+  coins.push(...rowCoins);
+  // Guiding trails: a coin over each stepping stone points at the row above,
+  // and an arc over the secret tank hints that it can be entered.
+  for (const [x, y] of steps) coins.push([x, y - 39]);
+  coins.push(
+    [spec.portal - 24, 222],
+    [spec.portal, 208],
+    [spec.portal + 24, 222],
+  );
+  // Street rhythm coins, kept clear of pits, block rows and the tank.
+  const blocked = (x: number) =>
+    spec.gaps.some(([a, b]) => x > a - 12 && x < b + 12) ||
+    Math.abs(x - spec.portal) < 40 ||
+    steps.some(([sx]) => Math.abs(x - sx) < 20);
+  for (let x = 276; x < spec.width - 350; x += 156)
+    if (!blocked(x)) coins.push([x, 284]);
+  // Lead-in coins before every pit show the take-off point.
+  for (const [a] of spec.gaps)
+    for (const c of [
+      [a - 60, 284],
+      [a - 36, 270],
+    ] as [number, number][])
+      if (!coins.some(([x, y]) => Math.hypot(x - c[0], y - c[1]) < 24))
+        coins.push(c);
+  const enemyX =
+    index === 0
+      ? [648, 936, 1368, 1800, 2352, 2760, 3168, 3648, 3960, 4464]
+      : [624, 840, 1224, 1656, 2124, 2508, 2928, 3360, 3768, 4320, 4776, 4968];
+  const enemies = enemyX.map((x, i) => ({
+    x,
+    kind: (i % 3 === 2
+      ? 'basket'
+      : index === 1 && i % 2 === 0
+        ? 'bug'
+        : 'cat') as 'cat' | 'bug' | 'basket',
+  }));
+  return { platforms, steps, blocks, rowCoins, coins, enemies };
 }

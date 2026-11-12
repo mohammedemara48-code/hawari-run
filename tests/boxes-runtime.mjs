@@ -131,6 +131,78 @@ for (const level of [0, 1]) {
     );
   }
 }
+// Game feel: variable jump height, corner correction and bump-kills.
+await ev(() => {
+  const s = window.hawari.scene.getScene('alley');
+  s.level = 0;
+  s.power = 0;
+  s.loadLevel();
+  s.remaining = 999;
+  s.enemies.clear(true, true);
+});
+const jumpPeak = async (x, hold) => {
+  await ev((x) => {
+    const s = window.hawari.scene.getScene('alley');
+    s.hero.body.reset(x, 312 - s.hero.height / 2);
+    s.hero.setVelocity(0, 0);
+    s.peak = 999;
+  }, x);
+  await page.waitForTimeout(150);
+  await page.keyboard.down('Space');
+  const end = Date.now() + 700;
+  let peak = 999;
+  let released = false;
+  while (Date.now() < end) {
+    if (!released && Date.now() > end - 700 + hold) {
+      await page.keyboard.up('Space');
+      released = true;
+    }
+    peak = Math.min(
+      peak,
+      await ev(() => window.hawari.scene.getScene('alley').hero.body.top),
+    );
+    await page.waitForTimeout(16);
+  }
+  if (!released) await page.keyboard.up('Space');
+  return peak;
+};
+const tap = await jumpPeak(200, 60),
+  hold = await jumpPeak(200, 600);
+console.log(`tap peak ${tap.toFixed(0)}, hold peak ${hold.toFixed(0)}`);
+assert.ok(tap - hold > 25, 'releasing jump early gives a shorter hop');
+// Head clips the outer 5px of the row's left brick (372..396): slide past it.
+const clip = await jumpPeak(372 - 12 + 5, 600);
+assert.ok(
+  clip < 200,
+  `corner correction lets the jump continue (peak ${clip})`,
+);
+assert.equal(
+  await ev(() =>
+    window.hawari.scene
+      .getScene('alley')
+      .solids.getChildren()
+      .some((b) => b.x === 384 && b.y === 216),
+  ),
+  true,
+);
+console.log('PASS: variable jump height and corner correction');
+// A cat standing on a brick is knocked out when the brick is bumped.
+await ev(() => {
+  const s = window.hawari.scene.getScene('alley');
+  s.loadLevel();
+  s.enemies.clear(true, true);
+  const e = s.enemy(816 + 24, 'cat');
+  e.body.reset(816 + 24, 216 - 12 - 11 - 1);
+  e.setVelocityX(0);
+  s.hero.body.reset(816 + 24, 312 - s.hero.height / 2);
+});
+await page.waitForTimeout(200);
+await page.keyboard.down('Space');
+await page.waitForTimeout(260);
+await page.keyboard.up('Space');
+await page.waitForTimeout(200);
+assert.equal(await ev(() => window.hawari.scene.getScene('alley').kills), 1);
+console.log('PASS: bumping a block knocks out the enemy on it');
 assert.deepEqual(errors, []);
 await browser.close();
 console.log('PASS: every gold box pays out from a real jump');

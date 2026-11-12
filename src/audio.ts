@@ -59,6 +59,10 @@ export class Sound {
       case 'fire':
         this.tone(780, 0.14, 'sawtooth', 0.025, 0, 100);
         break;
+      case 'bump':
+        this.tone(330, 0.07, 'square', 0.05, 0, 180);
+        this.tone(520, 0.08, 'triangle', 0.04, 0.05);
+        break;
       case 'break':
         this.tone(90, 0.12, 'sawtooth', 0.06, 0, 35);
         break;

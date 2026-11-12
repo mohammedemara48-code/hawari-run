@@ -187,8 +187,17 @@ export function makeArt(scene: Phaser.Scene) {
       rect(c, 7, 5, 2, 8, '#d59a3b');
       rect(c, 8 - w / 2, 4, 1, 9, '#fff0b2');
     });
-  for (const key of ['brick', 'box', 'used', 'ground', 'metro', 'platform'])
+  for (const key of [
+    'brick',
+    'box',
+    'box1',
+    'used',
+    'ground',
+    'metro',
+    'platform',
+  ])
     texture(scene, key, 24, 24, (c) => {
+      const isGold = key === 'box' || key === 'box1';
       if (key === 'ground' || key === 'metro') {
         rect(c, 0, 0, 24, 24, key === 'ground' ? '#806055' : '#344957');
         rect(c, 0, 0, 24, 4, key === 'ground' ? '#dba87c' : '#aebfb4');
@@ -214,7 +223,7 @@ export function makeArt(scene: Phaser.Scene) {
         1,
         22,
         21,
-        key === 'box'
+        isGold
           ? '#f1b94c'
           : key === 'used'
             ? '#4a3f37'
@@ -223,32 +232,11 @@ export function makeArt(scene: Phaser.Scene) {
               : '#ac6955',
       );
       const spent = key === 'used';
-      rect(
-        c,
-        2,
-        2,
-        20,
-        2,
-        key === 'box' ? '#ffe298' : spent ? '#6a5b4f' : '#df9b70',
-      );
-      rect(
-        c,
-        2,
-        3,
-        2,
-        18,
-        key === 'box' ? '#fbd577' : spent ? '#5d5046' : '#c68462',
-      );
-      rect(
-        c,
-        2,
-        20,
-        20,
-        2,
-        key === 'box' ? '#bc8038' : spent ? '#2c2522' : '#775349',
-      );
+      rect(c, 2, 2, 20, 2, isGold ? '#ffe298' : spent ? '#6a5b4f' : '#df9b70');
+      rect(c, 2, 3, 2, 18, isGold ? '#fbd577' : spent ? '#5d5046' : '#c68462');
+      rect(c, 2, 20, 20, 2, isGold ? '#bc8038' : spent ? '#2c2522' : '#775349');
       rect(c, 21, 4, 1, 16, '#694c45');
-      if (key === 'box') {
+      if (isGold) {
         poly(
           c,
           [
@@ -270,6 +258,12 @@ export function makeArt(scene: Phaser.Scene) {
           '#fff0ab',
         );
         rect(c, 11, 9, 3, 5, '#d29639');
+        if (key === 'box1') {
+          // Shine frame: a glint sweeps across the isGold face.
+          rect(c, 5, 5, 2, 2, '#ffffff');
+          rect(c, 7, 7, 2, 2, '#fff7d6');
+          rect(c, 12, 6, 2, 3, '#ffffff');
+        }
         for (const [x, y] of [
           [4, 4],
           [18, 4],
