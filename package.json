@@ -19,7 +19,9 @@
     "test:offline": "node tests/offline.mjs",
     "test:hero": "node tests/hero-runtime.mjs",
     "shots:hero": "node tests/hero-shots.mjs",
-    "test:boxes": "vitest run tests/boxes.test.ts && node tests/boxes-runtime.mjs"
+    "test:boxes": "vitest run tests/boxes.test.ts && node tests/boxes-runtime.mjs",
+    "test:pwa": "vite build && node tests/pwa.mjs",
+    "icons": "node scripts/make-icons.mjs"
   },
   "keywords": [],
   "author": "",

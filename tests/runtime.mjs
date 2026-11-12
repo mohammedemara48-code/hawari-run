@@ -1,6 +1,5 @@
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
-import { writeFile } from 'node:fs/promises';
 const browser = await chromium.launch({
   headless: true,
   args: ['--no-sandbox'],
@@ -172,26 +171,6 @@ await page.waitForTimeout(80);
 assert.equal((await state()).mode, 'win');
 assert.ok(await page.locator('#win-details').textContent());
 console.log('PASS: both world completions and final result');
-// PNG install icons are derived from the original hero sprite, not a third-party image.
-for (const size of [192, 512]) {
-  const encoded = await page.evaluate((size) => {
-    const s = window.hawari.scene.getScene('alley'),
-      c = document.createElement('canvas');
-    c.width = size;
-    c.height = size;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = '#19333b';
-    ctx.fillRect(0, 0, size, size);
-    ctx.imageSmoothingEnabled = false;
-    const source = s.textures.get('hero0').getSourceImage(),
-      height = size * 0.88,
-      width = (height * source.width) / source.height;
-    ctx.drawImage(source, (size - width) / 2, size * 0.06, width, height);
-
-    return c.toDataURL().split(',')[1];
-  }, size);
-  await writeFile(`public/icon-${size}.png`, Buffer.from(encoded, 'base64'));
-}
 // Full game-over and restart flow.
 await page.locator('[data-screen="win"] button').click();
 await setup(() => {

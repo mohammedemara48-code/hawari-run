@@ -379,6 +379,50 @@ button:active {
   padding-top: 11px;
   font-size: 16px;
 }
+.rotate-hint {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  background: #142429f2;
+  color: #ffe7af;
+  font-family: Changa, Tahoma, sans-serif;
+}
+.rotate-hint strong {
+  font-size: 22px;
+}
+.rotate-hint span {
+  font-size: 13px;
+  color: #c9d4c8;
+}
+.rotate-phone {
+  width: 38px;
+  height: 64px;
+  border: 3px solid #ffe7af;
+  border-radius: 8px;
+  animation: rotate-phone 1.8s ease-in-out infinite;
+}
+@keyframes rotate-phone {
+  0%,
+  25% {
+    transform: rotate(0deg);
+  }
+  60%,
+  100% {
+    transform: rotate(-90deg);
+  }
+}
+@media (orientation: portrait) and (pointer: coarse) and (max-width: 700px) {
+  .rotate-hint {
+    display: flex;
+  }
+}
 .toast {
   position: absolute;
   bottom: 16px;

@@ -1,7 +1,7 @@
 import js from '@eslint/js';
 import ts from 'typescript-eslint';
 export default ts.config(
-  { ignores: ['dist/**'] },
+  { ignores: ['dist/**', 'tests/fixtures/**'] },
   js.configs.recommended,
   ...ts.configs.recommended,
   {
@@ -20,6 +20,15 @@ export default ts.config(
         console: 'readonly',
         process: 'readonly',
         Buffer: 'readonly',
+        URL: 'readonly',
+        fetch: 'readonly',
+        caches: 'readonly',
+        Response: 'readonly',
+        matchMedia: 'readonly',
+        Element: 'readonly',
+        screen: 'readonly',
+        self: 'readonly',
+        Request: 'readonly',
       },
     },
     rules: {

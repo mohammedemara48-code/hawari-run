@@ -21,7 +21,16 @@ const game = new Phaser.Game({
 });
 // Public engine handle makes state inspectable for debugging; no service credentials.
 (window as any).hawari = game;
+// Offline worker: production only. A failed registration must never block play.
 if ('serviceWorker' in navigator)
   window.addEventListener('load', () => {
-    void navigator.serviceWorker.register('/sw.js');
+    if (import.meta.env.PROD)
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/' })
+        .catch((e) => console.warn('offline worker unavailable', e));
+    else
+      void navigator.serviceWorker
+        .getRegistrations()
+        .then((r) => r.forEach((x) => void x.unregister()))
+        .catch(() => {});
   });

@@ -7,9 +7,20 @@ export class Sound {
   mode = 0;
   timer?: ReturnType<typeof setInterval>;
   start() {
-    this.ctx ??= new AudioContext();
-    void this.ctx.resume();
-    if (!this.timer) this.timer = setInterval(() => this.tick(), 80);
+    // Audio is optional: old iOS (webkit prefix only), blocked autoplay or a
+    // standalone launch without a gesture must never stop the game starting.
+    try {
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
+      if (!Ctx) return;
+      this.ctx ??= new Ctx();
+      this.ctx.resume?.().catch(() => {});
+      if (!this.timer) this.timer = setInterval(() => this.tick(), 80);
+    } catch (e) {
+      console.warn('audio unavailable', e);
+    }
   }
   tone(
     freq: number,

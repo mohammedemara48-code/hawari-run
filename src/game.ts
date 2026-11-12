@@ -9,6 +9,17 @@ type Sprite = Phaser.Physics.Arcade.Sprite;
 type Mode = 'title' | 'play' | 'pause' | 'dead' | 'clear' | 'over' | 'win';
 const body = (s: Sprite) => s.body as Phaser.Physics.Arcade.Body;
 const EDGE = 144;
+/** Best effort: only works in fullscreen / installed apps on some browsers. */
+function lockLandscape() {
+  try {
+    const o = window.screen.orientation as ScreenOrientation & {
+      lock?: (o: string) => Promise<void>;
+    };
+    o?.lock?.('landscape')?.catch(() => {});
+  } catch {
+    /* Orientation lock unsupported. */
+  }
+}
 export class Alley extends Phaser.Scene {
   hero!: Sprite;
   heroShadow!: Phaser.GameObjects.Image;
@@ -71,6 +82,13 @@ export class Alley extends Phaser.Scene {
     this.loadLevel();
     this.physics.pause();
     screen('title');
+    // Turning a phone to portrait mid-run pauses; a rotate hint covers the game.
+    const portrait = window.matchMedia(
+      '(orientation: portrait) and (pointer: coarse) and (max-width: 700px)',
+    );
+    portrait.addEventListener?.('change', (e) => {
+      if (e.matches && this.mode === 'play') this.action('pause');
+    });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && this.mode === 'play') this.action('pause');
     });
@@ -79,6 +97,7 @@ export class Alley extends Phaser.Scene {
     switch (action) {
       case 'start':
         sound.start();
+        lockLandscape();
         this.level = 0;
         this.score = 0;
         this.coinCount = 0;
@@ -129,9 +148,17 @@ export class Alley extends Phaser.Scene {
         toast('تحت البلد… خلي بالك من السلال!');
         break;
       case 'fullscreen':
-        if (!document.fullscreenElement)
-          void document.getElementById('game-wrap')!.requestFullscreen?.();
-        else void document.exitFullscreen();
+        try {
+          if (!document.fullscreenElement)
+            document
+              .getElementById('game-wrap')!
+              .requestFullscreen?.()
+              ?.then(() => lockLandscape())
+              .catch(() => {});
+          else document.exitFullscreen?.()?.catch(() => {});
+        } catch {
+          /* Fullscreen is unavailable (e.g. iOS standalone). */
+        }
         break;
     }
   }

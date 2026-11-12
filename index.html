@@ -11,8 +11,17 @@
       name="description"
       content="بلبل في الحواري — مغامرة منصات مصرية أصلية برسوم بكسل وموسيقى معمولة مخصوص. العب من الكمبيوتر أو الموبايل."
     />
-    <link rel="icon" href="/icon-192.png" type="image/png" />
+    <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="بلبل" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="application-name" content="بلبل" />
     <title>بلبل في الحواري | مغامرة على أصولها</title>
   </head>
   <body>
@@ -114,6 +123,11 @@
           <button class="primary" data-action="start">العب من جديد ↶</button>
         </div>
         <div id="toast" class="toast" role="status"></div>
+        <div class="rotate-hint" aria-live="polite">
+          <span class="rotate-phone" aria-hidden="true"></span>
+          <strong>لف الموبايل بالعرض</strong>
+          <span>بلبل محتاج الشاشة بالعرض علشان يجري براحته</span>
+        </div>
         <div class="touch-controls" aria-label="تحكم اللمس">
           <div
             class="stick-zone"
