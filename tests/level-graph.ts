@@ -1,7 +1,11 @@
 import { TILE } from '../src/level-data';
 import {
+  BELT,
+  BOAT,
   BOUNCE,
+  LAMP,
   LEDGE,
+  STACK,
   MOVERS,
   SAQIA,
   SOLID,
@@ -23,12 +27,22 @@ export interface Surface {
   solid: boolean;
   /** Mud: a weak jump (one row up, short gaps). */
   mud?: boolean;
+  /** Conveyor belt: it may push against you, so shorter gaps. */
+  belt?: boolean;
+  /** Climbable net: climb anywhere within it; short hops off it. */
+  net?: boolean;
 }
 export const standable = (ch: string) =>
   SOLID.has(ch) || LEDGE.has(ch) || ch === 'X' || ch === 'D';
 
 export function surfaces(L: Parsed): Surface[] {
-  type Cell = { bounce: number; solid: boolean; mud?: boolean };
+  type Cell = {
+    bounce: number;
+    solid: boolean;
+    mud?: boolean;
+    belt?: boolean;
+    net?: boolean;
+  };
   const cell = new Map<string, Cell>();
   const key = (c: number, r: number) => c + ',' + r;
   const free = (c: number, r: number) => !SOLID.has(L.at(c, r));
@@ -48,7 +62,47 @@ export function surfaces(L: Parsed): Surface[] {
           : ch === 'D'
             ? bounceRows(BOUNCE.dish)
             : 0;
-      cell.set(key(c, r), { bounce, solid: SOLID.has(ch), mud: ch === 'u' });
+      cell.set(key(c, r), {
+        bounce,
+        solid: SOLID.has(ch),
+        mud: ch === 'u',
+        belt: ch in BELT,
+      });
+    }
+  const tideAmp = L.meta.tide?.amp ?? 0;
+  // Sea: swim at the surface, modelled at low tide (the hardest case).
+  for (const k of L.seas)
+    for (let c = k.c0; c <= k.c1; c++)
+      cell.set(key(c, k.topRow + tideAmp + 1), { bounce: 0, solid: false });
+  // Boats drift between their markers, decks one row above low water.
+  for (const b of L.boats) {
+    const sea = L.seas.find((k) => b.a.col >= k.c0 && b.a.col <= k.c1)!;
+    for (let c = b.a.col; c < b.endCol + BOAT.width; c++)
+      cell.set(key(c, sea.topRow + tideAmp - 1), { bounce: 0, solid: false });
+  }
+  // Furniture stacks: stand on top; once toppled they bridge to the right.
+  for (const p of L.stacks) {
+    cell.set(key(p.col, p.row - STACK.height + 1), { bounce: 0, solid: true });
+    for (let c = p.col + 1; c <= p.col + STACK.bridge; c++)
+      cell.set(key(c, p.row), { bounce: 0, solid: false });
+  }
+  // Nets: every net cell is a place to hang (standing row = the cell's row).
+  for (const n of L.nets)
+    cell.set(key(n.col, n.row + 1), { bounce: 0, solid: false, net: true });
+  // Swinging lamps: sample the arc of the platform.
+  for (const p of L.lamps)
+    for (let k = 0; k <= 8; k++) {
+      const a = -LAMP.amp + (k / 8) * LAMP.amp * 2,
+        x = p.x + Math.sin(a) * LAMP.length * TILE,
+        y = p.y + Math.cos(a) * LAMP.length * TILE;
+      const half = (LAMP.width * TILE) / 2,
+        row = Math.floor(y / TILE);
+      for (
+        let c = Math.floor((x - half) / TILE);
+        c <= Math.floor((x + half - 1) / TILE);
+        c++
+      )
+        cell.set(key(c, row), { bounce: 0, solid: false });
     }
   // Canals: you float at the surface and can swim-jump out, modelled
   // conservatively as standing one row below the water's top row.
@@ -102,7 +156,9 @@ export function surfaces(L: Parsed): Surface[] {
         cur &&
         cur.bounce === v.bounce &&
         cur.solid === v.solid &&
-        !!cur.mud === !!v.mud
+        !!cur.mud === !!v.mud &&
+        !!cur.belt === !!v.belt &&
+        !!cur.net === !!v.net
       ) {
         cur.c1 = c;
       } else {
@@ -115,6 +171,8 @@ export function surfaces(L: Parsed): Surface[] {
               bounce: v.bounce,
               solid: v.solid,
               mud: v.mud,
+              belt: v.belt,
+              net: v.net,
             }
           : null;
       }
@@ -131,7 +189,10 @@ export function canJump(u: Surface, v: Surface) {
     if (u.c0 < v.c0 || u.c1 > v.c1) gap = 1;
     else return false;
   }
+  if (u.net && v.net && overlap) return true;
+  if (u.net) return rise <= 2 && gap <= 2 + Math.max(0, Math.floor(-rise / 2));
   if (u.bounce) return rise <= u.bounce && gap <= 5;
+  if (u.belt && rise <= RISE && gap > 4) return false;
   if (u.mud) return rise <= 1 && gap <= 3 + Math.max(0, Math.floor(-rise / 2));
   if (rise > RISE) return false;
   if (rise <= 0) return gap <= 5 + Math.floor(-rise / 2);

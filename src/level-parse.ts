@@ -12,6 +12,8 @@ export const SOLID = new Set([
   'T',
   'N',
   'u',
+  '{',
+  '}',
 ]);
 export const LEDGE = new Set(['-', '~', 'A']);
 export const BOXES: Record<string, string> = {
@@ -32,9 +34,16 @@ export const ENEMY: Record<string, string> = {
   q: 'buffalo',
   n: 'goose',
   v: 'crow',
+  a: 'crab',
+  l: 'gull',
+  d: 'saw',
+  e: 'plane',
+  f: 'thief',
 };
 /** Flying enemies ignore gravity and floors. */
-export const FLYING = new Set(['bat', 'pigeon', 'crow']);
+export const FLYING = new Set(['bat', 'pigeon', 'crow', 'gull']);
+/** Conveyor belts: push direction per cell. */
+export const BELT: Record<string, number> = { '}': 1, '{': -1 };
 /** Canal water: current direction per cell. */
 export const WATER: Record<string, number> = { w: 1, x: -1 };
 export interface Pt {
@@ -85,6 +94,21 @@ export interface Parsed {
     c0: number;
     c1: number;
   }[];
+  /** World 3: conveyor runs, lamp pivots, furniture stacks, boats, nets, sea. */
+  belts: { row: number; c0: number; c1: number; dir: number }[];
+  lamps: Pt[];
+  stacks: Pt[];
+  boats: { a: Pt; endCol: number }[];
+  nets: Pt[];
+  seas: {
+    x0: number;
+    x1: number;
+    top: number;
+    bottom: number;
+    topRow: number;
+    c0: number;
+    c1: number;
+  }[];
 }
 const pt = (col: number, row: number): Pt => ({
   col,
@@ -127,12 +151,20 @@ export function parseLevel(index: number): Parsed {
     saqias: [],
     donkeys: [],
     canals: [],
+    belts: [],
+    lamps: [],
+    stacks: [],
+    boats: [],
+    nets: [],
+    seas: [],
   };
   const carts: Pt[] = [],
     cartEnds: Pt[] = [];
   const starts: Pt[] = [],
     ends: Pt[] = [];
   const windCells: Pt[] = [];
+  const boats: Pt[] = [],
+    boatEnds: Pt[] = [];
   let tankSeen = false;
   for (let r = 0; r < rows; r++)
     for (let c = 0; c < cols; c++) {
@@ -201,6 +233,21 @@ export function parseLevel(index: number): Parsed {
           case 'Y':
             carts.push(p);
             break;
+          case 'O':
+            out.lamps.push(p);
+            break;
+          case 'R':
+            out.stacks.push(p);
+            break;
+          case '%':
+            out.nets.push(p);
+            break;
+          case 'U':
+            boats.push(p);
+            break;
+          case 'I':
+            boatEnds.push(p);
+            break;
           case 'y':
             cartEnds.push(p);
             break;
@@ -227,6 +274,52 @@ export function parseLevel(index: number): Parsed {
       .filter((e) => e.row === a.row && e.col > a.col)
       .sort((x, y) => x.col - y.col)[0];
     out.donkeys.push({ a, endCol: end ? end.col : a.col + 8 });
+  }
+  for (const a of boats) {
+    const end = boatEnds
+      .filter((e) => e.row === a.row && e.col > a.col)
+      .sort((x, y) => x.col - y.col)[0];
+    out.boats.push({ a, endCol: end ? end.col : a.col + 6 });
+  }
+  // Conveyor belts: horizontal runs of one direction.
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++) {
+      const ch = grid[r][c];
+      if (!(ch in BELT)) continue;
+      let c1 = c;
+      while (c1 + 1 < cols && grid[r][c1 + 1] === ch) c1++;
+      out.belts.push({ row: r, c0: c, c1, dir: BELT[ch] });
+      c = c1;
+    }
+  // Sea: contiguous water runs in their top (high-tide) row. Boat markers
+  // sit in the water and count as sea.
+  const isSea = (ch: string | undefined) =>
+    ch === 's' || ch === 'U' || ch === 'I';
+  for (let r = 0; r < rows; r++) {
+    let c = 0;
+    while (c < cols) {
+      if (isSea(grid[r][c]) && !isSea(grid[r - 1]?.[c])) {
+        let c1 = c;
+        while (
+          c1 + 1 < cols &&
+          isSea(grid[r][c1 + 1]) &&
+          !isSea(grid[r - 1]?.[c1 + 1])
+        )
+          c1++;
+        let r1 = r;
+        while (r1 + 1 < rows && isSea(grid[r1 + 1][c])) r1++;
+        out.seas.push({
+          x0: c * TILE,
+          x1: (c1 + 1) * TILE,
+          top: r * TILE,
+          bottom: (r1 + 1) * TILE,
+          topRow: r,
+          c0: c,
+          c1,
+        });
+        c = c1 + 1;
+      } else c++;
+    }
   }
   // Canals: contiguous runs of water in their top row.
   for (let r = 0; r < rows; r++) {
@@ -291,6 +384,26 @@ export const SAQIA = { radius: 3, buckets: 4, width: 2, speed: 0.55 };
 export const DONKEY = { width: 4, speed: 115, back: 70 };
 export const MUD = { speed: 0.5, jump: 0.78 };
 export const CANAL = { current: 85, swimJump: 460 };
+/** World 3 mechanics. */
+export const BELT_SPEED = 80;
+/** Pendulum lamp: chain length (tiles), platform width, swing (rad, rad/s). */
+export const LAMP = { length: 3, width: 2, amp: 0.85, speed: 1.7 };
+/** Furniture stack: tiles tall, bridge length once toppled, wobble (ms). */
+export const STACK = { height: 3, bridge: 3, delay: 650 };
+export const BOAT = { width: 3, speed: 40, bob: 4 };
+export const NET = { climb: 110, hop: 400 };
+/** Sea surface y at time t (s): low tide at t = 0, high tide half a period on. */
+export function tideY(
+  sea: { top: number },
+  tide: { amp: number; period: number } | undefined,
+  t: number,
+) {
+  if (!tide) return sea.top;
+  return (
+    sea.top +
+    tide.amp * TILE * (0.5 + 0.5 * Math.cos((2 * Math.PI * t) / tide.period))
+  );
+}
 export const BOUNCE = {
   awning: 700,
   awningHold: 790,

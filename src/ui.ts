@@ -267,6 +267,10 @@ const THEME_ICON: Record<string, string> = {
   sewer:
     '<path d="M2 21V9a10 10 0 0 1 20 0v12h-4V10a6 6 0 0 0-12 0v11z" fill="#4b5c5e"/><path d="M6 17h12v4H6z" fill="#1f6a6a"/><path d="M8 16h8v1H8z" fill="#6fd0c0"/>',
   farm: '<path d="M11 10h2v12h-2z" fill="#a8822a"/><path d="M10 2h4v2h1v6h-1v2h-4v-2H9V4h1z" fill="#f0c860"/><path d="M11 3h1v7h-1z" fill="#fff0b0"/><path d="M5 9h3v2h1v3H8v1H6v-1H5zm11 0h3v5h-1v1h-2v-1h-1v-3h1z" fill="#e0b040"/><path d="M2 20h20v2H2z" fill="#6a9a3a"/>',
+  workshop:
+    '<path d="M4 3h16v18H4z" fill="#5a3418"/><path d="M5 4h14v16H5z" fill="#a8703e"/><path d="M12 6l2 4 4 2-4 2-2 4-2-4-4-2 4-2z" fill="#ffd27a"/><path d="M11 11h2v2h-2z" fill="#6a4228"/>',
+  harbor:
+    '<path d="M2 15h20l-3 5H5z" fill="#2e6aa8"/><path d="M3 15h18v2H3z" fill="#f0ead8"/><path d="M11 3h2v12h-2z" fill="#4a3220"/><path d="M13 4l6 9h-6z" fill="#e8e0d0"/><path d="M1 21h22v2H1z" fill="#4a9ac8"/>',
 };
 let selectedWorld: number | undefined;
 let lastUnlocked = -1;

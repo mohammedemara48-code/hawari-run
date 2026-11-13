@@ -4,20 +4,26 @@ import { FLYING, SOLID, parseLevel } from '../src/level-parse';
 import { onSurface, reach, standable } from './level-graph';
 
 describe('authored levels', () => {
-  it('has two playable worlds of four distinct levels each', () => {
-    expect(LEVELS.length).toBe(8);
+  it('has three playable worlds of four distinct levels each', () => {
+    expect(LEVELS.length).toBe(12);
     const cairo = LEVELS.filter((l) => l.world === 0),
       rif = LEVELS.filter((l) => l.world === 1);
     expect(cairo.length).toBe(4);
     expect(rif.length).toBe(4);
     expect(new Set(cairo.map((l) => l.theme)).size).toBe(4);
     expect(new Set(rif.map((l) => l.timeOfDay)).size).toBe(4);
-    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(8);
-    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(8);
+    const dam = LEVELS.filter((l) => l.world === 2);
+    expect(dam.length).toBe(4);
+    expect(new Set(dam.map((l) => l.timeOfDay)).size).toBe(4);
+    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(12);
+    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(12);
     // Levels are grouped by world in order, and each world ends with a boss.
-    expect(LEVELS.map((l) => l.world)).toEqual([0, 0, 0, 0, 1, 1, 1, 1]);
-    expect(LEVELS[3].boss && LEVELS[7].boss).toBe(true);
-    expect(WORLDS.filter((w) => w.playable).length).toBe(2);
+    expect(LEVELS.map((l) => l.world)).toEqual([
+      0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
+    ]);
+    expect(LEVELS[3].boss && LEVELS[7].boss && LEVELS[11].boss).toBe(true);
+    expect(LEVELS.filter((l) => l.boss).length).toBe(3);
+    expect(WORLDS.filter((w) => w.playable).length).toBe(3);
     expect(WORLDS.map((w) => w.name)).toEqual([
       'القاهرة',
       'الأرياف',
@@ -128,7 +134,9 @@ describe('authored levels', () => {
     });
   });
   it('each level has its own signature pieces', () => {
-    const [a, b, c, d, e, f, g, h] = LEVELS.map((_, i) => parseLevel(i));
+    const [a, b, c, d, e, f, g, h, i9, j10, k11, l12] = LEVELS.map((_, i) =>
+      parseLevel(i),
+    );
     expect(a.lanterns.length).toBeGreaterThanOrEqual(5);
     expect(a.ghosts.length).toBeGreaterThan(10);
     expect(b.awnings.length).toBeGreaterThan(6);
@@ -143,14 +151,14 @@ describe('authored levels', () => {
     expect(d.meta.water).toBeTruthy();
     expect(
       new Set(
-        [a, b, c, d, e, f, g].map((l) =>
+        [a, b, c, d, e, f, g, i9, j10, k11].map((l) =>
           l.enemies
             .map((e) => e.kind)
             .sort()
             .join(),
         ),
       ),
-    ).toHaveProperty('size', 7);
+    ).toHaveProperty('size', 10);
     // World 2: mud, canals with both currents, saqias, the donkey cart.
     const mud = (l: typeof e) => l.meta.rows.join('').split('u').length - 1;
     const hay = (l: typeof e) => l.meta.rows.join('').split('N').length - 1;
@@ -176,5 +184,38 @@ describe('authored levels', () => {
       ls.reduce((n, l) => n + l.cols, 0);
     expect(density([e, f, g, h])).toBeGreaterThan(density([a, b, d]));
     expect(e.meta.time).toBeLessThan(a.meta.time);
+    // World 3: belts both ways, stacks, lamps, boats on a tide, nets.
+    expect(i9.belts.length).toBeGreaterThanOrEqual(3);
+    expect(new Set(i9.belts.map((b) => b.dir)).size).toBe(2);
+    expect(i9.stacks.length).toBeGreaterThanOrEqual(3);
+    expect(j10.lamps.length).toBeGreaterThanOrEqual(4);
+    expect(j10.meta.dark).toBeGreaterThan(0);
+    expect(k11.meta.tide).toBeTruthy();
+    expect(k11.seas.length).toBeGreaterThanOrEqual(4);
+    expect(k11.boats.length).toBeGreaterThanOrEqual(4);
+    expect(k11.nets.length).toBeGreaterThanOrEqual(10);
+    expect(l12.boss && l12.meta.bossKind).toBe('crab');
+    expect(
+      l12.belts.length &&
+        l12.stacks.length &&
+        l12.lamps.length &&
+        l12.boats.length &&
+        l12.nets.length &&
+        l12.meta.tide,
+    ).toBeTruthy();
+    for (const k of ['crab', 'gull', 'saw', 'plane', 'thief'])
+      expect(
+        [i9, j10, k11, l12].some((l) => kinds(l).has(k)),
+        k,
+      ).toBe(true);
+    // A clear step up from World 2: denser and less time per column.
+    expect(density([i9, j10, k11, l12])).toBeGreaterThan(density([e, f, g, h]));
+    const perCol = (ls: (typeof e)[]) =>
+      ls.reduce((n, l) => n + l.meta.time, 0) /
+      ls.reduce((n, l) => n + l.cols, 0);
+    expect(perCol([i9, j10, k11, l12])).toBeLessThan(perCol([e, f, g, h]));
+    // Boxes never float over the sea or nets.
+    for (const l of [k11, l12])
+      for (const bx of l.boxes) expect(l.at(bx.col, bx.row + 4)).not.toBe('s');
   });
 });

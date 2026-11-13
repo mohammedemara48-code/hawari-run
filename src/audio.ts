@@ -20,8 +20,11 @@ export const RHYTHM = {
   saidi: 'DT.DD.T.',
   malfuf: 'D..T..T.',
   fallahi: 'DTkTDTkT',
+  /** Sea-coast clap-and-drum groove for the simsimiyya songs. */
+  bahari: 'D.kTD.TT',
 } as const;
 type RhythmName = keyof typeof RHYTHM;
+type Timbre = 'mizmar' | 'rababa' | 'simsimiyya';
 interface Track {
   name: string;
   maqam: MaqamName;
@@ -33,8 +36,11 @@ interface Track {
   melody: (number | null)[];
   bass: (number | null)[];
   drone?: boolean;
-  /** Folk lead colour: a nasal double-reed mizmar or a bowed rababa. */
-  timbre?: 'mizmar' | 'rababa';
+  /** Folk lead colour: a nasal double-reed mizmar, a bowed rababa or a
+   * plucked simsimiyya (the coastal lyre, re-plucked on long notes). */
+  timbre?: Timbre;
+  /** Sea songs: a soft surf swell breathes under the band every two bars. */
+  sea?: boolean;
   /** Boss tracks run at full intensity from the start. */
   boss?: boolean;
 }
@@ -492,6 +498,78 @@ export const TRACKS: Track[] = [
       7 . 6 . 5 4 3 4   5 . 4 3 2 . 1 .   0 1 2 3 4 3 2 1   0 . 0 . 0 . . .`),
     bass: seq('0 0 . 0 1 . 0 .   0 0 . 0 -2 . -1 .'),
   },
+  // World 3 · دمياط: the simsimiyya over a bahari clap groove, with surf.
+  {
+    name: 'شارع الموبيليا (راست · سمسمية · بحري)',
+    maqam: 'rast',
+    root: 62,
+    bpm: 116,
+    rhythm: 'bahari',
+    lead: 'triangle',
+    timbre: 'simsimiyya',
+    melody: seq(`
+      0 2 4 . 4 3 4 5   4 . 3 2 3 . . .   2 3 4 5 7 . 5 4   3 2 1 . 2 . . .
+      4 . 5 4 3 . 2 3   4 5 4 3 2 . 1 .   2 . 3 2 1 2 1 0   0 . . . -1 0 . .`),
+    bass: seq('0 . 0 . 4 . 0 .   3 . 3 . 4 . . .'),
+  },
+  {
+    name: 'جوه الورشة (بياتي · سمسمية · مقسوم)',
+    maqam: 'bayati',
+    root: 60,
+    bpm: 104,
+    rhythm: 'maqsum',
+    lead: 'triangle',
+    timbre: 'simsimiyya',
+    drone: true,
+    melody: seq(`
+      0 . 1 2 3 . 2 1   2 . 3 4 3 2 1 .   3 4 5 . 4 3 2 3   1 . 0 . . . . .
+      4 . 4 5 6 5 4 3   4 . 3 2 1 . 2 .   3 2 1 0 1 2 1 .   0 . . . 0 . . .`),
+    bass: seq('0 . . 0 -3 . . .   -2 . . -2 0 . . .'),
+  },
+  {
+    name: 'ميناء الصيد (نهاوند · سمسمية · بحري)',
+    maqam: 'nahawand',
+    root: 64,
+    bpm: 112,
+    rhythm: 'bahari',
+    lead: 'triangle',
+    timbre: 'simsimiyya',
+    sea: true,
+    melody: seq(`
+      4 . 3 4 5 . 4 3   2 . 3 2 1 . 0 .   2 3 4 . 6 5 4 .   3 . 2 . 1 2 0 .
+      7 . 6 7 8 . 7 6   5 . 6 5 4 . 3 .   4 5 4 3 2 . 1 .   0 . . . . . . .`),
+    bass: seq('0 . 0 . -3 . . .   -2 . -2 . -3 . . .'),
+  },
+  {
+    name: 'رأس البر (حجاز · سمسمية · بحري)',
+    maqam: 'hijaz',
+    root: 62,
+    bpm: 122,
+    rhythm: 'bahari',
+    lead: 'triangle',
+    timbre: 'simsimiyya',
+    sea: true,
+    melody: seq(`
+      0 1 2 . 2 1 2 3   4 . 3 2 1 . 2 .   4 5 6 5 4 . 3 4   2 1 0 . 1 . . .
+      7 . 6 5 4 5 4 3   2 . 3 4 5 . 4 .   3 2 1 2 1 0 -1 .  0 . . . 0 . . .`),
+    bass: seq('0 . 0 1 0 . 4 .   3 . 1 . 0 . . .'),
+  },
+  {
+    name: 'أبو مقص (كرد · سمسمية · فلاحي)',
+    maqam: 'kurd',
+    root: 59,
+    bpm: 150,
+    rhythm: 'fallahi',
+    lead: 'triangle',
+    timbre: 'simsimiyya',
+    drone: true,
+    sea: true,
+    boss: true,
+    melody: seq(`
+      0 0 2 0 3 . 2 0   4 . 3 2 3 . 1 .   5 5 4 3 4 . 3 2   3 2 1 . 0 . . .
+      7 . 6 . 5 6 5 4   3 . 4 5 4 . 2 .   1 2 3 2 1 0 -1 0  0 . 0 . 0 . . .`),
+    bass: seq('0 0 . 0 1 . 0 .   0 0 . 0 -2 . -1 .'),
+  },
 ];
 const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
 export function degreeToSemis(maqam: MaqamName, degree: number) {
@@ -809,6 +887,8 @@ export class Sound {
     const level = Math.max(this.intensity, t.boss ? 1 + this.bossPhase : 0);
     // Darbuka.
     const ch = RHYTHM[t.rhythm][s % 8];
+    // Surf: a slow filtered-noise swell every two bars on the sea songs.
+    if (t.sea && s % 16 === 0) this.surf(time, eighth * 14, duck);
     if (ch === 'D') this.hit(time, 'doum', 0.55 * duck, bus);
     else if (ch === 'T') this.hit(time, 'tek', 0.32 * duck, bus);
     else if (ch === 'k') this.hit(time, 'ka', 0.22 * duck, bus);
@@ -882,9 +962,32 @@ export class Sound {
       );
     }
   }
-  /** Countryside lead voices built from the same oscillators. */
+  /** A wave washing in: band-passed noise that swells and recedes. */
+  private surf(time: number, dur: number, duck: number) {
+    if (!this.noise || !this.ctx) return;
+    const ctx = this.ctx;
+    const src = ctx.createBufferSource(),
+      f = ctx.createBiquadFilter(),
+      g = ctx.createGain();
+    src.buffer = this.noise;
+    src.loop = true;
+    f.type = 'bandpass';
+    f.Q.value = 0.7;
+    f.frequency.setValueAtTime(500, time);
+    f.frequency.linearRampToValueAtTime(1300, time + dur * 0.4);
+    f.frequency.linearRampToValueAtTime(400, time + dur);
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.linearRampToValueAtTime(0.07 * duck, time + dur * 0.4);
+    g.gain.linearRampToValueAtTime(0.0001, time + dur);
+    src.connect(f);
+    f.connect(g);
+    g.connect(this.musicBus!);
+    src.start(time);
+    src.stop(time + dur + 0.05);
+  }
+  /** Folk lead voices built from the same oscillators. */
   private folk(
-    timbre: 'mizmar' | 'rababa',
+    timbre: Timbre,
     f: number,
     time: number,
     dur: number,
@@ -892,6 +995,21 @@ export class Sound {
     ornament: number,
   ) {
     const bus = this.musicBus!;
+    if (timbre === 'simsimiyya') {
+      // Plucked lyre: a bright, fast-decaying pluck, re-plucked in a
+      // tremolo on long notes the way Port Said players do.
+      const pluck = 0.11;
+      const n = dur > pluck * 2.2 ? Math.floor(dur / pluck) : 1;
+      for (let i = 0; i < n; i++) {
+        const t = time + i * (n > 1 ? pluck : 0),
+          v = (i === 0 ? 0.2 : 0.11) * duck;
+        this.voice(f, t, Math.min(dur, 0.24), 'triangle', v, bus, {
+          bendFrom: i === 0 ? ornament || undefined : undefined,
+        });
+        this.voice(f * 2, t, 0.07, 'square', v * 0.32, bus, { band: 2200 });
+      }
+      return;
+    }
     if (timbre === 'mizmar') {
       // Double reed: bright, nasal, a fast vibrato and a scoop into notes.
       this.voice(f, time, dur, 'sawtooth', 0.11 * duck, bus, {
@@ -1027,6 +1145,33 @@ export class Sound {
       case 'caw':
         this.tone(900, 0.12, 'square', 0.12, 0, 600);
         this.noiseFx(2500, 0.1, 0.2);
+        break;
+      case 'gull':
+        // A seagull's laughing cry.
+        this.tone(1300, 0.12, 'triangle', 0.14, 0, 900);
+        this.tone(1250, 0.14, 'triangle', 0.12, 0.13, 820);
+        break;
+      case 'clack':
+        // Crab claws snapping.
+        this.noiseFx(3800, 0.05, 0.35);
+        this.noiseFx(3200, 0.05, 0.3, 0.07);
+        break;
+      case 'saw':
+        this.tone(620, 0.25, 'sawtooth', 0.08, 0, 700);
+        this.noiseFx(5000, 0.2, 0.14, 0, 'highpass');
+        break;
+      case 'creak':
+        // Furniture stack starting to tip.
+        this.tone(140, 0.35, 'sawtooth', 0.12, 0, 100);
+        break;
+      case 'topple':
+        this.noiseFx(700, 0.45, 0.55);
+        this.tone(80, 0.3, 'square', 0.3, 0.05, 45);
+        break;
+      case 'steal':
+        this.tone(988, 0.06, 'square', 0.12);
+        this.tone(740, 0.08, 'square', 0.12, 0.06);
+        this.tone(494, 0.12, 'square', 0.12, 0.13);
         break;
       case 'swim':
         this.noiseFx(1400, 0.18, 0.25, 0, 'lowpass');

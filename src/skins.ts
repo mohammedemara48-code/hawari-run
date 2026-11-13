@@ -30,8 +30,8 @@ function tex(
   t.refresh();
 }
 
-export type Emblem = 'lamp' | 'star' | 'diamond' | 'gear' | 'pot';
-export type Collectible = 'coin' | 'wheat';
+export type Emblem = 'lamp' | 'star' | 'diamond' | 'gear' | 'pot' | 'crate';
+export type Collectible = 'coin' | 'wheat' | 'mishabek' | 'fish';
 export interface Skin {
   /** Brick: face, highlight, shadow, mortar. */
   brick: [string, string, string, string];
@@ -44,7 +44,7 @@ export interface Skin {
   coin: [string, string, string, string];
   collectible: Collectible;
   /** Brick pattern: running bond or mud-brick courses with straw flecks. */
-  bond: 'running' | 'mud' | 'block';
+  bond: 'running' | 'mud' | 'block' | 'plank';
 }
 
 export const SKINS: Record<string, Skin> = {
@@ -97,6 +97,26 @@ export const SKINS: Record<string, Skin> = {
     coin: ['#5a3a10', '#e0b040', '#ffe27a', '#fff8d0'],
     collectible: 'wheat',
     bond: 'mud',
+  },
+  // Damietta workshops: carved walnut, furniture crates, مشبك sweets.
+  workshop: {
+    brick: ['#7a4a2a', '#a8703e', '#4e2e18', '#2e1a0e'],
+    box: ['#c8904e', '#f0c07a', '#7a4e26', '#4e2e14', '#ffe0a0', '#d8d0c0'],
+    emblem: 'crate',
+    used: ['#6a4a34', '#8a6a4e', '#422c1e'],
+    coin: ['#6a2a08', '#e87a1a', '#ffb84a', '#fff0b0'],
+    collectible: 'mishabek',
+    bond: 'plank',
+  },
+  // The harbour: weathered boat timber, fish crates, silver fish.
+  harbor: {
+    brick: ['#5a6a72', '#7e9098', '#3a464e', '#26303a'],
+    box: ['#4a8ab0', '#8ac8e8', '#2a5a7a', '#1a3a52', '#e8f4ff', '#f0d080'],
+    emblem: 'crate',
+    used: ['#4e5a60', '#6e7c84', '#323c42'],
+    coin: ['#1a2a3a', '#9ab8cc', '#e0f0fa', '#ffffff'],
+    collectible: 'fish',
+    bond: 'plank',
   },
 };
 
@@ -193,6 +213,20 @@ function emblem(
     rect(c, 7, 7, 10, 9, dark);
     rect(c, 9, 9, 6, 5, light);
     rect(c, 11, 10, 2, 3, accent);
+  } else if (kind === 'crate') {
+    // Slatted furniture crate stencilled with an eight-point star.
+    for (const y of [6, 11, 16]) rect(c, 5, y, 14, 1, dark);
+    rect(c, 5, 5, 1, 13, dark);
+    rect(c, 18, 5, 1, 13, dark);
+    for (const [x, y, w, h] of [
+      [10, 6, 4, 12],
+      [6, 10, 12, 4],
+      [8, 8, 8, 8],
+    ])
+      rect(c, x, y, w, h, light);
+    rect(c, 11, 11, 2, 2, accent);
+    rect(c, 7, 9, 1, 1, dark);
+    rect(c, 16, 14, 1, 1, dark);
   } else {
     // Clay qulla water pot.
     rect(c, 10, 3, 4, 2, dark);
@@ -251,6 +285,29 @@ export function makeSkins(scene: Phaser.Scene) {
         rect(c, x + 1, y + 1, 1, 2, '#f08a4a');
       }
     });
+  // Damietta power-ups: a Damietta-cheese sandwich and a grilled fish.
+  if (!scene.textures.exists('workshop-food')) {
+    tex(scene, 'workshop-food', 24, 20, (c) => {
+      rect(c, 1, 5, 22, 12, INK);
+      rect(c, 2, 6, 20, 10, '#d8a050');
+      rect(c, 2, 6, 20, 2, '#f0c878');
+      rect(c, 3, 10, 18, 3, '#fff8e8');
+      for (const x of [5, 10, 15]) rect(c, x, 11, 2, 1, '#e8e0c8');
+      rect(c, 2, 14, 20, 2, '#a86a2a');
+    });
+    tex(scene, 'harbor-food', 24, 20, (c) => {
+      rect(c, 0, 14, 24, 5, INK);
+      rect(c, 1, 15, 22, 3, '#e8e4dc');
+      rect(c, 3, 6, 16, 9, INK);
+      rect(c, 4, 7, 14, 7, '#c87a3a');
+      rect(c, 4, 7, 14, 2, '#e8a060');
+      for (const x of [7, 11, 15]) rect(c, x, 8, 1, 5, '#6a3a1a');
+      rect(c, 18, 5, 5, 11, INK);
+      rect(c, 19, 6, 3, 9, '#c87a3a');
+      rect(c, 6, 9, 2, 2, '#14100e');
+      rect(c, 2, 12, 3, 2, '#f0e060');
+    });
+  }
   for (const [theme, s] of Object.entries(SKINS)) {
     if (scene.textures.exists(`${theme}-box`)) continue;
     const [bf, bl, bs, bm] = s.brick;
@@ -290,6 +347,11 @@ export function makeSkins(scene: Phaser.Scene) {
           }
         }
       });
+      if (s.bond === 'plank') {
+        // Carved boards: vertical grain and a peg.
+        for (let x = 4; x < 22; x += 6) rect(c, x, 2, 1, 20, bs);
+        rect(c, 11, 5, 2, 2, bl);
+      }
       if (s.bond === 'block') {
         // Moss in the joint.
         rect(c, 3, 11, 5, 1, '#4f8a54');
@@ -374,6 +436,71 @@ export function makeSkins(scene: Phaser.Scene) {
           rect(c, 7 + sway, 1, 1, 2, cs);
           rect(c, 5 + sway, 0, 1, 2, cb);
           rect(c, 10 + sway, 0, 1, 2, cb);
+          return;
+        }
+        if (s.collectible === 'mishabek') {
+          // مشبك: a round lattice of syrup-glazed loops (a ring, a cross
+          // and four little rings), turning edge-on as it spins.
+          const sq = [1, 0.75, 0.4, 0.75, 1, 1][fr];
+          c.save();
+          c.translate(8, 10);
+          c.scale(sq, 1);
+          const loop = (x: number, y: number, r: number) => {
+            c.beginPath();
+            c.arc(x, y, r, 0, Math.PI * 2);
+            c.stroke();
+          };
+          for (const [w, col] of [
+            [4, co],
+            [2, cb],
+          ] as const) {
+            c.lineWidth = w;
+            c.strokeStyle = col;
+            loop(0, 0, 6);
+            for (const [x, y] of [
+              [0, -3.5],
+              [0, 3.5],
+              [-3.5, 0],
+              [3.5, 0],
+            ])
+              loop(x, y, 1.6);
+          }
+          c.fillStyle = cl;
+          c.fillRect(-4, -6, 3, 1);
+          c.fillRect(2, 3, 1, 1);
+          c.restore();
+          // Syrup drip.
+          if (fr % 3 === 0) rect(c, 8, 17, 1, 2, cb);
+          return;
+        }
+        if (s.collectible === 'fish') {
+          // A silver fish, tail flicking, turning as it spins.
+          const sq = [1, 0.8, 0.45, 0.8, 1, 1][fr];
+          c.save();
+          c.translate(8, 10);
+          c.rotate(-Math.PI / 2.6);
+          c.scale(sq, 1);
+          c.fillStyle = co;
+          c.beginPath();
+          c.ellipse(0, 0, 4.5, 8, 0, 0, Math.PI * 2);
+          c.fill();
+          c.beginPath();
+          c.moveTo(0, 6);
+          c.lineTo(-5, 11);
+          c.lineTo(5, 11);
+          c.fill();
+          c.fillStyle = cb;
+          c.beginPath();
+          c.ellipse(0, 0, 3, 6.5, 0, 0, Math.PI * 2);
+          c.fill();
+          c.fillRect(-3, 8, 6, 2);
+          c.fillStyle = cl;
+          c.fillRect(-2, -5, 1, 8);
+          c.fillStyle = cs;
+          c.fillRect(1, -3, 1, 6);
+          c.fillStyle = '#14100e';
+          c.fillRect(-1, -5, 2, 2);
+          c.restore();
           return;
         }
         const w = [6, 10, 14, 10, 6, 3][fr];

@@ -303,13 +303,17 @@ log('map opens world 2, track', audio.track);
     [base.x, base.y],
   );
   assert.equal(await ev(() => window.T.e.getData('hp')), 2, 'buffalo has 2 hp');
-  await ev(() => window.T.s.damageEnemy(window.T.e));
+  await ev(() => {
+    window.T.s.damageEnemy(window.T.e);
+  });
   assert.equal(
     await ev(() => window.T.e.active),
     true,
     'one hit is not enough',
   );
-  await ev(() => window.T.s.damageEnemy(window.T.e));
+  await ev(() => {
+    window.T.s.damageEnemy(window.T.e);
+  });
   await wait(50);
   assert.equal(await ev(() => window.T.e.active), false, 'two hits fell it');
   // Goose: honks and chases.
@@ -333,7 +337,9 @@ log('map opens world 2, track', audio.track);
     'goose chases the hero',
   );
   // Crow: dives from above.
-  await ev(() => window.T.s.enemies.clear(true, true));
+  await ev(() => {
+    window.T.s.enemies.clear(true, true);
+  });
   await ev(
     ([x, y]) => {
       window.T.e = window.T.s.enemy(x + 60, y - 150, 'crow');
@@ -348,7 +354,9 @@ log('map opens world 2, track', audio.track);
     crow.some(([st, vy]) => st === 'dive' && vy > 100),
     'crow dive-bombs',
   );
-  await ev(() => window.T.s.enemies.clear(true, true));
+  await ev(() => {
+    window.T.s.enemies.clear(true, true);
+  });
   log('buffalo/goose/crow behave');
 }
 
@@ -479,9 +487,23 @@ await ev(() => {
   window.T.place(s.spec.exit.x, s.spec.exit.y - 1);
 });
 await wait(500);
-assert.equal(await ev(() => window.T.s.mode), 'win', 'world 2 done: the win');
-await shot('13-w2-win.png');
-log('boss: hard back, 3 phases, clods, crows, win');
+assert.equal(
+  await ev(() => window.T.s.mode),
+  'clear',
+  'world 2 done: on to Damietta',
+);
+assert.match(
+  await page.locator('#clear-title').textContent(),
+  /دمياط/,
+  'the clear screen opens the road to Damietta',
+);
+assert.ok(
+  (await ev(() => JSON.parse(window.localStorage.getItem('hawari-progress'))))
+    .unlocked >= 8,
+  'world 3 unlocked',
+);
+await shot('13-w2-clear-to-damietta.png');
+log('boss: hard back, 3 phases, clods, crows, world 3 unlocked');
 
 assert.deepEqual(errors, [], 'no console errors');
 await browser.close();

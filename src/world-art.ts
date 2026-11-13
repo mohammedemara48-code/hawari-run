@@ -5,60 +5,25 @@
 import Phaser from 'phaser';
 import type { Theme } from './level-data';
 import { SOLID, type Parsed } from './level-parse';
+import {
+  W3_PALETTES,
+  beltBed,
+  isW3,
+  netCell,
+  seaBed,
+  w3Cap,
+  w3Ledge,
+  w3Near,
+  w3Slab,
+  w3Stone,
+  w3Window,
+} from './world3-art';
+
+import { disc, grad, hash, poly, rect, tex, type Palette } from './art-kit';
+export { disc, hash, poly, rect, tex, type Palette };
 
 type C = CanvasRenderingContext2D;
 const T = 24;
-export const hash = (a: number, b: number, s = 0) => {
-  let h = (a * 374761393 + b * 668265263 + s * 2147483647) | 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177);
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-};
-function rect(c: C, x: number, y: number, w: number, h: number, color: string) {
-  c.fillStyle = color;
-  c.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
-}
-function poly(c: C, pts: number[][], color: string) {
-  c.fillStyle = color;
-  c.beginPath();
-  pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
-  c.closePath();
-  c.fill();
-}
-function disc(
-  c: C,
-  x: number,
-  y: number,
-  r: number,
-  color: string,
-  start = 0,
-  end = Math.PI * 2,
-) {
-  c.fillStyle = color;
-  c.beginPath();
-  c.moveTo(x, y);
-  c.arc(x, y, r, start, end);
-  c.closePath();
-  c.fill();
-}
-function grad(c: C, y0: number, y1: number, stops: [number, string][]) {
-  const g = c.createLinearGradient(0, y0, 0, y1);
-  for (const [o, col] of stops) g.addColorStop(o, col);
-  return g;
-}
-function tex(
-  scene: Phaser.Scene,
-  key: string,
-  w: number,
-  h: number,
-  paint: (c: C) => void,
-) {
-  if (scene.textures.exists(key)) scene.textures.remove(key);
-  const t = scene.textures.createCanvas(key, w, h)!;
-  t.context.imageSmoothingEnabled = false;
-  paint(t.context);
-  t.refresh();
-  return t;
-}
 function sign(
   c: C,
   x: number,
@@ -80,18 +45,6 @@ function sign(
 }
 
 /* ───────────────────────── Palettes ───────────────────────── */
-export interface Palette {
-  sky: [number, string][];
-  stone: string[];
-  mortar: string;
-  top: string[];
-  wood: string[];
-  accent: string;
-  glow: string;
-  window: string;
-  windowLit: string;
-  fog: string;
-}
 export const PALETTES: Record<Theme, Palette> = {
   night: {
     sky: [
@@ -174,6 +127,7 @@ export const PALETTES: Record<Theme, Palette> = {
     windowLit: '#ffcf7a',
     fog: '#e8c08a',
   },
+  ...W3_PALETTES,
 };
 
 /* ─────────────────────── Tile painting ─────────────────────── */
@@ -186,6 +140,7 @@ function stoneFill(
   pal: Palette,
   theme: Theme,
 ) {
+  if (isW3(theme)) return w3Stone(c, x, y, col, row, pal, theme);
   const h = hash(col, row),
     base = pal.stone[Math.floor(h * pal.stone.length)];
   rect(c, x, y, T, T, base);
@@ -246,6 +201,7 @@ function capTop(
   pal: Palette,
   theme: Theme,
 ) {
+  if (isW3(theme)) return w3Cap(c, x, y, col, row, pal, theme);
   const h = hash(col, row, 7);
   if (theme === 'farm') {
     // Field edge: dark soil under a grass lip with wheat and clover tufts.
@@ -307,6 +263,7 @@ function facadeWindow(
   pal: Palette,
   theme: Theme,
 ) {
+  if (isW3(theme)) return w3Window(c, x, y, col, row, pal, theme);
   const h = hash(col, row, 3),
     lit = theme === 'night' ? h > 0.45 : theme === 'sewer' ? h > 0.8 : false;
   if (theme === 'farm') {
@@ -358,6 +315,7 @@ function slab(
   pal: Palette,
   theme: Theme,
 ) {
+  if (isW3(theme)) return w3Slab(c, x, y, col, row, pal, theme);
   const h = hash(col, row, 11);
   if (theme === 'farm') {
     // A split palm trunk laid flat: ringed bark.
@@ -398,6 +356,7 @@ function ledge(
   theme: Theme,
   end: number,
 ) {
+  if (isW3(theme)) return w3Ledge(c, x, y, col, row, pal, theme, end);
   const h = hash(col, row, 5);
   if (theme === 'farm') {
     // Palm-rib (jareed) shelf lashed with rope, a few drying dates.
@@ -565,6 +524,11 @@ export function paintLevel(
           } else if (ch === 'N')
             hayBale(c, x, y, col, row, L.at(col, row - 1) !== 'N');
           else if (ch === 'u') mudTile(c, x, y, col, row);
+          else if (ch === '{' || ch === '}') beltBed(c, x, y, col);
+          else if (ch === 's' || ch === 'U' || ch === 'I')
+            seaBed(c, x, y, col, row, L.at(col, row + 1));
+          else if (ch === '%')
+            netCell(c, x, y, col, row, L.at(col, row - 1) !== '%');
           else if (ch === 'w' || ch === 'x')
             canalBed(c, x, y, col, row, L.at(col, row - 1));
           else if (ch === '=') slab(c, x, y, col, row, pal, theme);
@@ -1749,7 +1713,9 @@ export function makeParallax(scene: Phaser.Scene, theme: Theme) {
             : theme === 'farm'
               ? '#1e2a14'
               : '#050909';
-    if (theme === 'farm') {
+    if (isW3(theme)) {
+      w3Near(c, theme, W);
+    } else if (theme === 'farm') {
       // Date-palm fronds drooping into the top of the view: a curved rib
       // with leaflets hanging off both sides, thinning towards the tip.
       const frond = (x0: number, dir: number, len: number, drop: number) => {

@@ -20,8 +20,18 @@
 //   W  saqia waterwheel hub (four rotating bucket platforms)
 //   Y / y  donkey cart start / end of its run (rides while you stand on it)
 //   enemies: q buffalo  n goose  v crow
+// World 3 (دمياط)
+//   { / }  plank conveyor belt moving left / right (solid, carries you)
+//   O  swinging chandelier / harbour lantern pivot (platform on a chain)
+//   R  stacked furniture, base cell of a 1×3 stack: stand on it and it
+//      topples to the right into a 3-wide bridge
+//   s  sea water (swim); its surface rises and falls with the tide
+//   U / I  fishing boat start / end of its drift (bobs on the tide)
+//   %  climbable fishing net
+//   enemies: a crab  l seagull  d runaway saw  e runaway plane  f fish-thief cat
 export const TILE = 24;
-export type Theme = 'night' | 'market' | 'roof' | 'sewer' | 'farm';
+export type Theme =
+  'night' | 'market' | 'roof' | 'sewer' | 'farm' | 'workshop' | 'harbor';
 /** One region of the journey across Egypt. */
 export interface WorldMeta {
   id: string;
@@ -61,7 +71,7 @@ export const WORLDS: WorldMeta[] = [
     x: 0.58,
     y: 0.11,
     side: 'right',
-    playable: false,
+    playable: true,
   },
   {
     id: 'alex',
@@ -105,8 +115,10 @@ export interface LevelMeta {
     speed: number;
   };
   boss?: boolean;
-  /** Which boss: the Cairo alley tough or the countryside buffalo. */
-  bossKind?: 'fatwa' | 'buffalo';
+  /** Which boss: the Cairo tough, the countryside buffalo, the giant crab. */
+  bossKind?: 'fatwa' | 'buffalo' | 'crab';
+  /** Sea levels: the tide lifts the water `amp` rows over `period` seconds. */
+  tide?: { amp: number; period: number };
   /** Music track for the level and for its boss fight (indices into TRACKS). */
   track: number;
   bossTrack?: number;
@@ -146,6 +158,11 @@ class Grid {
   /** An irrigation canal: water down to a mud floor, current dir ±1. */
   canal(x0: number, x1: number, dir: number, top = this.h - 3) {
     this.rect(x0, top, x1, this.h - 2, dir > 0 ? 'w' : 'x');
+    this.run(x0, x1, this.h - 1, '#');
+  }
+  /** Harbour water with a sand floor; `top` is the high-tide row. */
+  sea(x0: number, x1: number, top = this.h - 5) {
+    this.rect(x0, top, x1, this.h - 2, 's');
     this.run(x0, x1, this.h - 1, '#');
   }
   rows() {
@@ -658,6 +675,270 @@ function threshingFloor() {
   return g.rows();
 }
 
+/* ───────────── World 3 · دمياط (workshops: ground row 12 · harbour: quay row 10) ───────────── */
+const G3 = 12,
+  GH = 10;
+
+/* 9 ─ شارع الموبيليا: conveyor belts, toppling furniture, runaway tools. */
+function workshopStreet() {
+  const g = new Grid(236, 15);
+  g.ground(0, 38, G3);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(10, 8, 'B?B');
+  g.set(16, 11, 'e');
+  // Lesson: the belt carries you along.
+  g.run(20, 33, G3, '}');
+  g.text(22, 10, 'o o o o o o');
+  g.set(30, 11, 'f');
+  // Lesson: climb the stacked furniture and it topples into a bridge.
+  g.set(38, 11, 'R');
+  g.text(40, 9, 'o o');
+  g.ground(46, 80, G3);
+  g.set(50, 11, 'd');
+  g.text(54, 8, 'BCB');
+  g.set(58, 11, 'e');
+  g.run(60, 64, 8, '-');
+  g.text(60, 7, 'ooooo');
+  g.set(67, 8, '?');
+  g.set(70, 11, 'f');
+  g.set(75, 11, 'e');
+  // Against the belt, saws riding it towards you, then a stack bridge.
+  g.ground(81, 97, G3);
+  g.run(81, 96, G3, '{');
+  g.text(84, 10, 'o o o o o o');
+  g.set(88, 11, 'd');
+  g.set(97, 11, 'R');
+  g.text(99, 9, 'o o');
+  g.ground(105, 140, G3);
+  g.set(108, 11, 'c');
+  g.text(112, 8, 'B?B');
+  g.set(118, 8, 'i');
+  g.set(125, 11, 'f');
+  g.set(132, 11, 'e');
+  // Set piece: the long belt with saws and shelves overhead.
+  g.ground(141, 170, G3);
+  g.run(141, 170, G3, '}');
+  g.run(146, 150, 8, '-');
+  g.run(156, 160, 8, '-');
+  g.text(146, 7, 'ooooo');
+  g.text(156, 7, 'ooooo');
+  g.set(152, 11, 'd');
+  g.set(164, 11, 'd');
+  g.ground(171, 235, G3);
+  // Secret: a stack up to the varnish shelf (jump before it topples).
+  g.set(175, 11, 'R');
+  g.run(178, 184, 6, '-');
+  g.text(178, 5, 'oooo  G');
+  g.set(190, 11, 'f');
+  g.set(196, 11, 'd');
+  g.text(200, 8, 'BFB');
+  g.set(206, 11, 'e');
+  g.set(212, 11, 'f');
+  g.set(220, 11, 'd');
+  g.set(225, 11, 'f');
+  g.text(215, 11, 'o o o');
+  g.set(230, 11, 'E');
+  return g.rows();
+}
+
+/* 10 ─ جوه الورشة: lamp-lit workshop, swinging chandeliers over the saw pits. */
+function insideWorkshop() {
+  const g = new Grid(240, 15);
+  g.ground(0, 24, G3);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(10, 8, 'B?B');
+  g.set(15, 11, 'e');
+  // Lesson: ride the chandelier over the pit.
+  g.rect(21, 10, 24, 11);
+  g.set(26, 4, 'O');
+  g.text(25, 4, 'o');
+  g.text(27, 4, 'o');
+  g.ground(34, 60, G3);
+  g.text(40, 8, 'BCB');
+  g.set(46, 11, 'e');
+  g.set(52, 11, 'd');
+  g.set(56, 11, 'f');
+  g.set(60, 11, 'R');
+  g.text(62, 9, 'o o');
+  g.ground(68, 80, G3);
+  g.set(72, 11, 'f');
+  // Two chandeliers in a row over the long pit.
+  g.rect(77, 10, 80, 11);
+  g.set(83, 4, 'O');
+  g.set(91, 4, 'O');
+  g.text(85, 3, 'o o o o');
+  g.ground(98, 140, G3);
+  g.set(102, 11, 'c');
+  // The belt runs against you, saws and planes coming down it.
+  g.run(110, 125, G3, '{');
+  g.text(112, 10, 'o o o o o');
+  g.set(116, 11, 'd');
+  g.set(122, 11, 'e');
+  g.text(128, 8, 'B?B');
+  g.set(134, 11, 'f');
+  g.set(138, 11, 'd');
+  // Stack bridge to a single post, then on.
+  g.set(140, 11, 'R');
+  g.rect(147, 11, 147, 14);
+  g.text(142, 9, 'o o');
+  g.ground(151, 185, G3);
+  // Secret: lumber shelves up to the golden fanoos.
+  g.run(155, 157, 9, '=');
+  g.run(160, 164, 6, '-');
+  g.text(160, 5, 'oo G');
+  g.set(167, 8, 'i');
+  g.set(169, 11, 'e');
+  g.run(172, 184, G3, '}');
+  g.set(176, 11, 'd');
+  g.set(181, 11, 'f');
+  // A last chandelier pit.
+  g.rect(183, 10, 185, 11);
+  g.set(188, 4, 'O');
+  g.ground(195, 239, G3);
+  g.text(200, 8, 'BFB');
+  g.set(207, 11, 'd');
+  g.set(212, 11, 'e');
+  g.set(218, 11, 'f');
+  g.set(224, 11, 'd');
+  g.set(228, 11, 'e');
+  g.text(216, 11, 'o o o');
+  g.set(37, 11, 'f');
+  g.set(158, 11, 'd');
+  g.set(197, 11, 'e');
+  g.set(234, 11, 'E');
+  return g.rows();
+}
+
+/* 11 ─ ميناء الصيد: the tide, bobbing boats, net climbs, crabs and gulls. */
+function harbor() {
+  const g = new Grid(240, 15);
+  g.ground(0, 24, GH);
+  g.set(3, 9, 'P');
+  g.text(6, 9, 'o o o');
+  g.text(10, 6, 'B?B');
+  g.set(18, 9, 'a');
+  // Lesson: a small inlet — the tide comes in and out.
+  g.sea(25, 32);
+  g.text(26, 8, 'o o o o');
+  g.ground(33, 60, GH);
+  g.set(40, 3, 'l');
+  g.set(45, 9, 'a');
+  g.text(48, 6, 'BCB');
+  g.set(55, 9, 'f');
+  // A basin crossed on a drifting fishing boat.
+  g.sea(61, 82);
+  g.set(62, 10, 'U');
+  g.set(77, 10, 'I');
+  g.text(64, 8, 'o o o o o o o');
+  g.set(70, 3, 'l');
+  g.ground(83, 124, GH);
+  g.set(86, 9, 'c');
+  // Climb the net to the pier deck, gulls overhead.
+  g.rect(94, 4, 94, 9, '%');
+  g.run(95, 99, 3, '=');
+  g.text(95, 2, 'ooooo');
+  g.run(103, 107, 5, '-');
+  g.text(103, 4, 'ooo');
+  g.set(104, 1, 'l');
+  g.set(110, 9, 'a');
+  g.set(115, 9, 'a');
+  g.set(120, 9, 'f');
+  // Two boats, boat to boat across the wide basin.
+  g.sea(125, 150);
+  g.set(126, 10, 'U');
+  g.set(134, 10, 'I');
+  g.set(138, 10, 'U');
+  g.set(146, 10, 'I');
+  g.text(128, 8, 'o o o o o o o o o o');
+  g.set(132, 3, 'l');
+  g.set(144, 2, 'l');
+  g.ground(151, 239, GH);
+  g.text(156, 6, 'B?B');
+  g.set(162, 6, 'i');
+  g.set(166, 9, 'a');
+  // Secret: up the net to the crow's nest.
+  g.rect(170, 3, 170, 9, '%');
+  g.run(171, 176, 3, '-');
+  g.text(171, 2, 'oooo G');
+  g.set(180, 9, 'f');
+  g.set(184, 3, 'l');
+  g.sea(188, 197);
+  g.set(189, 10, 'U');
+  g.set(193, 10, 'I');
+  g.set(203, 9, 'a');
+  g.text(206, 6, 'BFB');
+  g.set(212, 9, 'f');
+  g.set(218, 2, 'l');
+  g.set(222, 9, 'a');
+  g.set(227, 9, 'a');
+  g.text(214, 9, 'o o o');
+  g.set(234, 9, 'E');
+  return g.rows();
+}
+
+/* 12 ─ رأس البر: where the Nile meets the sea — everything, then «أبو مقص». */
+function rasElBar() {
+  const g = new Grid(191, 15);
+  g.ground(0, 22, GH);
+  g.set(3, 9, 'P');
+  g.text(6, 9, 'o o o');
+  g.text(10, 6, 'B?B');
+  g.set(16, 9, 'a');
+  g.set(20, 3, 'l');
+  // The fish-market belt and a crate stack over the gap.
+  g.ground(23, 40, GH);
+  g.run(23, 36, GH, '}');
+  g.text(25, 8, 'o o o o o');
+  g.set(30, 9, 'd');
+  g.set(40, 9, 'R');
+  g.text(42, 7, 'o o');
+  g.ground(48, 70, GH);
+  g.set(52, 9, 'f');
+  g.text(56, 6, 'BCB');
+  g.set(62, 9, 'a');
+  g.set(66, 3, 'l');
+  // A harbour lantern swings over the water, then a boat.
+  g.sea(71, 86);
+  g.set(74, 4, 'O');
+  g.set(80, 10, 'U');
+  g.set(84, 10, 'I');
+  g.text(75, 8, 'o o o o o');
+  g.ground(87, 120, GH);
+  g.set(90, 9, 'c');
+  g.set(96, 9, 'a');
+  // Net to the lighthouse pier.
+  g.rect(100, 4, 100, 9, '%');
+  g.run(101, 105, 3, '=');
+  g.text(101, 2, 'oo G');
+  g.set(108, 2, 'l');
+  g.set(112, 9, 'f');
+  g.set(116, 9, 'a');
+  g.sea(121, 134);
+  g.set(122, 10, 'U');
+  g.set(129, 10, 'I');
+  g.text(123, 8, 'o o o o');
+  g.set(127, 3, 'l');
+  g.ground(135, 160, GH);
+  g.text(140, 6, 'BFB');
+  g.set(146, 9, 'd');
+  g.set(150, 9, 'a');
+  // Boss arena: up the breakwater blocks, over the wall, onto the beach.
+  g.rect(154, 8, 155, 9);
+  g.rect(157, 5, 158, 9);
+  g.rect(160, 3, 160, 9);
+  g.ground(160, 190, GH);
+  g.rect(190, 1, 190, 9);
+  g.run(167, 169, 7, '-');
+  g.run(181, 183, 7, '-');
+  g.set(180, 9, 'Z');
+  g.set(187, 9, 'E');
+  g.set(57, 9, 'd');
+  g.set(138, 9, 'f');
+  return g.rows();
+}
+
 export const LEVELS: LevelMeta[] = [
   {
     world: 0,
@@ -781,5 +1062,66 @@ export const LEVELS: LevelMeta[] = [
     mechanic: 'كل حاجة مع بعض + الزعيم',
     enemy: 'أبو قرون',
     rows: threshingFloor(),
+  },
+  {
+    world: 2,
+    id: 'furniture',
+    track: 10,
+    name: 'شارع الموبيليا',
+    subtitle: 'السيور شغالة والعفش متكوّم… والمناشير هربانة',
+    theme: 'workshop',
+    timeOfDay: 'morning',
+    time: 285,
+    dark: 0,
+    mechanic: 'سيور خشب وعفش بيقع يعمل كوبري',
+    enemy: 'منشار وفارة هربانين + قطط حرامية',
+    rows: workshopStreet(),
+  },
+  {
+    world: 2,
+    id: 'workshop',
+    track: 11,
+    name: 'جوه الورشة',
+    subtitle: 'النجف بيتمرجح فوق حفر النشارة',
+    theme: 'workshop',
+    timeOfDay: 'lamplight',
+    time: 290,
+    dark: 0.45,
+    mechanic: 'نجف بيتمرجح وسيور عكسك',
+    enemy: 'العِدّة الهربانة',
+    rows: insideWorkshop(),
+  },
+  {
+    world: 2,
+    id: 'harbor',
+    track: 12,
+    name: 'ميناء الصيد',
+    subtitle: 'المد والجزر شغالين… اركب المراكب واطلع على الشباك',
+    theme: 'harbor',
+    timeOfDay: 'dusk',
+    time: 285,
+    dark: 0,
+    tide: { amp: 2, period: 10 },
+    mechanic: 'مد وجزر ومراكب بتتهز وشباك تتسلّق',
+    enemy: 'الكابوريا + النوارس',
+    rows: harbor(),
+  },
+  {
+    world: 2,
+    id: 'rasbar',
+    track: 13,
+    bossTrack: 14,
+    bossKind: 'crab',
+    name: 'رأس البر',
+    subtitle: 'مطرح ما النيل بيبوس البحر… وأبو مقص مستني',
+    theme: 'harbor',
+    timeOfDay: 'bluehour',
+    time: 300,
+    dark: 0.2,
+    tide: { amp: 2, period: 8 },
+    boss: true,
+    mechanic: 'البحر والسيور والنجف مع بعض + الزعيم',
+    enemy: 'أبو مقص',
+    rows: rasElBar(),
   },
 ];

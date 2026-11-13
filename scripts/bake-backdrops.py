@@ -23,6 +23,12 @@ JOBS = {
     'l6': ('bg-w2-countryside', 0.92, 0.8, 0.8, 'noon'),
     'l7': ('bg-w2-countryside', 0.78, 0.85, 0.85, 'dusk'),
     'l8': ('bg-w2-countryside', 0.62, 0.7, 0.9, 'night'),
+    # World 3 (Damietta): the workshop quay by morning, by lamplight indoors,
+    # at sunset over the harbour and in the blue hour at Ras El Bar.
+    'l9': ('bg-w3-damietta', 0.84, 0.86, 0.9, 'morning'),
+    'l10': ('bg-w3-damietta', 0.6, 0.7, 0.9, 'lamplight'),
+    'l11': ('bg-w3-damietta', 0.8, 0.85, 0.85, 'dusk'),
+    'l12': ('bg-w3-damietta', 0.66, 0.72, 0.92, 'bluehour'),
 }
 # Per-channel multipliers and a lift towards a sky tint for each grade.
 GRADES = {
@@ -30,6 +36,9 @@ GRADES = {
     'noon': ((1.0, 1.04, 0.98), (236, 228, 196), 0.12),
     'dusk': ((1.0, 1.0, 1.0), (0, 0, 0), 0.0),
     'night': ((0.55, 0.68, 1.05), (20, 30, 70), 0.3),
+    'morning': ((1.0, 1.02, 1.08), (200, 214, 230), 0.05),
+    'lamplight': ((1.08, 0.82, 0.55), (60, 30, 10), 0.3),
+    'bluehour': ((0.6, 0.75, 1.1), (30, 50, 90), 0.26),
 }
 
 
@@ -42,12 +51,13 @@ def grade(im, name):
     im = Image.merge('RGB', (r, g, b))
     if amount:
         im = Image.blend(im, Image.new('RGB', im.size, tint), amount)
-    if name == 'noon':
+    if name in ('noon', 'morning'):
         # A high blue midday sky replaces the sunset glow above the horizon.
         w, h = im.size
         mask = Image.new('L', (w, h))
         mask.putdata([int(200 * max(0, 1 - y / (h * 0.42))) for y in range(h) for _ in range(w)])
-        im = Image.composite(Image.new('RGB', (w, h), (132, 184, 222)), im, mask)
+        sky = (132, 184, 222) if name == 'noon' else (176, 200, 220)
+        im = Image.composite(Image.new('RGB', (w, h), sky), im, mask)
     return im
 
 
