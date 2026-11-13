@@ -7,6 +7,19 @@ import { makeDamiettaProps } from './world3-art';
 import { makeSeaCreatures } from './creatures-sea';
 import { makeAlexCreatures } from './creatures-alex';
 import { makeAlexProps } from './world4-art';
+import { makeLuxorCreatures } from './creatures-luxor';
+import { isW5, makeLuxorProps } from './world5-art';
+import {
+  buildLuxor,
+  luxorContact,
+  luxorMove,
+  ramContact,
+  ramPhase,
+  updateLuxorEnemy,
+  updateLuxorWorld,
+  updateRamBoss,
+  type W5,
+} from './world5';
 import {
   alexContact,
   alexMove,
@@ -45,7 +58,7 @@ import {
   worldWeapon,
 } from './weapons';
 import { PHYSICS } from './levels';
-import { LEVELS, TILE, WORLDS } from './level-data';
+import { BOSS_NAMES, LEVELS, TILE, WORLDS } from './level-data';
 import {
   BIRD_REST_MS,
   BIRD_TELL_MS,
@@ -58,6 +71,7 @@ import {
   LEDGE,
   MOVERS,
   MUD,
+  SAND,
   SAQIA,
   SOLID,
   WET,
@@ -65,7 +79,16 @@ import {
   type Parsed,
 } from './level-parse';
 import { sound } from './audio';
-import { bindUI, bossBar, hud, renderMap, screen, toast, touch } from './ui';
+import {
+  bindUI,
+  bossBar,
+  ending,
+  hud,
+  renderMap,
+  screen,
+  toast,
+  touch,
+} from './ui';
 import { loadProgress, recordClear, recordSecret } from './progress';
 
 type Sprite = Phaser.Physics.Arcade.Sprite;
@@ -121,12 +144,14 @@ function oneWayBelow(b: SBody) {
   b.checkCollision.left = false;
   b.checkCollision.right = false;
 }
-interface Lantern {
+export interface Lantern {
   img: Phaser.GameObjects.Image;
   glow: Phaser.GameObjects.Image;
   lit: boolean;
   col: number;
   row: number;
+  /** World 5 torches: when it burns out (scene time, ms). */
+  until?: number;
 }
 interface Mover {
   img: Img;
@@ -155,6 +180,13 @@ interface Mover {
   boat?: { sea: { top: number }; seed: number };
   /** The Alexandria tram (World 4): moved by world4.ts. */
   tram?: boolean;
+  /** A Luxor hot-air balloon (World 5): moved by world5.ts. */
+  balloon?: {
+    base: number;
+    phase: number;
+    sink: number;
+    env: Phaser.GameObjects.Image;
+  };
 }
 interface Canal {
   x0: number;
@@ -204,6 +236,10 @@ export class Alley extends Phaser.Scene {
   w3?: W3;
   /** World 4 mechanics (waves, tram, umbrellas, storm). */
   w4?: W4;
+  /** World 5 mechanics (doors, pillars, sand, balloons, torches). */
+  w5?: W5;
+  /** Extra darkness laid over the level (0..1). */
+  darkBoost = 0;
   wheels: Phaser.GameObjects.Image[] = [];
   swimming = false;
   onMud = false;
@@ -298,6 +334,8 @@ export class Alley extends Phaser.Scene {
     makeFarmProps(this);
     makeDamiettaProps(this);
     makeAlexProps(this);
+    makeLuxorCreatures(this);
+    makeLuxorProps(this);
     makeSkins(this);
     for (const l of LEVELS) makeParallax(this, l.theme);
     this.keys = this.input.keyboard!.addKeys(
@@ -424,6 +462,8 @@ export class Alley extends Phaser.Scene {
     this.moverList = [];
     this.canals = [];
     this.w3 = undefined;
+    this.w5 = undefined;
+    this.darkBoost = 0;
     this.wheels = [];
     this.swimming = false;
     this.onMud = false;
@@ -461,7 +501,7 @@ export class Alley extends Phaser.Scene {
     this.hurtUntil = this.time.now + INVULN_MS;
     this.bossState = {
       active: false,
-      hp: 6,
+      hp: this.bossMax,
       chili: 0,
       state: 'idle',
       until: 0,
@@ -647,7 +687,7 @@ export class Alley extends Phaser.Scene {
       this.terrain.add(
         this.add.zone(rc.centerX, rc.centerY, rc.width, rc.height),
       );
-    for (const ch of ['N', 'u'])
+    for (const ch of ['N', 'u', ',', '/', ';', '_'])
       for (const [r, a, b] of this.runs(ch))
         this.terrain.add(
           this.add.zone(
@@ -725,7 +765,9 @@ export class Alley extends Phaser.Scene {
       body(item).setAllowGravity(false).setSize(16, 16);
     }
     for (const p of L.lanterns) {
-      const img = this.add.image(p.x, p.y - 2, 'lantern-off').setDepth(3);
+      const img = this.add
+        .image(p.x, p.y - 2, this.skin('lantern-off'))
+        .setDepth(3);
       const glow = this.add
         .image(p.x, p.y + 4, 'glow')
         .setBlendMode(Phaser.BlendModes.ADD)
@@ -736,10 +778,10 @@ export class Alley extends Phaser.Scene {
     }
     for (const g of L.ghosts) {
       const hint = this.add
-        .image(g.x, g.y - 6, 'ghost-hint')
+        .image(g.x, g.y - 6, this.skin('ghost-hint'))
         .setDepth(2)
         .setAlpha(0.35);
-      const s = this.ghosts.create(g.x, g.y - 6, 'ghost') as Sprite;
+      const s = this.ghosts.create(g.x, g.y - 6, this.skin('ghost')) as Sprite;
       s.setAlpha(0).setDepth(2).setData('lit', false).setData('hint', hint);
       const sb = s.body as SBody;
       sb.setSize(24, 8).setOffset(0, 0);
@@ -783,7 +825,15 @@ export class Alley extends Phaser.Scene {
       oneWay(sb);
     }
     for (const x of L.crates) {
-      const s = this.crates.create(x.x, x.y, 'ccrate') as Sprite;
+      const s = this.crates.create(
+        x.x,
+        x.y,
+        isW5(theme)
+          ? theme === 'tomb'
+            ? 'tomb-slab-crack'
+            : 'slab-crack'
+          : 'ccrate',
+      ) as Sprite;
       s.setDepth(3).setData('home', { x: x.x, y: x.y });
     }
     for (const g of L.spikes) {
@@ -866,6 +916,7 @@ export class Alley extends Phaser.Scene {
     this.buildFarm();
     this.w3 = buildDamietta(this);
     this.w4 = buildAlexandria(this);
+    this.w5 = buildLuxor(this);
     for (const e of L.enemies) this.enemy(e.x, e.y, e.kind);
     if (L.boss) this.makeBoss(L.boss.x, (L.boss.row + 1) * TILE);
     if (L.checkpoint)
@@ -1183,6 +1234,39 @@ export class Alley extends Phaser.Scene {
         quantity: 2,
         emitZone: zone(1100, 420),
       },
+      temple: {
+        // Fine sand drifting on the desert wind (dust motes by moonlight).
+        lifespan: 4600,
+        speedX: { min: 24, max: 60 },
+        speedY: { min: -6, max: 8 },
+        scale: { min: 0.6, max: 1.4 },
+        alpha: { start: 0.7, end: 0 },
+        tint: meta.timeOfDay === 'moon' ? 0xc8d4ff : 0xffe0a8,
+        frequency: 110,
+        emitZone: zone(1000, 380),
+      },
+      nile: {
+        // Dawn mist rising off the river.
+        lifespan: 5200,
+        speedX: { min: 6, max: 22 },
+        speedY: { min: -14, max: -4 },
+        scale: { min: 0.8, max: 1.8 },
+        alpha: { start: 0.4, end: 0 },
+        tint: 0xffe8f0,
+        blendMode: 'ADD',
+        frequency: 140,
+        emitZone: zone(1000, 380),
+      },
+      tomb: {
+        // Dust sifting down through the torchlight.
+        lifespan: 3400,
+        speedX: { min: -6, max: 6 },
+        speedY: { min: 10, max: 26 },
+        alpha: { start: 0.75, end: 0 },
+        tint: 0xffc890,
+        frequency: 120,
+        emitZone: zone(1000, 380),
+      },
       harbor: {
         // Salt spray and sea mist blown off the water.
         lifespan: 4200,
@@ -1206,6 +1290,9 @@ export class Alley extends Phaser.Scene {
       harbor: 'mote',
       corniche: 'spray',
       fort: 'rain',
+      temple: 'sand-grain',
+      nile: 'mote',
+      tomb: 'sand-grain',
     }[meta.theme];
     this.ambient = this.add
       .particles(0, 0, key, conf[meta.theme])
@@ -1334,12 +1421,19 @@ export class Alley extends Phaser.Scene {
     );
     this.physics.add.collider(this.hazards, this.terrain, (h) => {
       const s = h as Sprite;
-      if (['bone', 'clod', 'shell', 'bubble'].includes(s.getData('kind'))) {
+      const k = s.getData('kind');
+      if (['bone', 'clod', 'shell', 'bubble', 'sand', 'venom'].includes(k)) {
         this.burst(
           s.x,
           s.y,
-          s.getData('kind') === 'clod' ? 0x5a3a22 : 0xf3ead2,
-          4,
+          k === 'clod'
+            ? 0x5a3a22
+            : k === 'sand'
+              ? 0xe0b070
+              : k === 'venom'
+                ? 0x8ad040
+                : 0xf3ead2,
+          k === 'sand' ? 7 : 4,
         );
         s.destroy();
       }
@@ -1424,6 +1518,10 @@ export class Alley extends Phaser.Scene {
       jelly: [16, 18, 4, 4],
       brolly: [26, 18, 5, 4],
       ball: [18, 18, 2, 2],
+      scarab: [18, 12, 3, 6],
+      mummy: [18, 32, 7, 6],
+      cobra: [14, 24, 8, 8],
+      devil: [22, 40, 6, 6],
     };
     const [w, h, ox, oy] = sizes[type];
     const b = body(e);
@@ -1460,6 +1558,9 @@ export class Alley extends Phaser.Scene {
           plane: 44,
           thief: 56,
           ball: 78,
+          scarab: 58,
+          mummy: 30,
+          cobra: 0,
         } as Record<string, number>
       )[type] ?? 40
     );
@@ -1467,17 +1568,17 @@ export class Alley extends Phaser.Scene {
   get bossKind() {
     return this.L.meta.bossKind ?? 'fatwa';
   }
+  /** Hearts: the final boss has four phases of two. */
+  get bossMax() {
+    return this.L?.meta.bossKind === 'ram' ? 8 : 6;
+  }
   get bossName() {
-    return {
-      buffalo: 'أبو قرون',
-      crab: 'أبو مقص',
-      gull: 'ريّس النوة',
-      fatwa: 'الفتوة برعي',
-    }[this.bossKind];
+    return BOSS_NAMES[this.bossKind];
   }
   bossTex(pose: string) {
     return (
       {
+        ram: 'boss5-',
         buffalo: 'boss2-',
         crab: 'boss3-',
         gull: 'boss4-',
@@ -1498,6 +1599,9 @@ export class Alley extends Phaser.Scene {
     if (this.bossKind === 'gull') {
       body(boss).setSize(72, 40).setOffset(28, 39).setAllowGravity(false);
       boss.y = bottom - 60;
+    } else if (this.bossKind === 'ram') {
+      body(boss).setSize(116, 56).setOffset(26, 52);
+      boss.y = bottom - 52;
     } else if (crab) body(boss).setSize(92, 40).setOffset(16, 30);
     else if (buffalo) body(boss).setSize(76, 50).setOffset(12, 14);
     else body(boss).setSize(52, 54).setOffset(13, 10);
@@ -1525,7 +1629,9 @@ export class Alley extends Phaser.Scene {
                 : this.L.meta.theme === 'corniche' ||
                     this.L.meta.theme === 'fort'
                   ? 'جمبري مشوي من الكورنيش… بقيت أقوى!'
-                  : 'سندوتش فول… بقيت أقوى!',
+                  : isW5(this.L.meta.theme)
+                    ? 'عيش شمسي سخن من فرن الأقصر… بقيت أقوى!'
+                    : 'سندوتش فول… بقيت أقوى!',
       );
       this.burst(this.hero.x, this.hero.y, 0xffc879, 16);
     }
@@ -1977,6 +2083,8 @@ export class Alley extends Phaser.Scene {
     if (c.getData('shaking')) return;
     c.setData('shaking', true);
     const home = c.getData('home');
+    // Luxor's cracked slabs give way faster and take longer to come back.
+    const w5 = isW5(this.L.meta.theme);
     this.tweens.add({
       targets: c,
       x: home.x + 2,
@@ -1984,11 +2092,11 @@ export class Alley extends Phaser.Scene {
       repeat: 4,
       duration: 35,
     });
-    this.time.delayedCall(360, () => {
+    this.time.delayedCall(w5 ? 250 : 360, () => {
       if (!c.active) return;
       (c.body as SBody).enable = false;
       sound.fx('crumble');
-      this.burst(c.x, c.y, 0xa8743e, 8);
+      this.burst(c.x, c.y, w5 ? 0xd8aa6e : 0xa8743e, 8);
       this.tweens.add({
         targets: c,
         y: home.y + 220,
@@ -1997,7 +2105,7 @@ export class Alley extends Phaser.Scene {
         duration: 520,
         ease: 'Quad.easeIn',
       });
-      this.time.delayedCall(2600, () => {
+      this.time.delayedCall(w5 ? 3600 : 2600, () => {
         if (!c.active) return;
         c.setPosition(home.x, home.y).setAngle(0).setAlpha(0);
         (c.body as SBody).enable = true;
@@ -2010,7 +2118,9 @@ export class Alley extends Phaser.Scene {
   lightLantern(l: Lantern, announce = true) {
     if (l.lit) return;
     l.lit = true;
-    l.img.setTexture('lantern-on');
+    const burn = this.L.meta.torchBurn;
+    l.until = burn ? this.time.now + burn * 1000 : 0;
+    l.img.setTexture(this.skin('lantern-on'));
     l.glow.setAlpha(0.85).setScale(1.3);
     this.tweens.add({
       targets: l.glow,
@@ -2127,6 +2237,7 @@ export class Alley extends Phaser.Scene {
       b.prev.y + b.height,
       eb.top,
     );
+    if (luxorContact(this, e, fromTop)) return;
     if (alexContact(this, e, fromTop)) return;
     if (
       fromTop &&
@@ -2319,6 +2430,7 @@ export class Alley extends Phaser.Scene {
     } else {
       this.mode = 'win';
       screen('win', details);
+      ending(loadProgress(), LEVELS, this.score);
       try {
         const best = Number(localStorage.getItem('hawari-best') || 0);
         if (this.score > best)
@@ -2331,6 +2443,8 @@ export class Alley extends Phaser.Scene {
   /* ───────────────────────── Boss ───────────────────────── */
   bossPhase() {
     const hp = this.bossState.hp;
+    if (this.bossKind === 'ram')
+      return hp > 6 ? 1 : hp > 4 ? 2 : hp > 2 ? 3 : 4;
     return hp > 4 ? 1 : hp > 2 ? 2 : 3;
   }
   bossSet(state: string, ms: number) {
@@ -2350,6 +2464,10 @@ export class Alley extends Phaser.Scene {
     }
     if (this.bossKind === 'gull') {
       stormContact(this, fromAbove);
+      return;
+    }
+    if (this.bossKind === 'ram') {
+      ramContact(this, fromAbove);
       return;
     }
     if (this.bossKind === 'buffalo' && s.state !== 'dazed') {
@@ -2394,6 +2512,12 @@ export class Alley extends Phaser.Scene {
       this.burst(this.boss!.x, this.boss!.y - 20, 0xf5a34d, 4);
       return;
     }
+    if (this.bossKind === 'ram' && s.state !== 'bowed') {
+      // Chili just scorches the stone; only the bowed brow feels it.
+      this.burst(this.boss!.x, this.boss!.y - 20, 0xf5a34d, 4);
+      this.hint('ram-chili', 'الشطة مش بتأثر في الحجر… غير لما يوطّي راسه');
+      return;
+    }
     s.chili++;
     this.boss!.setTintFill(0xffa040);
     this.time.delayedCall(60, () => this.boss?.active && this.boss.clearTint());
@@ -2419,7 +2543,7 @@ export class Alley extends Phaser.Scene {
       () => this.mode === 'play' && this.physics.resume(),
     );
     this.popText(boss.x, boss.y - 40, '+٥٠٠', '#ffe08a');
-    bossBar(true, s.hp / 6, this.bossPhase(), this.bossName);
+    bossBar(true, s.hp / this.bossMax, this.bossPhase(), this.bossName);
     if (s.hp <= 0) {
       this.bossDefeat();
       return;
@@ -2428,7 +2552,8 @@ export class Alley extends Phaser.Scene {
       sound.bossPhase = this.bossPhase() - 1;
       sound.fx('roar');
       const buffalo = this.bossKind === 'buffalo';
-      if (this.bossKind === 'crab')
+      if (this.bossKind === 'ram') ramPhase(this, this.bossPhase());
+      else if (this.bossKind === 'crab')
         toast(
           this.bossPhase() === 2
             ? 'أبو مقص اتعصّب! بيتف فقاقيع وهو مغروز'
@@ -2474,6 +2599,8 @@ export class Alley extends Phaser.Scene {
       boss.setVelocity(boss.x < this.hero.x ? -150 : 150, -260);
     else if (this.bossKind === 'gull')
       boss.setVelocity(boss.x < this.hero.x ? -180 : 180, -200);
+    else if (this.bossKind === 'ram')
+      boss.setVelocity(boss.x < this.hero.x ? -120 : 120, -220);
     else boss.setVelocity(boss.x < this.hero.x ? -200 : 200, -380);
   }
   bossDefeat() {
@@ -2488,6 +2615,7 @@ export class Alley extends Phaser.Scene {
       for (const b of this.w4.bolts.splice(0)) b.img.destroy();
       this.w4.bossGustUntil = 0;
     }
+    if (this.w5) this.w5.darkTarget = 0;
     boss.setVelocity(0, -300);
     this.hazards.clear(true, true);
     this.burst(boss.x, boss.y, 0xffd474, 40);
@@ -2497,6 +2625,7 @@ export class Alley extends Phaser.Scene {
     bossBar(false);
     toast(
       {
+        ram: 'الكبش الحارس رجع حجر! باب الكرنك اتفتح… والمشوار خلص',
         buffalo: 'أبو قرون قعد في الطين! باب الجرن اتفتح',
         crab: 'أبو مقص رجع البحر! رأس البر بقت بتاعتك',
         gull: 'ريّس النوة طار مع الريح! النوة هديت والقلعة بقت بتاعتك',
@@ -2575,6 +2704,7 @@ export class Alley extends Phaser.Scene {
         sound.setTrack(this.L.meta.bossTrack ?? 4);
         sound.fx(
           {
+            ram: 'rumble',
             buffalo: 'moo',
             crab: 'clack',
             gull: 'screech',
@@ -2584,6 +2714,7 @@ export class Alley extends Phaser.Scene {
         bossBar(true, 1, 1, this.bossName);
         toast(
           {
+            ram: 'الكبش الحارس: «محدّش يعدّي الكرنك!» — لما يخبط الأرض ويوطّي راسه اتنطّ على الجوهرة',
             buffalo:
               'أبو قرون: «مين داس على جرني؟!» — خلّيه يخبط ويدوخ واتنطّ على ضهره',
             crab: 'أبو مقص: «مين داخل شطّي؟!» — استنى مقصّه يتغرز في الرملة واتنطّ عليه',
@@ -2608,6 +2739,11 @@ export class Alley extends Phaser.Scene {
     }
     if (this.bossKind === 'gull') {
       updateStormBoss(this, time);
+      this.updateHazards(time);
+      return;
+    }
+    if (this.bossKind === 'ram') {
+      updateRamBoss(this, time);
       this.updateHazards(time);
       return;
     }
@@ -2920,6 +3056,8 @@ export class Alley extends Phaser.Scene {
       else if (k === 'shell' || k === 'bubble') {
         h.angle += k === 'shell' ? 9 : 0;
         if (h.y > this.L.height + 40) h.destroy();
+      } else if (k === 'sand' || k === 'venom') {
+        if (h.y > this.L.height + 40) h.destroy();
       } else if (k === 'bone' || k === 'clod') {
         h.angle += k === 'bone' ? 12 : 4;
         if (h.y > this.L.height + 40) h.destroy();
@@ -3106,7 +3244,10 @@ export class Alley extends Phaser.Scene {
       sx = cam.scrollX,
       sy = cam.scrollY;
     rt.clear();
-    rt.fill(0x05061a, this.L.meta.dark);
+    rt.fill(
+      this.L.meta.theme === 'tomb' ? 0x080402 : 0x05061a,
+      Math.min(0.95, this.L.meta.dark + this.darkBoost),
+    );
     const light = (x: number, y: number, r: number, a = 1) => {
       if (
         x + r < sx ||
@@ -3121,7 +3262,11 @@ export class Alley extends Phaser.Scene {
         erase: true,
       });
     };
-    light(this.hero.x, this.hero.y, 120 + Math.sin(this.clock * 3) * 3);
+    light(
+      this.hero.x,
+      this.hero.y,
+      (this.L.meta.theme === 'tomb' ? 92 : 120) + Math.sin(this.clock * 3) * 3,
+    );
     const radius = (this.L.meta.lanternRadius ?? 4) * TILE;
     for (const l of this.lanterns)
       light(l.img.x, l.img.y, l.lit ? radius * 1.05 : 46, l.lit ? 1 : 0.7);
@@ -3133,7 +3278,7 @@ export class Alley extends Phaser.Scene {
     if (this.water)
       light((this.water.x0 + this.water.x1) / 2, this.water.y, 170, 0.7);
     if (this.boss?.active && this.bossState.active)
-      light(this.boss.x, this.boss.y, 170);
+      light(this.boss.x, this.boss.y, this.darkBoost > 0.2 ? 64 : 170);
     for (const s of this.shots.getChildren() as Sprite[])
       light(s.x, s.y, 50, 0.9);
     for (const m of this.moverList) light(m.img.x + 24, m.img.y, 60, 0.6);
@@ -3211,7 +3356,7 @@ export class Alley extends Phaser.Scene {
       k.surface.tilePositionX = -this.clock * 30 * k.dir;
     for (const m of this.moverList) {
       const b = body(m.img);
-      if (m.lamp || m.boat || m.tram) continue;
+      if (m.lamp || m.boat || m.tram || m.balloon) continue;
       if (m.saqia) {
         // Follow the wheel: the rim's own velocity plus a gentle pull back
         // onto the rim, so buckets glide instead of jittering.
@@ -3252,6 +3397,7 @@ export class Alley extends Phaser.Scene {
     }
     updateDamiettaWorld(this, time, dt);
     updateAlexWorld(this, time, dt);
+    updateLuxorWorld(this, time, dt);
     if (this.water) {
       this.water.top.tilePositionX = this.clock * 20;
       this.water.top.y = this.water.y;
@@ -3375,6 +3521,8 @@ export class Alley extends Phaser.Scene {
     }
     windPush += beltPush(under, grounded);
     const alex = alexMove(this, grounded, under, jump, dt);
+    const sand = luxorMove(this, grounded, under);
+    windPush += sand.push;
     if (alex.glide) windPush *= GLIDE.wind;
     if (beltPush(under, grounded))
       this.hint('belt', 'السير شغّال! بيزقّك… امشي عكسه أو استغلّه');
@@ -3419,13 +3567,17 @@ export class Alley extends Phaser.Scene {
         b.velocity.x,
         dir * speed + windPush,
         (dir
-          ? alex.wet
-            ? WET.accel
-            : 1000
+          ? sand.sand
+            ? SAND.accel
+            : alex.wet
+              ? WET.accel
+              : 1000
           : grounded
-            ? alex.wet
-              ? WET.decel
-              : 1400
+            ? sand.sand
+              ? SAND.decel
+              : alex.wet
+                ? WET.decel
+                : 1400
             : 450) * dt,
       );
       const skid =
@@ -3671,6 +3823,7 @@ export class Alley extends Phaser.Scene {
     else if (b.blocked.left || b.blocked.right || b.blocked.down) release(0);
   }
   updateEnemy(e: Sprite, time: number) {
+    if (updateLuxorEnemy(this, e, time)) return;
     if (updateAlexEnemy(this, e, time)) return;
     const eb = body(e),
       kind = e.getData('kind') as string,

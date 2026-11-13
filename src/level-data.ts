@@ -42,6 +42,22 @@
 //   (  a beach-umbrella stand: grab an umbrella to glide (hold jump)
 //   enemies: 1 storm gull  2 jellyfish (sea)  3 umbrella blown loose
 //            4 beach ball
+// World 5 (الأقصر)
+//   ,  a recumbent ram-headed sphinx statue (solid; stand on its back)
+//   /  a lotus column (solid; broken ones make stepping stones)
+//   ; / _  sand slide pouring right / left (solid; it carries you hard)
+//   z  hot-air balloon basket at the bottom of its climb (2 wide; it rises
+//      and sinks on its own, and sinks while you stand in it)
+//   0  lever: pull it and the next rotating stone door to its right swings
+//      open for a few seconds
+//   ]  rotating stone door (solid until its lever is pulled)
+//   [  crushing pillar hanging from the ceiling (slams to the floor on a beat)
+//   9  crack in the ceiling: sand pours down when you pass beneath
+//   X  (here) a cracked sandstone floor slab that collapses under you
+//   L / ~  (here) torches that burn out after a while, and the ghost
+//      ledges their light holds up
+//   enemies: 5 scarab  6 mummy (reassembles)  7 cobra (spits)
+//            8 sand-dust devil
 export const TILE = 24;
 export type Theme =
   | 'night'
@@ -52,7 +68,10 @@ export type Theme =
   | 'workshop'
   | 'harbor'
   | 'corniche'
-  | 'fort';
+  | 'fort'
+  | 'temple'
+  | 'nile'
+  | 'tomb';
 /** One region of the journey across Egypt. */
 export interface WorldMeta {
   id: string;
@@ -110,9 +129,17 @@ export const WORLDS: WorldMeta[] = [
     x: 0.64,
     y: 0.74,
     side: 'left',
-    playable: false,
+    playable: true,
   },
 ];
+/** Each world's boss, by kind (map, HUD bar and the ending recap). */
+export const BOSS_NAMES: Record<NonNullable<LevelMeta['bossKind']>, string> = {
+  fatwa: 'الفتوة برعي',
+  buffalo: 'أبو قرون',
+  crab: 'أبو مقص',
+  gull: 'ريّس النوة',
+  ram: 'الكبش الحارس',
+};
 export interface LevelMeta {
   /** Index into WORLDS. */
   world: number;
@@ -137,8 +164,12 @@ export interface LevelMeta {
   };
   boss?: boolean;
   /** Which boss: the Cairo tough, the countryside buffalo, the giant crab,
-   * the Alexandrian storm gull. */
-  bossKind?: 'fatwa' | 'buffalo' | 'crab' | 'gull';
+   * the Alexandrian storm gull, the ram guardian of Karnak. */
+  bossKind?: 'fatwa' | 'buffalo' | 'crab' | 'gull' | 'ram';
+  /** World 5: torches burn out after this many seconds. */
+  torchBurn?: number;
+  /** World 5: the Nile current (px/s, negative = flowing left). */
+  current?: number;
   /** Crashing waves: every `period` s, after `warn` s of foam (World 4). */
   waves?: { period: number; warn: number; crash: number; roll?: number };
   /** Gust strength (px/s push) and rhythm (ms on / off). */
@@ -1318,6 +1349,354 @@ function qaitbay() {
   return g.rows();
 }
 
+/* ───────────── World 5 · الأقصر (ground row 12) ───────────── */
+const G5 = 12;
+/** A ram-headed sphinx on its plinth: steps up at both ends. */
+function sphinx(g: Grid, x: number) {
+  g.rect(x, 10, x + 6, 11);
+  g.rect(x + 1, 8, x + 4, 9, ',');
+}
+/** A sand slide: stairs of pouring sand, `steps` rows down from `row`,
+ * descending right (';') or left ('_'), filled solid beneath. */
+function slide(g: Grid, x: number, row: number, steps: number, ch: string) {
+  for (let i = 0; i < steps; i++) {
+    const r = row + i,
+      cols =
+        ch === ';' ? [x + 2 * i, x + 2 * i + 1] : [x - 2 * i, x - 2 * i - 1];
+    for (const c of cols) {
+      g.set(c, r, ch);
+      g.rect(c, r + 1, c, G5 - 1);
+    }
+  }
+}
+/** A rotating stone door under a lintel (cols x-2..x+2), its lever `back`
+ * columns before it. */
+function gateway(g: Grid, x: number, back: number, top = 2) {
+  g.rect(x - 2, top, x + 2, top + 2);
+  g.rect(x, top + 3, x, G5 - 1, ']');
+  g.set(x - back, G5 - 1, '0');
+}
+
+/* 17 ─ طريق الكباش: the sphinx avenue in the afternoon sun. */
+function ramAvenue() {
+  const g = new Grid(260, 15);
+  g.ground(0, 34, G5);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(10, 8, 'B?B');
+  g.set(15, 11, '5');
+  sphinx(g, 19);
+  g.set(21, 7, '7');
+  g.text(26, 9, 'o o');
+  g.set(30, 11, '5');
+  // Lesson: cracked slabs over a pit collapse under you — keep running.
+  g.run(35, 39, G5, 'X');
+  g.text(35, 10, 'o o o');
+  g.ground(40, 76, G5);
+  g.set(44, 10, '8');
+  g.text(47, 8, 'BFB');
+  sphinx(g, 52);
+  g.set(54, 7, '5');
+  g.set(61, 11, '7');
+  // A dune and its sand slide.
+  g.rect(64, 9, 67, 11);
+  slide(g, 68, 10, 2, ';');
+  g.text(64, 7, 'oooo');
+  g.set(73, 11, '5');
+  g.ground(81, 120, G5);
+  g.set(83, 11, 'c');
+  g.text(86, 8, 'B?B');
+  g.set(90, 8, 'i');
+  g.set(93, 11, '7');
+  sphinx(g, 96);
+  g.set(99, 5, '8');
+  g.set(105, 11, '5');
+  g.run(108, 113, 9, '=');
+  g.text(108, 7, 'oooooo');
+  g.set(116, 11, '5');
+  // The high dune: stairs up, then a long slide down into the devil.
+  g.ground(119, 150, G5);
+  g.rect(119, 10, 120, 11);
+  g.rect(121, 8, 125, 11);
+  slide(g, 126, 9, 3, ';');
+  g.text(121, 6, 'ooooo');
+  g.set(134, 10, '8');
+  g.set(140, 11, '5');
+  g.run(151, 155, G5, 'X');
+  g.text(151, 9, 'o o o');
+  g.ground(156, 215, G5);
+  g.set(158, 11, '7');
+  g.text(160, 8, 'BCB');
+  sphinx(g, 165);
+  g.set(167, 7, '7');
+  g.set(175, 11, '5');
+  // Secret: up the stepped pylon of a gateway to the golden fanoos.
+  g.rect(178, 10, 179, 11);
+  g.rect(180, 7, 181, 11);
+  g.rect(182, 4, 186, 11);
+  g.text(182, 3, 'ooo');
+  g.set(185, 2, 'G');
+  g.set(190, 10, '8');
+  g.set(194, 11, '5');
+  // Sand pouring against you along the ground.
+  g.run(198, 205, G5, '_');
+  g.text(199, 9, 'o o o o');
+  g.set(207, 11, '7');
+  g.set(210, 9, '8');
+  g.ground(220, 259, G5);
+  g.text(223, 8, 'B?B');
+  g.set(228, 11, '5');
+  g.set(232, 10, '8');
+  g.set(236, 11, '7');
+  g.set(240, 11, '5');
+  sphinx(g, 243);
+  g.set(252, 11, '5');
+  g.set(255, 11, 'E');
+  return g.rows();
+}
+
+/* 18 ─ النيل: feluccas on the current and hot-air balloons at dawn. */
+function nileDawn() {
+  const g = new Grid(250, 15);
+  g.ground(0, 24, G5);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(9, 8, 'B?B');
+  g.set(14, 11, '5');
+  g.set(20, 11, '7');
+  // The Nile: swimming fights the current; ride the felucca.
+  g.sea(25, 52, G5);
+  g.set(26, G5, 'U');
+  g.set(45, G5, 'I');
+  g.text(28, 9, 'o o o o o o');
+  g.set(30, 10, '8');
+  g.set(36, 9, '8');
+  g.ground(53, 80, G5);
+  g.set(55, 11, '7');
+  // A balloon lifts you to the palm-top ledge.
+  g.set(58, 11, 'z');
+  g.run(61, 66, 5, '=');
+  g.text(61, 4, 'ooooo');
+  g.set(65, 4, '7');
+  g.set(70, 11, '5');
+  g.set(76, 11, '5');
+  g.sea(81, 110, G5);
+  g.set(82, G5, 'U');
+  g.set(100, G5, 'I');
+  // From the felucca onto a balloon over the river; the fanoos is high up.
+  g.set(92, 9, 'z');
+  g.run(96, 99, 3, '=');
+  g.text(96, 2, 'oo');
+  g.set(98, 1, 'G');
+  g.set(95, 6, '8');
+  g.set(104, 8, '8');
+  g.ground(111, 140, G5);
+  g.set(113, 11, 'c');
+  g.set(115, 11, '5');
+  g.text(116, 8, 'BFB');
+  g.set(121, 11, '7');
+  g.set(125, 11, '5');
+  // Balloon up the cliff.
+  g.set(129, 11, 'z');
+  g.rect(132, 6, 140, 11);
+  g.text(133, 4, 'o o o');
+  g.set(135, 5, '5');
+  g.set(138, 5, '7');
+  // The widest reach: two feluccas and a balloon in the middle.
+  g.sea(141, 175, G5);
+  g.set(142, G5, 'U');
+  g.set(152, G5, 'I');
+  g.set(156, G5, 'U');
+  g.set(170, G5, 'I');
+  g.set(165, 9, 'z');
+  g.text(158, 9, 'o o o');
+  g.set(150, 8, '8');
+  g.set(168, 6, '8');
+  g.ground(176, 191, G5);
+  g.text(179, 8, 'B?B');
+  g.set(184, 11, '7');
+  g.set(188, 11, '5');
+  g.run(192, 195, G5, 'X');
+  g.text(192, 10, 'oooo');
+  g.ground(196, 215, G5);
+  g.set(200, 11, '5');
+  g.set(204, 10, '8');
+  g.set(207, 11, '5');
+  g.text(210, 8, 'BCB');
+  g.sea(216, 236, G5);
+  g.set(217, G5, 'U');
+  g.set(230, G5, 'I');
+  g.set(225, 9, '8');
+  g.ground(237, 249, G5);
+  g.set(240, 11, '5');
+  g.set(245, 11, 'E');
+  return g.rows();
+}
+
+/* 19 ─ وادي الملوك: inside the tomb — torches burn out, floors give way,
+ * pillars crush and the mummies keep getting up. */
+function kingsValley() {
+  const g = new Grid(240, 15);
+  g.rect(0, 0, 239, 1);
+  g.ground(0, 30, G5);
+  g.set(3, 11, 'P');
+  g.set(6, 11, 'L');
+  g.text(8, 11, 'o o o');
+  g.text(10, 8, 'B?B');
+  g.set(16, 11, '6');
+  g.set(22, 2, '[');
+  g.set(26, 11, '5');
+  // Lesson: the floor gives way.
+  g.run(31, 35, G5, 'X');
+  g.text(31, 10, 'o o o');
+  g.ground(36, 70, G5);
+  g.set(38, 11, 'L');
+  g.set(42, 11, '5');
+  g.set(46, 2, '9');
+  g.set(48, 11, '5');
+  g.set(50, 2, '[');
+  g.set(54, 11, '6');
+  // Pull the lever and race the rotating door before it swings shut.
+  gateway(g, 64, 6, 1);
+  g.set(61, 11, '5');
+  g.text(66, 11, 'o o');
+  // The torch relay over the dark shaft.
+  g.set(69, 11, 'L');
+  g.run(71, 74, 11, '~');
+  g.run(76, 77, 10, '=');
+  g.set(77, 9, 'L');
+  g.run(79, 81, 10, '~');
+  g.text(72, 9, 'o o');
+  g.text(79, 8, 'o o');
+  g.ground(83, 124, G5);
+  g.set(85, 11, 'c');
+  g.text(88, 8, 'BFB');
+  g.set(93, 11, '6');
+  g.set(97, 2, '[');
+  g.set(100, 11, '6');
+  g.set(101, 2, '[');
+  g.set(105, 11, '5');
+  g.set(109, 2, '9');
+  gateway(g, 118, 6, 1);
+  g.set(115, 11, '5');
+  g.set(121, 11, '7');
+  g.run(125, 130, G5, 'X');
+  g.text(125, 10, 'o o o');
+  g.ground(131, 170, G5);
+  g.set(134, 11, '6');
+  g.set(140, 11, '7');
+  // Secret: a torch lights a ghost stair to a hidden burial niche.
+  g.set(144, 11, 'L');
+  g.run(146, 148, 9, '~');
+  g.set(148, 8, 'L');
+  g.run(150, 152, 6, '~');
+  g.text(150, 5, 'oo');
+  g.set(152, 4, 'G');
+  g.set(156, 11, '5');
+  g.set(160, 2, '9');
+  g.set(164, 2, '[');
+  g.set(167, 11, '7');
+  g.ground(175, 239, G5);
+  g.set(178, 11, '6');
+  gateway(g, 188, 6, 1);
+  g.set(186, 11, '5');
+  g.set(192, 2, '[');
+  g.set(195, 2, '[');
+  g.set(196, 11, '6');
+  g.set(199, 11, '7');
+  g.text(201, 8, 'B?B');
+  g.set(204, 11, '6');
+  g.set(209, 11, '5');
+  g.set(213, 2, '9');
+  g.set(216, 11, '7');
+  g.set(220, 11, '6');
+  g.set(226, 11, '5');
+  g.set(230, 11, 'L');
+  g.set(235, 11, 'E');
+  return g.rows();
+}
+
+/* 20 ─ معبد الكرنك: moonlight in Karnak — lotus columns, rotating doors,
+ * crushing pillars, and the ram guardian. */
+function karnak() {
+  const g = new Grid(220, 15);
+  g.ground(0, 24, G5);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(9, 8, 'B?B');
+  g.set(14, 11, '5');
+  g.set(19, 10, '8');
+  // Broken lotus columns over a sand pit.
+  g.rect(27, 9, 28, 14, '/');
+  g.rect(31, 8, 32, 14, '/');
+  g.rect(35, 10, 36, 14, '/');
+  g.rect(39, 8, 40, 14, '/');
+  g.rect(43, 9, 44, 14, '/');
+  g.text(27, 7, 'oo  oo  oo  oo  oo');
+  g.set(31, 7, '7');
+  g.set(39, 7, '7');
+  g.set(46, 9, '8');
+  g.ground(45, 90, G5);
+  g.set(49, 11, '5');
+  gateway(g, 60, 8);
+  g.set(58, 5, '9');
+  g.set(62, 5, '9');
+  g.text(63, 11, 'o o');
+  // The hypostyle hall: a roof and crushing pillars on a beat.
+  g.rect(66, 0, 88, 2);
+  g.set(68, 11, '5');
+  g.set(70, 3, '[');
+  g.set(72, 11, '6');
+  g.set(74, 3, '[');
+  g.set(76, 3, '9');
+  g.set(78, 3, '[');
+  g.set(80, 11, '5');
+  g.set(82, 3, '[');
+  g.set(86, 3, '9');
+  g.set(92, 11, 'c');
+  g.ground(91, 109, G5);
+  g.text(95, 8, 'BFB');
+  g.rect(100, 9, 103, 11);
+  slide(g, 104, 10, 2, ';');
+  g.set(99, 11, '7');
+  g.set(108, 10, '8');
+  g.ground(114, 165, G5);
+  g.set(117, 11, '7');
+  // Secret: lotus columns up to the fanoos on the tallest capital.
+  g.rect(120, 10, 121, 11, '/');
+  g.rect(123, 7, 124, 11, '/');
+  g.rect(126, 5, 127, 11, '/');
+  g.text(126, 4, 'oo');
+  g.set(127, 2, 'G');
+  g.set(125, 3, '8');
+  g.set(131, 11, '5');
+  g.set(135, 11, '6');
+  gateway(g, 146, 8);
+  g.set(142, 11, '7');
+  g.set(144, 5, '9');
+  g.set(148, 5, '9');
+  g.set(152, 11, '6');
+  g.set(156, 11, '5');
+  g.set(160, 10, '8');
+  g.set(162, 11, '5');
+  // The boss court: torches for when the moon goes dark, crushing
+  // pillars from the architrave, ledges to escape the shockwaves.
+  g.ground(166, 219, G5);
+  g.set(170, 11, '6');
+  g.set(175, 11, '7');
+  g.rect(184, 0, 218, 1);
+  g.set(188, 11, 'L');
+  g.set(212, 11, 'L');
+  g.set(193, 2, '[');
+  g.set(207, 2, '[');
+  g.run(186, 189, 8, '-');
+  g.run(209, 212, 8, '-');
+  g.rect(219, 0, 219, 11);
+  g.set(200, 11, 'Z');
+  g.set(215, 11, 'E');
+  return g.rows();
+}
+
 export const LEVELS: LevelMeta[] = [
   {
     world: 0,
@@ -1568,5 +1947,70 @@ export const LEVELS: LevelMeta[] = [
     mechanic: 'النوة: مطر وريح متقلّبة وموج + الزعيم',
     enemy: 'ريّس النوة',
     rows: qaitbay(),
+  },
+  {
+    world: 4,
+    id: 'kabbash',
+    track: 20,
+    name: 'طريق الكباش',
+    subtitle: 'الكباش الحجر صاحية… والرمل بيزحلق وزوابع التراب جاية',
+    theme: 'temple',
+    timeOfDay: 'afternoon',
+    time: 240,
+    dark: 0,
+    mechanic: 'رمل بيزحلق وبلاط بيقع وسفنكسات تطلع على ضهرها',
+    enemy: 'الجعران + الكوبرا + زوابع التراب',
+    rows: ramAvenue(),
+  },
+  {
+    world: 4,
+    id: 'nile',
+    track: 21,
+    name: 'النيل',
+    subtitle: 'الفجر على النيل… اركب الفلوكة والبالونة قبل ما التيار يشدّك',
+    theme: 'nile',
+    timeOfDay: 'nile-dawn',
+    time: 230,
+    dark: 0,
+    current: -80,
+    mechanic: 'فلايك على النيل وبالونات بتطلع وتنزل وتيار شادد',
+    enemy: 'زوابع التراب فوق المية + الجعران',
+    rows: nileDawn(),
+  },
+  {
+    world: 4,
+    id: 'valley',
+    track: 22,
+    name: 'وادي الملوك',
+    subtitle: 'جوه المقبرة… المشاعل بتطفي والأرض بتقع والمومياوات بتقوم تاني',
+    theme: 'tomb',
+    timeOfDay: 'tomb',
+    time: 225,
+    dark: 0.93,
+    lanternRadius: 5,
+    torchBurn: 12,
+    mechanic: 'مشاعل بتطفي وأرض بتقع وأعمدة بتهرس وأبواب بروافع',
+    enemy: 'المومياوات اللي بتتلم تاني + الرمل النازل',
+    rows: kingsValley(),
+  },
+  {
+    world: 4,
+    id: 'karnak',
+    track: 23,
+    bossTrack: 24,
+    bossKind: 'ram',
+    name: 'معبد الكرنك',
+    subtitle: 'تحت القمر في الكرنك… والكبش الحارس صحي',
+    theme: 'temple',
+    timeOfDay: 'moon',
+    time: 230,
+    dark: 0.3,
+    lanternRadius: 5,
+    torchBurn: 16,
+    boss: true,
+    mechanic:
+      'أعمدة اللوتس والأبواب الدوّارة والأعمدة اللي بتهرس + الزعيم الأخير',
+    enemy: 'الكبش الحارس',
+    rows: karnak(),
   },
 ];

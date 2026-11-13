@@ -32,6 +32,20 @@ import {
   wetTile,
   wireCell,
 } from './world4-art';
+import {
+  W5_PALETTES,
+  isW5,
+  lotusCell,
+  nileBed,
+  slideCell,
+  sphinxArt,
+  w5Cap,
+  w5Ledge,
+  w5Near,
+  w5Slab,
+  w5Stone,
+  w5Window,
+} from './world5-art';
 import { disc, grad, hash, poly, rect, tex, type Palette } from './art-kit';
 export { disc, hash, poly, rect, tex, type Palette };
 
@@ -142,6 +156,7 @@ export const PALETTES: Record<Theme, Palette> = {
   },
   ...W3_PALETTES,
   ...W4_PALETTES,
+  ...W5_PALETTES,
 };
 
 /* ─────────────────────── Tile painting ─────────────────────── */
@@ -156,6 +171,7 @@ function stoneFill(
 ) {
   if (isW3(theme)) return w3Stone(c, x, y, col, row, pal, theme);
   if (isW4(theme)) return w4Stone(c, x, y, col, row, pal, theme);
+  if (isW5(theme)) return w5Stone(c, x, y, col, row, pal, theme);
   const h = hash(col, row),
     base = pal.stone[Math.floor(h * pal.stone.length)];
   rect(c, x, y, T, T, base);
@@ -218,6 +234,7 @@ function capTop(
 ) {
   if (isW3(theme)) return w3Cap(c, x, y, col, row, pal, theme);
   if (isW4(theme)) return w4Cap(c, x, y, col, row, pal, theme);
+  if (isW5(theme)) return w5Cap(c, x, y, col, row, pal, theme);
   const h = hash(col, row, 7);
   if (theme === 'farm') {
     // Field edge: dark soil under a grass lip with wheat and clover tufts.
@@ -281,6 +298,7 @@ function facadeWindow(
 ) {
   if (isW3(theme)) return w3Window(c, x, y, col, row, pal, theme);
   if (isW4(theme)) return w4Window(c, x, y, col, row, pal, theme);
+  if (isW5(theme)) return w5Window(c, x, y, col, row, pal, theme);
   const h = hash(col, row, 3),
     lit = theme === 'night' ? h > 0.45 : theme === 'sewer' ? h > 0.8 : false;
   if (theme === 'farm') {
@@ -334,6 +352,7 @@ function slab(
 ) {
   if (isW3(theme)) return w3Slab(c, x, y, col, row, pal, theme);
   if (isW4(theme)) return w4Slab(c, x, y, col, row, pal, theme);
+  if (isW5(theme)) return w5Slab(c, x, y, col, row, pal, theme);
   const h = hash(col, row, 11);
   if (theme === 'farm') {
     // A split palm trunk laid flat: ringed bark.
@@ -376,6 +395,7 @@ function ledge(
 ) {
   if (isW3(theme)) return w3Ledge(c, x, y, col, row, pal, theme, end);
   if (isW4(theme)) return w4Ledge(c, x, y, col, row, pal, theme, end);
+  if (isW5(theme)) return w5Ledge(c, x, y, col, row, pal, theme, end);
   const h = hash(col, row, 5);
   if (theme === 'farm') {
     // Palm-rib (jareed) shelf lashed with rope, a few drying dates.
@@ -568,8 +588,36 @@ export function paintLevel(
               L.at(col, row - 1) !== ':',
               L.at(col, row + 1) !== ':',
             );
+          else if (
+            (ch === 's' || ch === 'U' || ch === 'I' || ch === '2') &&
+            theme === 'nile'
+          )
+            nileBed(c, x, y, col, row, L.at(col, row + 1));
           else if (ch === 's' || ch === 'U' || ch === 'I' || ch === '2')
             seaBed(c, x, y, col, row, L.at(col, row + 1));
+          else if (ch === ';' || ch === '_')
+            slideCell(
+              c,
+              x,
+              y,
+              col,
+              row,
+              ch === ';' ? 1 : -1,
+              !solid(col, row - 1),
+              pal,
+              theme,
+            );
+          else if (ch === '/')
+            lotusCell(
+              c,
+              x,
+              y,
+              col,
+              row,
+              L.at(col, row - 1) !== '/',
+              L.at(col - 1, row) !== '/',
+              L.meta.timeOfDay === 'moon',
+            );
           else if (ch === '%')
             netCell(c, x, y, col, row, L.at(col, row - 1) !== '%');
           else if (ch === 'w' || ch === 'x')
@@ -586,6 +634,31 @@ export function paintLevel(
           }
         }
       if (!overlay) {
+        // World 5: ram sphinxes over each block of ',' cells.
+        for (let row = 0; row < L.rows; row++)
+          for (let col = 0; col < L.cols; col++) {
+            if (
+              L.at(col, row) !== ',' ||
+              L.at(col - 1, row) === ',' ||
+              L.at(col, row - 1) === ','
+            )
+              continue;
+            let w = 1,
+              h = 1;
+            while (L.at(col + w, row) === ',') w++;
+            while (L.at(col, row + h) === ',') h++;
+            const px = col * T - x0;
+            if (px + w * T < -40 || px > CW + 40) continue;
+            sphinxArt(
+              c,
+              px,
+              row * T,
+              w * T,
+              h * T,
+              Math.floor(col / 7) % 2 ? 1 : -1,
+              L.meta.timeOfDay === 'moon',
+            );
+          }
         // Clotheslines with laundry (decor drawn into the terrain).
         for (const { a, b } of L.lines) {
           const ax = a.x - x0,
@@ -1756,7 +1829,9 @@ export function makeParallax(scene: Phaser.Scene, theme: Theme) {
             : theme === 'farm'
               ? '#1e2a14'
               : '#050909';
-    if (isW4(theme)) {
+    if (isW5(theme)) {
+      w5Near(c, theme, W);
+    } else if (isW4(theme)) {
       w4Near(c, theme, W);
     } else if (isW3(theme)) {
       w3Near(c, theme, W);

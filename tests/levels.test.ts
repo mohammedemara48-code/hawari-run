@@ -5,8 +5,8 @@ import { heroBody } from '../src/hero-state';
 import { fitsThrough, onSurface, reach, standable } from './level-graph';
 
 describe('authored levels', () => {
-  it('has four playable worlds of four distinct levels each', () => {
-    expect(LEVELS.length).toBe(16);
+  it('has five playable worlds of four distinct levels each', () => {
+    expect(LEVELS.length).toBe(20);
     const cairo = LEVELS.filter((l) => l.world === 0),
       rif = LEVELS.filter((l) => l.world === 1);
     expect(cairo.length).toBe(4);
@@ -20,17 +20,20 @@ describe('authored levels', () => {
     expect(alex.length).toBe(4);
     expect(new Set(alex.map((l) => l.timeOfDay)).size).toBe(4);
     expect(alex.some((l) => l.storm && l.timeOfDay === 'storm')).toBe(true);
-    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(16);
-    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(16);
+    const luxor = LEVELS.filter((l) => l.world === 4);
+    expect(luxor.length).toBe(4);
+    expect(new Set(luxor.map((l) => l.timeOfDay)).size).toBe(4);
+    expect(luxor.some((l) => l.timeOfDay === 'tomb' && l.dark)).toBe(true);
+    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(20);
+    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(20);
     // Levels are grouped by world in order, and each world ends with a boss.
     expect(LEVELS.map((l) => l.world)).toEqual([
-      0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,
+      0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4,
     ]);
-    expect(
-      LEVELS[3].boss && LEVELS[7].boss && LEVELS[11].boss && LEVELS[15].boss,
-    ).toBe(true);
-    expect(LEVELS.filter((l) => l.boss).length).toBe(4);
-    expect(WORLDS.filter((w) => w.playable).length).toBe(4);
+    expect([3, 7, 11, 15, 19].every((i) => LEVELS[i].boss)).toBe(true);
+    expect(LEVELS.filter((l) => l.boss).length).toBe(5);
+    expect(LEVELS[19].bossKind).toBe('ram');
+    expect(WORLDS.filter((w) => w.playable).length).toBe(5);
     expect(WORLDS.map((w) => w.name)).toEqual([
       'القاهرة',
       'الأرياف',
@@ -74,6 +77,14 @@ describe('authored levels', () => {
           expect(
             onSurface(S, seen, l.col, l.row, [1, 1]),
             `lantern ${l.col},${l.row}`,
+          ).toBe(true);
+      });
+      it('every stone door has a reachable lever before it', () => {
+        for (const d of L.doors) expect(d.lever, `door ${d.col}`).toBeTruthy();
+        for (const l of L.levers)
+          expect(
+            onSurface(S, seen, l.col, l.row, [1, 1]),
+            `lever ${l.col},${l.row}`,
           ).toBe(true);
       });
       it('every box can be bumped from below (both forms)', () => {
@@ -172,8 +183,28 @@ describe('authored levels', () => {
     });
   });
   it('each level has its own signature pieces', () => {
-    const [a, b, c, d, e, f, g, h, i9, j10, k11, l12, m13, n14, o15, p16] =
-      LEVELS.map((_, i) => parseLevel(i));
+    const [
+      a,
+      b,
+      c,
+      d,
+      e,
+      f,
+      g,
+      h,
+      i9,
+      j10,
+      k11,
+      l12,
+      m13,
+      n14,
+      o15,
+      p16,
+      q17,
+      r18,
+      s19,
+      t20,
+    ] = LEVELS.map((_, i) => parseLevel(i));
     expect(a.lanterns.length).toBeGreaterThanOrEqual(5);
     expect(a.ghosts.length).toBeGreaterThan(10);
     expect(b.awnings.length).toBeGreaterThan(6);
@@ -252,7 +283,7 @@ describe('authored levels', () => {
       ls.reduce((n, l) => n + l.cols, 0);
     expect(perCol([i9, j10, k11, l12])).toBeLessThan(perCol([e, f, g, h]));
     // Boxes never float over the sea or nets.
-    for (const l of [k11, l12, o15, p16])
+    for (const l of [k11, l12, o15, p16, r18])
       for (const bx of l.boxes) expect(l.at(bx.col, bx.row + 4)).not.toBe('s');
     // World 4: breaking waves, wet tiles, the tram run with wires and low
     // bridges, umbrella stands, a gale over Stanley, the storm and the boss.
@@ -300,6 +331,42 @@ describe('authored levels', () => {
     );
     expect(perCol([m13, n14, o15, p16])).toBeLessThan(
       perCol([i9, j10, k11, l12]),
+    );
+    // World 5: the sphinx avenue with sand slides, the Nile on feluccas and
+    // balloons against the current, the dark tomb (collapsing slabs, burning
+    // torches, doors, pillars, falling sand) and Karnak with everything.
+    const count = (l: typeof e, ch: string) =>
+      l.meta.rows.join('').split(ch).length - 1;
+    expect(count(q17, ',')).toBeGreaterThanOrEqual(30);
+    expect(count(q17, ';') + count(q17, '_')).toBeGreaterThanOrEqual(12);
+    expect(q17.crates.length).toBeGreaterThanOrEqual(6);
+    expect(r18.balloons.length).toBeGreaterThanOrEqual(4);
+    expect(r18.boats.length).toBeGreaterThanOrEqual(4);
+    expect(r18.meta.current).toBeLessThan(0);
+    expect(s19.meta.dark).toBeGreaterThan(0.9);
+    expect(s19.meta.torchBurn).toBeGreaterThan(0);
+    expect(s19.crates.length).toBeGreaterThanOrEqual(8);
+    expect(s19.lanterns.length).toBeGreaterThanOrEqual(5);
+    expect(s19.ghosts.length).toBeGreaterThan(10);
+    expect(s19.doors.length).toBeGreaterThanOrEqual(2);
+    expect(s19.pillars.length).toBeGreaterThanOrEqual(4);
+    expect(s19.sands.length).toBeGreaterThanOrEqual(3);
+    expect(t20.boss && t20.meta.bossKind).toBe('ram');
+    expect(count(t20, '/')).toBeGreaterThanOrEqual(40);
+    expect(
+      t20.doors.length && t20.pillars.length && t20.sands.length,
+    ).toBeTruthy();
+    for (const k of ['scarab', 'mummy', 'cobra', 'devil'])
+      expect(
+        [q17, r18, s19, t20].some((l) => kinds(l).has(k)),
+        k,
+      ).toBe(true);
+    // The peak of the game: denser and less time per column than Alexandria.
+    expect(density([q17, r18, s19, t20])).toBeGreaterThan(
+      density([m13, n14, o15, p16]),
+    );
+    expect(perCol([q17, r18, s19, t20])).toBeLessThan(
+      perCol([m13, n14, o15, p16]),
     );
   });
 });

@@ -16,6 +16,10 @@ export const SOLID = new Set([
   '}',
   '$',
   '!',
+  ',',
+  '/',
+  ';',
+  '_',
 ]);
 export const LEDGE = new Set(['-', '~', 'A']);
 export const BOXES: Record<string, string> = {
@@ -45,6 +49,10 @@ export const ENEMY: Record<string, string> = {
   '2': 'jelly',
   '3': 'brolly',
   '4': 'ball',
+  '5': 'scarab',
+  '6': 'mummy',
+  '7': 'cobra',
+  '8': 'devil',
 };
 /** Flying enemies ignore gravity and floors (jellyfish swim). */
 export const FLYING = new Set([
@@ -55,9 +63,12 @@ export const FLYING = new Set([
   'skua',
   'jelly',
   'brolly',
+  'devil',
 ]);
 /** Conveyor belts: push direction per cell. */
 export const BELT: Record<string, number> = { '}': 1, '{': -1 };
+/** World 5 sand slides: push direction per cell. */
+export const SLIDE: Record<string, number> = { ';': 1, _: -1 };
 /** Canal water: current direction per cell. */
 export const WATER: Record<string, number> = { w: 1, x: -1 };
 export interface Pt {
@@ -133,6 +144,13 @@ export interface Parsed {
   stands: Pt[];
   /** Ground pickups (the current world's weapon, placed with '@'). */
   pickups: Pt[];
+  /** World 5: balloons (bottom of their climb), levers, rotating doors,
+   * crushing pillars, ceiling cracks that pour sand. */
+  balloons: Pt[];
+  levers: Pt[];
+  doors: { col: number; row0: number; row1: number; lever?: Pt }[];
+  pillars: Pt[];
+  sands: Pt[];
 }
 const pt = (col: number, row: number): Pt => ({
   col,
@@ -187,6 +205,11 @@ export function parseLevel(index: number): Parsed {
     wires: [],
     stands: [],
     pickups: [],
+    balloons: [],
+    levers: [],
+    doors: [],
+    pillars: [],
+    sands: [],
   };
   const carts: Pt[] = [],
     cartEnds: Pt[] = [];
@@ -304,6 +327,18 @@ export function parseLevel(index: number): Parsed {
           case '@':
             out.pickups.push(p);
             break;
+          case 'z':
+            out.balloons.push(p);
+            break;
+          case '0':
+            out.levers.push(p);
+            break;
+          case '[':
+            out.pillars.push(p);
+            break;
+          case '9':
+            out.sands.push(p);
+            break;
           case 'H':
           case 'J':
             starts.push({ ...p, tag: ch.toLowerCase() } as Pt);
@@ -361,6 +396,19 @@ export function parseLevel(index: number): Parsed {
         });
         c = c1;
       }
+  // Rotating doors: vertical runs of ']'; each opens with the nearest
+  // lever to its left.
+  for (let c = 0; c < cols; c++)
+    for (let r = 0; r < rows; r++) {
+      if (grid[r][c] !== ']') continue;
+      let r1 = r;
+      while (r1 + 1 < rows && grid[r1 + 1][c] === ']') r1++;
+      const lever = out.levers
+        .filter((l) => l.col < c)
+        .sort((a, b) => b.col - a.col)[0];
+      out.doors.push({ col: c, row0: r, row1: r1, lever });
+      r = r1;
+    }
   // Conveyor belts: horizontal runs of one direction.
   for (let r = 0; r < rows; r++)
     for (let c = 0; c < cols; c++) {
@@ -517,3 +565,40 @@ export const BOUNCE = {
   dish: 640,
   dishHold: 720,
 };
+/** World 5 mechanics. Sand slides: push (px/s) and how little grip you get. */
+export const SAND = { push: 150, accel: 300, decel: 120 };
+/** Hot-air balloon: basket width (tiles), climb (rows), cycle (s), how fast
+ * it sinks under you (px/s) and how far (rows). */
+export const BALLOON = {
+  width: 2,
+  range: 6,
+  period: 9,
+  sink: 26,
+  sinkMax: 2.5,
+};
+/** Rotating doors: seconds open, and the last seconds they warn. */
+export const DOOR = { open: 6.5, warn: 1.8 };
+/** Crushing pillars: seconds up, shaking, falling, down, rising. */
+export const PILLAR = { up: 1.6, warn: 0.5, fall: 0.14, down: 0.7, rise: 0.9 };
+/** Pillar phase at clock t for a pillar in column col. */
+export function pillarState(
+  col: number,
+  t: number,
+): { state: 'up' | 'warn' | 'fall' | 'down' | 'rise'; k: number } {
+  const P = PILLAR,
+    period = P.up + P.warn + P.fall + P.down + P.rise;
+  let k = (((t + col * 0.53) % period) + period) % period;
+  for (const [state, d] of [
+    ['up', P.up],
+    ['warn', P.warn],
+    ['fall', P.fall],
+    ['down', P.down],
+    ['rise', P.rise],
+  ] as const) {
+    if (k < d) return { state, k: k / d };
+    k -= d;
+  }
+  return { state: 'up', k: 0 };
+}
+/** Falling sand: warning trickle (ms) and cooldown before it pours again. */
+export const SANDFALL = { warn: 520, cooldown: 2600 };

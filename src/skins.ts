@@ -31,9 +31,23 @@ function tex(
 }
 
 export type Emblem =
-  'lamp' | 'star' | 'diamond' | 'gear' | 'pot' | 'crate' | 'fishcrate';
+  | 'lamp'
+  | 'star'
+  | 'diamond'
+  | 'gear'
+  | 'pot'
+  | 'crate'
+  | 'fishcrate'
+  | 'canopic';
 export type Collectible =
-  'coin' | 'wheat' | 'mishabek' | 'fish' | 'freska' | 'icecream';
+  | 'coin'
+  | 'wheat'
+  | 'mishabek'
+  | 'fish'
+  | 'freska'
+  | 'icecream'
+  | 'dates'
+  | 'turquoise';
 export interface Skin {
   /** Brick: face, highlight, shadow, mortar. */
   brick: [string, string, string, string];
@@ -142,6 +156,36 @@ export const SKINS: Record<string, Skin> = {
     collectible: 'icecream',
     bond: 'block',
   },
+  // Luxor: carved sandstone, alabaster canopic jars, strings of turquoise.
+  temple: {
+    brick: ['#d2a064', '#f0cc92', '#a8743e', '#7a5028'],
+    box: ['#e8dcc4', '#fffaf0', '#b8a888', '#2a8a8a', '#a8f0e8', '#c8955a'],
+    emblem: 'canopic',
+    used: ['#8a6a48', '#a8845e', '#5e4430'],
+    coin: ['#0e4a4a', '#2aa8a0', '#8ae8d8', '#ffffff'],
+    collectible: 'turquoise',
+    bond: 'block',
+  },
+  // The Nile bank: mud brick, canopic jars, a cluster of dried dates.
+  nile: {
+    brick: ['#a8845a', '#c8a478', '#7a5a38', '#5a4028'],
+    box: ['#e8dcc4', '#fffaf0', '#b8a888', '#c8642a', '#ffe0b0', '#8a6038'],
+    emblem: 'canopic',
+    used: ['#7a6048', '#9a7e62', '#4e3c2c'],
+    coin: ['#3a1a08', '#8a3a14', '#c8642a', '#ffd0a0'],
+    collectible: 'dates',
+    bond: 'mud',
+  },
+  // The tomb: painted plaster, a canopic jar glinting in torchlight.
+  tomb: {
+    brick: ['#8a6a44', '#a8845a', '#5a4028', '#2e1e12'],
+    box: ['#d8c8a8', '#fff4dc', '#9a8a6a', '#2a4a9a', '#e8b84a', '#5a4028'],
+    emblem: 'canopic',
+    used: ['#4e3c2a', '#6a5238', '#2e2216'],
+    coin: ['#0e4a4a', '#2aa8a0', '#8ae8d8', '#ffffff'],
+    collectible: 'turquoise',
+    bond: 'block',
+  },
 };
 
 function emblem(
@@ -237,6 +281,48 @@ function emblem(
     rect(c, 7, 7, 10, 9, dark);
     rect(c, 9, 9, 6, 5, light);
     rect(c, 11, 10, 2, 3, accent);
+  } else if (kind === 'canopic') {
+    // An alabaster canopic jar with a plain round lid and a band of marks.
+    rect(c, 9, 3, 6, 2, dark);
+    poly(
+      c,
+      [
+        [8, 5],
+        [16, 5],
+        [17, 7],
+        [7, 7],
+      ],
+      dark,
+    );
+    rect(c, 10, 4, 4, 1, light);
+    poly(
+      c,
+      [
+        [7, 7],
+        [17, 7],
+        [18, 11],
+        [16, 19],
+        [8, 19],
+        [6, 11],
+      ],
+      dark,
+    );
+    poly(
+      c,
+      [
+        [8, 8],
+        [16, 8],
+        [17, 11],
+        [15, 18],
+        [9, 18],
+        [7, 11],
+      ],
+      light,
+    );
+    rect(c, 9, 11, 6, 3, accent);
+    rect(c, 10, 12, 1, 1, dark);
+    rect(c, 13, 12, 1, 1, dark);
+    rect(c, 9, 9, 1, 7, '#ffffff88');
   } else if (kind === 'fishcrate') {
     // Blue plastic fishing crate: hand-hold slot, ribs and a fish stencil.
     rect(c, 7, 5, 10, 3, dark);
@@ -358,6 +444,28 @@ export function makeSkins(scene: Phaser.Scene) {
       rect(c, 2, 12, 3, 2, '#f0e060');
     });
   }
+  // Luxor power-up: a round loaf of عيش شمسي, the sun-risen bread of Upper
+  // Egypt, slashed on top and dusted with bran.
+  if (!scene.textures.exists('temple-food'))
+    for (const key of ['temple-food', 'nile-food', 'tomb-food'])
+      tex(scene, key, 24, 20, (c) => {
+        rect(c, 2, 6, 20, 13, INK);
+        rect(c, 4, 4, 16, 2, INK);
+        rect(c, 3, 7, 18, 11, '#c8823a');
+        rect(c, 5, 5, 14, 2, '#d8964a');
+        rect(c, 4, 7, 16, 3, '#e8b060');
+        rect(c, 3, 15, 18, 3, '#8a4e1e');
+        // The baker's cross-slash and bran flecks.
+        rect(c, 8, 8, 8, 1, '#f8e0a8');
+        rect(c, 11, 6, 1, 6, '#f8e0a8');
+        for (const [x, y] of [
+          [6, 11],
+          [16, 12],
+          [9, 13],
+          [14, 9],
+        ])
+          rect(c, x, y, 1, 1, '#5a3010');
+      });
   // Alexandria power-up: a skewer of grilled shrimp (جمبري مشوي).
   if (!scene.textures.exists('corniche-food'))
     for (const key of ['corniche-food', 'fort-food'])
@@ -618,6 +726,54 @@ export function makeSkins(scene: Phaser.Scene) {
             rect(c, x - 3, y - 3 + bob, 7, 7, co);
             rect(c, x - 2, y - 2 + bob, 5, 5, col);
             rect(c, x - 2, y - 2 + bob, 2, 1, '#ffffff');
+          }
+          return;
+        }
+        if (s.collectible === 'turquoise') {
+          // A short string of turquoise beads with a gold spacer, swinging.
+          const sw = [0, 1, 1, 0, -1, -1][fr];
+          c.strokeStyle = co;
+          c.lineWidth = 1;
+          c.beginPath();
+          c.moveTo(3, 2);
+          c.quadraticCurveTo(8 + sw * 2, 22, 13, 2);
+          c.stroke();
+          const beads: [number, number][] = [
+            [4, 6],
+            [5, 11],
+            [8, 14],
+            [11, 11],
+            [12, 6],
+          ];
+          beads.forEach(([x, y], i) => {
+            const bx = x + Math.round(sw * (y / 14));
+            if (i === 2) {
+              rect(c, bx - 2, y - 2, 5, 5, co);
+              rect(c, bx - 1, y - 1, 3, 3, '#e8b84a');
+              rect(c, bx - 1, y - 1, 1, 1, '#fff4c0');
+            } else {
+              rect(c, bx - 2, y - 2, 4, 4, co);
+              rect(c, bx - 1, y - 1, 2, 2, cb);
+              rect(c, bx - 1, y - 1, 1, 1, cs);
+            }
+          });
+          if (fr === 0) rect(c, 13, 3, 1, 1, '#ffffff');
+          return;
+        }
+        if (s.collectible === 'dates') {
+          // Three glossy dried dates on a little sprig, catching the light.
+          const bob = [0, 0, 1, 1, 0, 0][fr];
+          rect(c, 7, 0 + bob, 2, 5, '#c8a050');
+          rect(c, 4, 2 + bob, 8, 1, '#c8a050');
+          for (const [x, y] of [
+            [2, 4],
+            [7, 6],
+            [11, 4],
+          ] as const) {
+            rect(c, x, y + bob, 5, 11, co);
+            rect(c, x + 1, y + 1 + bob, 3, 9, cb);
+            rect(c, x + 1, y + 1 + bob, 1, 5, cl);
+            if (fr < 2) rect(c, x + 2, y + 2 + bob, 1, 2, cs);
           }
           return;
         }

@@ -17,7 +17,8 @@ export const MAQAM = {
   sikah: [0, 1.5, 3.5, 5.5, 7, 8.5, 10.5],
 } as const;
 type MaqamName = keyof typeof MAQAM;
-/** Darbuka patterns over 8 eighth-notes: D = doum, T = tek, k = ka, . = rest. */
+/** Darbuka patterns over 8 eighth-notes: D = doum, T = tek, k = ka,
+ * B = deep tabl, . = rest. */
 export const RHYTHM = {
   maqsum: 'DT.TD.T.',
   baladi: 'DD.TD.T.',
@@ -28,9 +29,15 @@ export const RHYTHM = {
   bahari: 'D.kTD.TT',
   /** Light Alexandrian sea-shanty lilt (a skipping wahda). */
   iskandarani: 'D.TkT.Tk',
+  /** Luxor processional: B = the deep Upper-Egyptian tabl under the darbuka. */
+  tabl: 'B.TkB.T.',
+  /** Slow tomb pulse: a lone tabl stroke and a whispered tek. */
+  maqbara: 'B...B.k.',
+  /** The guardian's war beat. */
+  harbi: 'B.TBB.Tk',
 } as const;
 type RhythmName = keyof typeof RHYTHM;
-type Timbre = 'mizmar' | 'rababa' | 'simsimiyya' | 'accordion';
+type Timbre = 'mizmar' | 'rababa' | 'simsimiyya' | 'accordion' | 'ney';
 interface Track {
   name: string;
   maqam: MaqamName;
@@ -650,6 +657,77 @@ export const TRACKS: Track[] = [
       7 . 6 . 5 4 5 6   7 . 5 . 4 . 3 .   4 5 4 3 2 1 2 1   0 . 0 . 0 . . .`),
     bass: seq('0 0 . 0 1 . 0 .   0 0 . 0 -2 . -1 .'),
   },
+  {
+    name: 'طريق الكباش (حجاز · ناي · طبل)',
+    maqam: 'hijaz',
+    root: 62,
+    bpm: 108,
+    rhythm: 'tabl',
+    lead: 'triangle',
+    timbre: 'ney',
+    drone: true,
+    melody: seq(`
+      4 . 3 2 1 . 2 .   3 . 2 1 0 . . .   0 1 2 . 3 4 5 4   3 . 2 . 1 2 1 .
+      7 . 6 5 4 . 5 6   7 . 8 7 6 5 4 .   3 4 3 2 1 . 2 1   0 . . . 0 . . .`),
+    bass: seq('0 . . 0 4 . . .   3 . . 3 4 . 0 .'),
+  },
+  {
+    name: 'فجر النيل (صبا · ناي · طبل)',
+    maqam: 'saba',
+    root: 64,
+    bpm: 96,
+    rhythm: 'tabl',
+    lead: 'triangle',
+    timbre: 'ney',
+    sea: true,
+    melody: seq(`
+      0 1 2 . 3 . 2 1   2 . 1 . 0 . . .   2 3 4 . 3 2 3 .   2 1 2 . 1 0 . .
+      4 . 5 4 3 . 2 3   4 . 3 2 1 . 2 .   3 2 1 0 1 2 1 .   0 . . . 0 . . .`),
+    bass: seq('0 . . . 4 . . .   3 . . . 0 . . .'),
+  },
+  {
+    name: 'وادي الملوك (صبا · ناي · مقبرة)',
+    maqam: 'saba',
+    root: 58,
+    bpm: 84,
+    rhythm: 'maqbara',
+    lead: 'triangle',
+    timbre: 'ney',
+    drone: true,
+    melody: seq(`
+      0 . . 1 2 . 1 .   0 . -1 . 0 . . .   2 . 3 . 3 2 1 .   2 . . . 1 . . .
+      4 . . 3 4 5 4 .   3 . 2 . 1 . . .   2 1 0 . -1 . 0 .   0 . . . . . . .`),
+    bass: seq('0 . . . . . . .   -3 . . . . . . .'),
+  },
+  {
+    name: 'معبد الكرنك (حجاز · ناي · طبل)',
+    maqam: 'hijaz',
+    root: 60,
+    bpm: 112,
+    rhythm: 'tabl',
+    lead: 'triangle',
+    timbre: 'ney',
+    drone: true,
+    melody: seq(`
+      0 1 2 3 4 . 3 2   1 . 2 . 0 . . .   4 5 6 . 5 4 3 4   5 . 4 3 2 . . .
+      7 . 7 6 5 . 4 5   6 . 5 4 3 . 2 .   1 2 1 0 -1 . 0 .  0 . . . 0 . . .`),
+    bass: seq('0 . 0 . 4 . 3 .   0 . 0 . -3 . -2 .'),
+  },
+  {
+    name: 'الكبش الحارس (حجاز · ناي · طبل حربي)',
+    maqam: 'hijaz',
+    root: 62,
+    bpm: 150,
+    rhythm: 'harbi',
+    lead: 'triangle',
+    timbre: 'ney',
+    drone: true,
+    boss: true,
+    melody: seq(`
+      0 1 2 . 1 0 -1 0  2 3 4 . 3 2 1 .   4 5 4 3 2 . 1 2   1 0 -1 . 0 . . .
+      7 . 6 5 4 5 6 .   7 8 7 6 5 . 4 .   5 4 3 2 1 2 1 .   0 . 0 . 0 . . .`),
+    bass: seq('0 0 . 0 1 . 0 .   0 0 . 0 -2 . -1 .'),
+  },
 ];
 const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
 export function degreeToSemis(maqam: MaqamName, degree: number) {
@@ -897,11 +975,39 @@ export class Sound {
   }
   private hit(
     t: number,
-    kind: 'doum' | 'tek' | 'ka' | 'riq' | 'snap',
+    kind: 'doum' | 'tek' | 'ka' | 'riq' | 'snap' | 'tabl',
     vol: number,
     bus: GainNode,
   ) {
     const ctx = this.ctx!;
+    if (kind === 'tabl') {
+      // The big two-headed tabl baladi: a long, deep boom plus the skin slap.
+      const o = ctx.createOscillator(),
+        g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(96, t);
+      o.frequency.exponentialRampToValueAtTime(36, t + 0.32);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.62);
+      o.connect(g);
+      g.connect(bus);
+      o.start(t);
+      o.stop(t + 0.65);
+      const src = ctx.createBufferSource(),
+        f = ctx.createBiquadFilter(),
+        ng = ctx.createGain();
+      src.buffer = this.noise!;
+      f.type = 'lowpass';
+      f.frequency.value = 420;
+      ng.gain.setValueAtTime(vol * 0.6, t);
+      ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+      src.connect(f);
+      f.connect(ng);
+      ng.connect(bus);
+      src.start(t, Math.random() * 0.5);
+      src.stop(t + 0.14);
+      return;
+    }
     if (kind === 'doum') {
       const o = ctx.createOscillator(),
         g = ctx.createGain();
@@ -969,7 +1075,8 @@ export class Sound {
     const ch = RHYTHM[t.rhythm][s % 8];
     // Surf: a slow filtered-noise swell every two bars on the sea songs.
     if (t.sea && s % 16 === 0) this.surf(time, eighth * 14, duck);
-    if (ch === 'D') this.hit(time, 'doum', 0.55 * duck, bus);
+    if (ch === 'B') this.hit(time, 'tabl', 0.7 * duck, bus);
+    else if (ch === 'D') this.hit(time, 'doum', 0.55 * duck, bus);
     else if (ch === 'T') this.hit(time, 'tek', 0.32 * duck, bus);
     else if (ch === 'k') this.hit(time, 'ka', 0.22 * duck, bus);
     if (level >= 1 && s % 2 === 1) this.hit(time, 'riq', 0.16 * duck, bus);
@@ -1065,6 +1172,28 @@ export class Sound {
     src.start(time);
     src.stop(time + dur + 0.05);
   }
+  /** Breath noise for the ney: band-passed near the note, puffed at onset. */
+  private breath(f: number, time: number, dur: number, duck: number) {
+    if (!this.noise || !this.ctx) return;
+    const ctx = this.ctx;
+    const src = ctx.createBufferSource(),
+      bp = ctx.createBiquadFilter(),
+      g = ctx.createGain();
+    src.buffer = this.noise;
+    src.loop = true;
+    bp.type = 'bandpass';
+    bp.frequency.value = Math.min(6000, f * 2.5);
+    bp.Q.value = 3;
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.linearRampToValueAtTime(0.09 * duck, time + 0.03);
+    g.gain.setTargetAtTime(0.03 * duck, time + 0.05, 0.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+    src.connect(bp);
+    bp.connect(g);
+    g.connect(this.musicBus!);
+    src.start(time, Math.random() * 0.5);
+    src.stop(time + dur + 0.05);
+  }
   /** Folk lead voices built from the same oscillators. */
   private folk(
     timbre: Timbre,
@@ -1075,6 +1204,22 @@ export class Sound {
     ornament: number,
   ) {
     const bus = this.musicBus!;
+    if (timbre === 'ney') {
+      // Reed flute: a soft swelling sine with a whisper of octave, a slow
+      // vibrato and the breath hissing through the cane.
+      const v = 0.24 * duck;
+      this.voice(f, time, dur, 'sine', v, bus, {
+        attack: Math.min(0.09, dur / 3),
+        vibrato: dur > 0.3 ? 0.011 : 0,
+        bendFrom: ornament || undefined,
+      });
+      this.voice(f * 2, time, dur * 0.9, 'triangle', v * 0.22, bus, {
+        attack: 0.07,
+        filter: 2400,
+      });
+      this.breath(f, time, dur, duck);
+      return;
+    }
     if (timbre === 'simsimiyya') {
       // Plucked lyre: a bright, fast-decaying pluck, re-plucked in a
       // tremolo on long notes the way Port Said players do.
@@ -1328,6 +1473,34 @@ export class Sound {
       case 'screech':
         this.tone(1500, 0.35, 'sawtooth', 0.14, 0, 700);
         this.noiseFx(3500, 0.3, 0.2);
+        break;
+      case 'tick':
+        // A stone mechanism counting down.
+        this.tone(1800, 0.04, 'square', 0.08);
+        this.noiseFx(4200, 0.03, 0.12);
+        break;
+      case 'rumble':
+        this.noiseFx(180, 1.1, 0.5, 0, 'lowpass');
+        this.tone(42, 0.9, 'sawtooth', 0.14, 0, 30);
+        break;
+      case 'crush':
+        // A granite pillar slamming down.
+        this.tone(64, 0.35, 'square', 0.4, 0, 30);
+        this.noiseFx(700, 0.45, 0.6, 0, 'lowpass');
+        break;
+      case 'sand':
+        this.noiseFx(3800, 0.6, 0.22);
+        this.noiseFx(1200, 0.5, 0.14, 0.1);
+        break;
+      case 'hiss':
+        this.noiseFx(6000, 0.45, 0.24, 0, 'highpass');
+        break;
+      case 'spit':
+        this.noiseFx(2600, 0.12, 0.3);
+        this.tone(700, 0.1, 'triangle', 0.12, 0, 300);
+        break;
+      case 'buzz':
+        this.tone(140, 0.25, 'sawtooth', 0.08, 0, 180);
         break;
       case 'lantern':
         [72, 79, 84].forEach((n, i) =>

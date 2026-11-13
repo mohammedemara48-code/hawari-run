@@ -1,10 +1,12 @@
 import { TILE } from '../src/level-data';
 import {
+  BALLOON,
   BELT,
   BOAT,
   BOUNCE,
   LAMP,
   LEDGE,
+  SLIDE,
   STACK,
   MOVERS,
   SAQIA,
@@ -67,7 +69,7 @@ export function surfaces(L: Parsed): Surface[] {
         bounce,
         solid: SOLID.has(ch),
         mud: ch === 'u',
-        belt: ch in BELT,
+        belt: ch in BELT || ch in SLIDE,
       });
     }
   const tideAmp = L.meta.tide?.amp ?? 0;
@@ -132,6 +134,8 @@ export function surfaces(L: Parsed): Surface[] {
   L.carts.forEach((p) => span(p, MOVERS.cart, false));
   L.planks.forEach((p) => span(p, MOVERS.plank, false));
   L.lifts.forEach((p) => span(p, MOVERS.lift, true));
+  // Balloons climb and sink over their whole range.
+  L.balloons.forEach((p) => span(p, BALLOON, true));
   // Donkey carts ride from their start to the end marker.
   for (const d of L.donkeys)
     for (let c = d.a.col; c <= d.endCol; c++)

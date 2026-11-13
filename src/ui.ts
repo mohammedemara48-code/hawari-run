@@ -1,6 +1,6 @@
 import { paintEgypt, type WorldState } from './map-art';
 import { sound } from './audio';
-import { WORLDS, type LevelMeta } from './level-data';
+import { BOSS_NAMES, WORLDS, type LevelMeta } from './level-data';
 import type { Progress } from './progress';
 import { powerLabel, worldWeapon, type WorldWeapon } from './weapons';
 export type Screen =
@@ -284,6 +284,10 @@ const THEME_ICON: Record<string, string> = {
   corniche:
     '<path d="M1 3h22v1H1z" fill="#3a3e44"/><path d="M9 4l3 4h-1l-3-4z" fill="#3a3e44"/><path d="M2 8h20v10H2z" fill="#1d1416"/><path d="M3 9h18v5H3z" fill="#f0c84a"/><path d="M3 14h18v3H3z" fill="#2e6ab0"/><path d="M5 10h3v3H5zm5 0h3v3h-3zm5 0h3v3h-3z" fill="#a8d0e8"/><path d="M5 18h3v2H5zm11 0h3v2h-3z" fill="#2a2a30"/><path d="M0 21h24v2H0z" fill="#4a9ac8"/>',
   fort: '<path d="M3 9h18v12H3z" fill="#b4aa94"/><path d="M3 6h3v3H3zm5 0h3v3H8zm5 0h3v3h-3zm5 0h3v3h-3z" fill="#b4aa94"/><path d="M9 3h6v6H9z" fill="#c8bea8"/><path d="M11 13h2v8h-2z" fill="#3a3428"/><path d="M5 11h2v3H5zm12 0h2v3h-2z" fill="#3a3428"/><path d="M0 20c3-2 5 0 8-1s5-2 8 0 5 1 8-1v4H0z" fill="#3a7aaa"/><path d="M18 1l-2 4h2l-1 3 3-4h-2l1-3z" fill="#ffe890"/>',
+  temple:
+    '<path d="M2 20h20v2H2z" fill="#a8783e"/><path d="M3 6h18v3H3z" fill="#e0b070"/><path d="M4 4h16v2H4z" fill="#c8945a"/><path d="M5 9h3v11H5zm5.5 0h3v11h-3zM16 9h3v11h-3z" fill="#d8a868"/><path d="M5 9h3v2H5zm5.5 0h3v2h-3zM16 9h3v2h-3z" fill="#4aa8a0"/><path d="M6 13h1v1H6zm5.5 2h1v1h-1zm5.5-3h1v1h-1z" fill="#7a4a24"/>',
+  nile: '<path d="M8 2h8v2h2v5h-1v2h-2l-1 3h-4l-1-3H7V9H6V4h2z" fill="#e85a3a"/><path d="M10 2h4v9h-4z" fill="#f4c040"/><path d="M10 14h4v3h-4z" fill="#8a5a2a"/><path d="M3 19h18l-2 2H5z" fill="#6a3a1e"/><path d="M11 12h1v7h-1z" fill="#5a3a20"/><path d="M0 21h24v3H0z" fill="#3a8aa8"/>',
+  tomb: '<path d="M3 22V9l9-7 9 7v13z" fill="#4a3220"/><path d="M8 22V12h8v10z" fill="#120a06"/><path d="M5 10h2v2H5zm12 0h2v2h-2z" fill="#c89050"/><path d="M11 13h2v1h-2zm-1 3h4v1h-4z" fill="#3a2414"/><path d="M4 14h1v5H4z" fill="#6a4a2a"/><path d="M3 11h3v3H3z" fill="#ff9a30"/><path d="M4 11h1v1H4z" fill="#ffe080"/>',
 };
 let selectedWorld: number | undefined;
 let lastUnlocked = -1;
@@ -390,6 +394,30 @@ export function renderMap(
 let mapResize: ResizeObserver | undefined;
 const LOCK_ICON =
   '<path d="M8 10V7a4 4 0 0 1 8 0v3h-2V7a2 2 0 0 0-4 0v3z" fill="#9aa39a"/><path d="M6 10h12v10H6z" fill="#6c766e"/><path d="M11 13h2v4h-2z" fill="#2a322e"/>';
+/** The finale: a card per world of the journey, then the credits roll. */
+export function ending(progress: Progress, levels: LevelMeta[], score: number) {
+  const ar = (n: number) => n.toLocaleString('ar-EG');
+  const cards = WORLDS.map((w, wi) => {
+    const own = levels.filter((l) => l.world === wi);
+    const boss = own.find((l) => l.boss);
+    const secrets = own.filter((l) => progress.secrets[l.id]).length;
+    const icon = THEME_ICON[own[own.length - 1]?.theme ?? 'night'];
+    return `<li class="journey-card" style="--i:${wi}">
+      <svg viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true">${icon}</svg>
+      <div><b>${w.name}</b><small>${w.subtitle}</small>
+      <span>غلبت ${boss?.bossKind ? BOSS_NAMES[boss.bossKind] : '—'} · فوانيس دهبي ${ar(secrets)}/${ar(own.length)}</span></div>
+    </li>`;
+  }).join('');
+  const found = levels.filter((l) => progress.secrets[l.id]).length;
+  document.getElementById('win-journey')!.innerHTML = cards;
+  text(
+    'win-secrets',
+    found === levels.length
+      ? `لقيت كل الفوانيس الدهبي (${ar(found)}) — إنت أسطورة الحواري!`
+      : `لقيت ${ar(found)} من ${ar(levels.length)} فانوس دهبي… الباقي لسه مستخبّي في الخريطة`,
+  );
+  text('win-score', ar(score));
+}
 export function toast(text: string) {
   const el = document.getElementById('toast')!;
   el.textContent = text;
