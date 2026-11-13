@@ -99,9 +99,9 @@ export const PALETTES: Record<Theme, Palette> = {
       [0.55, '#1a2350'],
       [1, '#3d3561'],
     ],
-    stone: ['#4a4057', '#54485f', '#3f3750', '#5c4f66'],
-    mortar: '#2a2236',
-    top: ['#8a7c92', '#a497a8', '#6b5f77'],
+    stone: ['#34304c', '#3b3656', '#2c2842', '#423c5c'],
+    mortar: '#1c1a2e',
+    top: ['#6e6070', '#857282', '#564a5e'],
     wood: ['#5a3a2e', '#7a5240', '#3c261f'],
     accent: '#ffcf7a',
     glow: '#ffbf5a',
@@ -116,9 +116,9 @@ export const PALETTES: Record<Theme, Palette> = {
       [0.8, '#f4a95f'],
       [1, '#ffd88f'],
     ],
-    stone: ['#b9825a', '#c48d62', '#a8744f', '#cf9a6c'],
-    mortar: '#7a4f39',
-    top: ['#e9c18c', '#f2d29f', '#d9ab78'],
+    stone: ['#8c6444', '#9a7050', '#7a5638', '#a87a56'],
+    mortar: '#4e3220',
+    top: ['#d8a868', '#e8bc7a', '#c4935a'],
     wood: ['#7a4b2e', '#9c6640', '#5a3420'],
     accent: '#ffd36b',
     glow: '#ffb35c',
@@ -132,9 +132,9 @@ export const PALETTES: Record<Theme, Palette> = {
       [0.6, '#9fd4f2'],
       [1, '#f4e6c4'],
     ],
-    stone: ['#d9b58c', '#e3c29a', '#cda67d', '#e8caa6'],
-    mortar: '#a07d5e',
-    top: ['#f6efe0', '#ffffff', '#e2d6c0'],
+    stone: ['#a4553a', '#b2603f', '#94492f', '#bc6a48'],
+    mortar: '#dcc8a8',
+    top: ['#d8d0c0', '#ece4d4', '#c4baa8'],
     wood: ['#8a5b3a', '#b07a4f', '#5f3c26'],
     accent: '#ffe08a',
     glow: '#fff0b0',
@@ -147,9 +147,9 @@ export const PALETTES: Record<Theme, Palette> = {
       [0, '#0c1416'],
       [1, '#1c2b2c'],
     ],
-    stone: ['#3b4a4e', '#435458', '#33403f', '#4b5c5e'],
-    mortar: '#1f2a2b',
-    top: ['#7d9088', '#93a79b', '#5e716b'],
+    stone: ['#3a4640', '#424f48', '#323d37', '#4a5850'],
+    mortar: '#1a2420',
+    top: ['#6e8478', '#84998a', '#56685e'],
     wood: ['#4d3a2a', '#6b5038', '#2f241b'],
     accent: '#9fe3c4',
     glow: '#b7f0c0',
@@ -218,7 +218,7 @@ function capTop(
     for (let i = 0; i < 3; i++) {
       const w = 6 + Math.floor(hash(col, row, i) * 3);
       rect(c, x + i * 8 + 1, y + 1, w, 5, pal.top[i % 2]);
-      rect(c, x + i * 8 + 1, y + 1, w, 1, '#c9bfd2');
+      rect(c, x + i * 8 + 1, y + 1, w, 1, '#e8bf86');
     }
     rect(c, x, y + 7, T, 2, '#241c30');
   } else if (theme === 'market') {

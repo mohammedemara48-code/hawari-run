@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { makeSkins, skinKey } from './skins';
 import { makeArt } from './art';
 import { makeCreatures } from './creatures';
 import {
@@ -204,6 +205,7 @@ export class Alley extends Phaser.Scene {
     makeArt(this);
     makeCreatures(this);
     makeProps(this);
+    makeSkins(this);
     for (const l of LEVELS) makeParallax(this, l.theme);
     this.keys = this.input.keyboard!.addKeys(
       'LEFT,RIGHT,UP,DOWN,A,D,W,S,Z,X,SPACE,SHIFT,ESC,ENTER,M',
@@ -1049,13 +1051,17 @@ export class Alley extends Phaser.Scene {
     }
   }
   /* ───────────────────────── Entities ───────────────────────── */
+  /** The current world's skin for a shared element texture. */
+  skin(key: string) {
+    return skinKey(this, this.L.meta.theme, key);
+  }
   block(x: number, y: number, key: string, content = '') {
-    const s = this.blocks.create(x, y, key) as Sprite;
+    const s = this.blocks.create(x, y, this.skin(key)) as Sprite;
     s.setData('kind', key).setData('content', content).setDepth(4);
     return s;
   }
   coin(x: number, y: number) {
-    const s = this.coins.create(x, y, 'coin0') as Sprite;
+    const s = this.coins.create(x, y, this.skin('coin0')) as Sprite;
     s.setData('phase', Math.floor(x / 24) % 6).setDepth(5);
     body(s).setSize(11, 17);
     return s;
@@ -1303,11 +1309,13 @@ export class Alley extends Phaser.Scene {
       },
     });
     if (kind === 'box') {
-      block.setData('kind', 'used').setTexture('used');
+      block.setData('kind', 'used').setTexture(this.skin('used'));
       const content = block.getData('content') || 'coin';
       if (content === 'coin') {
         this.collect();
-        const c = this.add.image(block.x, block.y - 20, 'coin1').setDepth(15);
+        const c = this.add
+          .image(block.x, block.y - 20, this.skin('coin1'))
+          .setDepth(15);
         this.tweens.add({
           targets: c,
           y: c.y - 46,
@@ -1365,7 +1373,7 @@ export class Alley extends Phaser.Scene {
   }
   spawnItem(block: Sprite, content: string) {
     const top = block.y - 12;
-    const item = this.items.create(block.x, top, content) as Sprite;
+    const item = this.items.create(block.x, top, this.skin(content)) as Sprite;
     item.setData('kind', content).setDepth(5).setScale(0.3);
     const ib = body(item);
     ib.setAllowGravity(false).enable = false;
@@ -2023,13 +2031,13 @@ export class Alley extends Phaser.Scene {
       cam.scrollX + cam.width / 2,
       cam.scrollY + (this.L.meta.theme === 'sewer' ? 20 : cam.height / 2),
     );
-    const shine = Math.floor(time / 140) % 10 < 2 ? 'box1' : 'box';
+    const shine = this.skin(Math.floor(time / 140) % 10 < 2 ? 'box1' : 'box');
     for (const obj of this.blocks.getChildren() as Sprite[])
       if (obj.getData('kind') === 'box' && obj.texture.key !== shine)
         obj.setTexture(shine);
     for (const obj of this.coins.getChildren() as Sprite[])
       obj.setTexture(
-        'coin' + (Math.floor(time / 100 + obj.getData('phase')) % 6),
+        this.skin('coin' + (Math.floor(time / 100 + obj.getData('phase')) % 6)),
       );
     // Ride carts and planks: carry the hero by the platform's own step.
     if (this.mode === 'play' && !this.zip) {
@@ -2306,7 +2314,7 @@ export class Alley extends Phaser.Scene {
     toast('خزان الفكة! لمّ بسرعة');
     sound.fx('secret');
     for (let i = 0; i < 10; i++) {
-      const c = this.items.create(t.x, t.y - 34, 'coin1') as Sprite;
+      const c = this.items.create(t.x, t.y - 34, this.skin('coin1')) as Sprite;
       c.setData('kind', 'coin')
         .setData('settled', true)
         .setVelocity((i - 4.5) * 34, -330 - (i % 3) * 40)
