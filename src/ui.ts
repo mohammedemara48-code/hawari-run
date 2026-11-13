@@ -271,6 +271,9 @@ const THEME_ICON: Record<string, string> = {
     '<path d="M4 3h16v18H4z" fill="#5a3418"/><path d="M5 4h14v16H5z" fill="#a8703e"/><path d="M12 6l2 4 4 2-4 2-2 4-2-4-4-2 4-2z" fill="#ffd27a"/><path d="M11 11h2v2h-2z" fill="#6a4228"/>',
   harbor:
     '<path d="M2 15h20l-3 5H5z" fill="#2e6aa8"/><path d="M3 15h18v2H3z" fill="#f0ead8"/><path d="M11 3h2v12h-2z" fill="#4a3220"/><path d="M13 4l6 9h-6z" fill="#e8e0d0"/><path d="M1 21h22v2H1z" fill="#4a9ac8"/>',
+  corniche:
+    '<path d="M1 3h22v1H1z" fill="#3a3e44"/><path d="M9 4l3 4h-1l-3-4z" fill="#3a3e44"/><path d="M2 8h20v10H2z" fill="#1d1416"/><path d="M3 9h18v5H3z" fill="#f0c84a"/><path d="M3 14h18v3H3z" fill="#2e6ab0"/><path d="M5 10h3v3H5zm5 0h3v3h-3zm5 0h3v3h-3z" fill="#a8d0e8"/><path d="M5 18h3v2H5zm11 0h3v2h-3z" fill="#2a2a30"/><path d="M0 21h24v2H0z" fill="#4a9ac8"/>',
+  fort: '<path d="M3 9h18v12H3z" fill="#b4aa94"/><path d="M3 6h3v3H3zm5 0h3v3H8zm5 0h3v3h-3zm5 0h3v3h-3z" fill="#b4aa94"/><path d="M9 3h6v6H9z" fill="#c8bea8"/><path d="M11 13h2v8h-2z" fill="#3a3428"/><path d="M5 11h2v3H5zm12 0h2v3h-2z" fill="#3a3428"/><path d="M0 20c3-2 5 0 8-1s5-2 8 0 5 1 8-1v4H0z" fill="#3a7aaa"/><path d="M18 1l-2 4h2l-1 3 3-4h-2l1-3z" fill="#ffe890"/>',
 };
 let selectedWorld: number | undefined;
 let lastUnlocked = -1;

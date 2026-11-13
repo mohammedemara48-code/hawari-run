@@ -641,9 +641,21 @@ await ev(() => {
   window.T.place(s.spec.exit.x, s.spec.exit.y - 1);
 });
 await wait(500);
-assert.equal(await ev(() => window.T.s.mode), 'win', 'world 3 done: the win');
-await shot('13-w3-win.png');
-log('boss: claws, snap, stuck, bubbles, waves, gulls, win');
+// World 3 done: the clear screen opens the road to Alexandria.
+assert.equal(await ev(() => window.T.s.mode), 'clear', 'world 3 cleared');
+assert.match(
+  await page.locator('#clear-title').textContent(),
+  /اسكندرية/,
+  'the road to Alexandria opens',
+);
+assert.ok(
+  (await ev(
+    () => JSON.parse(window.localStorage.getItem('hawari-progress')).unlocked,
+  )) >= 12,
+  'world 4 unlocked',
+);
+await shot('14-w3-clear-to-alexandria.png');
+log('boss: claws, snap, stuck, bubbles, waves, gulls, clear → اسكندرية');
 
 assert.deepEqual(errors, [], 'no console errors');
 await browser.close();

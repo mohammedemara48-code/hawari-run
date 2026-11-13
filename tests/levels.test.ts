@@ -4,8 +4,8 @@ import { FLYING, SOLID, parseLevel } from '../src/level-parse';
 import { onSurface, reach, standable } from './level-graph';
 
 describe('authored levels', () => {
-  it('has three playable worlds of four distinct levels each', () => {
-    expect(LEVELS.length).toBe(12);
+  it('has four playable worlds of four distinct levels each', () => {
+    expect(LEVELS.length).toBe(16);
     const cairo = LEVELS.filter((l) => l.world === 0),
       rif = LEVELS.filter((l) => l.world === 1);
     expect(cairo.length).toBe(4);
@@ -15,15 +15,21 @@ describe('authored levels', () => {
     const dam = LEVELS.filter((l) => l.world === 2);
     expect(dam.length).toBe(4);
     expect(new Set(dam.map((l) => l.timeOfDay)).size).toBe(4);
-    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(12);
-    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(12);
+    const alex = LEVELS.filter((l) => l.world === 3);
+    expect(alex.length).toBe(4);
+    expect(new Set(alex.map((l) => l.timeOfDay)).size).toBe(4);
+    expect(alex.some((l) => l.storm && l.timeOfDay === 'storm')).toBe(true);
+    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(16);
+    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(16);
     // Levels are grouped by world in order, and each world ends with a boss.
     expect(LEVELS.map((l) => l.world)).toEqual([
-      0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
+      0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,
     ]);
-    expect(LEVELS[3].boss && LEVELS[7].boss && LEVELS[11].boss).toBe(true);
-    expect(LEVELS.filter((l) => l.boss).length).toBe(3);
-    expect(WORLDS.filter((w) => w.playable).length).toBe(3);
+    expect(
+      LEVELS[3].boss && LEVELS[7].boss && LEVELS[11].boss && LEVELS[15].boss,
+    ).toBe(true);
+    expect(LEVELS.filter((l) => l.boss).length).toBe(4);
+    expect(WORLDS.filter((w) => w.playable).length).toBe(4);
     expect(WORLDS.map((w) => w.name)).toEqual([
       'القاهرة',
       'الأرياف',
@@ -134,9 +140,8 @@ describe('authored levels', () => {
     });
   });
   it('each level has its own signature pieces', () => {
-    const [a, b, c, d, e, f, g, h, i9, j10, k11, l12] = LEVELS.map((_, i) =>
-      parseLevel(i),
-    );
+    const [a, b, c, d, e, f, g, h, i9, j10, k11, l12, m13, n14, o15, p16] =
+      LEVELS.map((_, i) => parseLevel(i));
     expect(a.lanterns.length).toBeGreaterThanOrEqual(5);
     expect(a.ghosts.length).toBeGreaterThan(10);
     expect(b.awnings.length).toBeGreaterThan(6);
@@ -215,7 +220,54 @@ describe('authored levels', () => {
       ls.reduce((n, l) => n + l.cols, 0);
     expect(perCol([i9, j10, k11, l12])).toBeLessThan(perCol([e, f, g, h]));
     // Boxes never float over the sea or nets.
-    for (const l of [k11, l12])
+    for (const l of [k11, l12, o15, p16])
       for (const bx of l.boxes) expect(l.at(bx.col, bx.row + 4)).not.toBe('s');
+    // World 4: breaking waves, wet tiles, the tram run with wires and low
+    // bridges, umbrella stands, a gale over Stanley, the storm and the boss.
+    const wet = (l: typeof e) => l.meta.rows.join('').split('$').length - 1;
+    expect(m13.waves.length).toBeGreaterThanOrEqual(10);
+    expect(m13.meta.waves).toBeTruthy();
+    expect(wet(m13)).toBeGreaterThanOrEqual(30);
+    expect(m13.seas.length).toBeGreaterThanOrEqual(2);
+    expect(m13.stands.length).toBeGreaterThanOrEqual(3);
+    expect(n14.trams.length).toBe(1);
+    expect(n14.trams[0].endCol - n14.trams[0].a.col).toBeGreaterThan(150);
+    expect(n14.wires.filter((w) => !w.bridge).length).toBeGreaterThanOrEqual(8);
+    expect(n14.wires.filter((w) => w.bridge).length).toBeGreaterThanOrEqual(3);
+    expect(o15.wind.length).toBeGreaterThanOrEqual(1);
+    expect(o15.meta.gust!.push).toBeGreaterThan(150);
+    expect(o15.seas.length).toBeGreaterThanOrEqual(5);
+    expect(o15.stands.length).toBeGreaterThanOrEqual(2);
+    expect(p16.boss && p16.meta.bossKind).toBe('gull');
+    expect(p16.meta.storm && p16.meta.waves && p16.meta.gust).toBeTruthy();
+    expect(new Set(p16.wind.map((w) => w.dir)).size).toBe(2);
+    expect(wet(p16)).toBeGreaterThanOrEqual(40);
+    for (const k of ['skua', 'jelly', 'brolly', 'ball', 'gull'])
+      expect(
+        [m13, n14, o15, p16].some((l) => kinds(l).has(k)),
+        k,
+      ).toBe(true);
+    // Jellyfish only live in the sea.
+    for (const l of [m13, n14, o15, p16])
+      for (const j of l.enemies.filter((x) => x.kind === 'jelly'))
+        expect(
+          l.seas.some((k) => j.x >= k.x0 && j.x < k.x1 && j.y >= k.top),
+          `jelly ${j.col},${j.row}`,
+        ).toBe(true);
+    // Every wire and bridge can be ducked under from the tram roof: the
+    // hazard ends above a crouching hero (32-38px) and catches a standing
+    // one (46-54px).
+    const roof = (n14.trams[0].a.row - 2) * 24;
+    for (const w of n14.wires) {
+      expect(roof - w.y1).toBeGreaterThan(38);
+      expect(roof - w.y1).toBeLessThan(46);
+    }
+    // A clear step up from Damietta: denser and less time per column.
+    expect(density([m13, n14, o15, p16])).toBeGreaterThan(
+      density([i9, j10, k11, l12]),
+    );
+    expect(perCol([m13, n14, o15, p16])).toBeLessThan(
+      perCol([i9, j10, k11, l12]),
+    );
   });
 });

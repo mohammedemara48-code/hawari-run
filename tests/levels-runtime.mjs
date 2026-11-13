@@ -493,8 +493,8 @@ assert.equal(
 );
 assert.equal(
   await page.locator('.world-pin.soon').count(),
-  2,
-  'Alexandria and Luxor are coming soon',
+  1,
+  'only Luxor is still coming soon',
 );
 await shot('13-map-world2.png');
 await page.locator('.world-pin[data-world="0"]').click();

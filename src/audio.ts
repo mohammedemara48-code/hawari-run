@@ -11,6 +11,10 @@ export const MAQAM = {
   kurd: [0, 1, 3, 5, 7, 8, 10],
   bayati: [0, 1.5, 3, 5, 7, 8, 10],
   saba: [0, 1.5, 3, 4, 7, 8, 10],
+  /** Bright ajam (major) of the Alexandrian café songs. */
+  ajam: [0, 2, 4, 5, 7, 9, 11],
+  /** Sikah: the three-quarter-tone colour of old Alexandrian melodies. */
+  sikah: [0, 1.5, 3.5, 5.5, 7, 8.5, 10.5],
 } as const;
 type MaqamName = keyof typeof MAQAM;
 /** Darbuka patterns over 8 eighth-notes: D = doum, T = tek, k = ka, . = rest. */
@@ -22,9 +26,11 @@ export const RHYTHM = {
   fallahi: 'DTkTDTkT',
   /** Sea-coast clap-and-drum groove for the simsimiyya songs. */
   bahari: 'D.kTD.TT',
+  /** Light Alexandrian sea-shanty lilt (a skipping wahda). */
+  iskandarani: 'D.TkT.Tk',
 } as const;
 type RhythmName = keyof typeof RHYTHM;
-type Timbre = 'mizmar' | 'rababa' | 'simsimiyya';
+type Timbre = 'mizmar' | 'rababa' | 'simsimiyya' | 'accordion';
 interface Track {
   name: string;
   maqam: MaqamName;
@@ -36,8 +42,9 @@ interface Track {
   melody: (number | null)[];
   bass: (number | null)[];
   drone?: boolean;
-  /** Folk lead colour: a nasal double-reed mizmar, a bowed rababa or a
-   * plucked simsimiyya (the coastal lyre, re-plucked on long notes). */
+  /** Folk lead colour: a nasal double-reed mizmar, a bowed rababa, a
+   * plucked simsimiyya (the coastal lyre, re-plucked on long notes) or the
+   * Alexandrian café accordion (two detuned reeds with a bellows swell). */
   timbre?: Timbre;
   /** Sea songs: a soft surf swell breathes under the band every two bars. */
   sea?: boolean;
@@ -570,6 +577,79 @@ export const TRACKS: Track[] = [
       7 . 6 . 5 6 5 4   3 . 4 5 4 . 2 .   1 2 3 2 1 0 -1 0  0 . 0 . 0 . . .`),
     bass: seq('0 0 . 0 1 . 0 .   0 0 . 0 -2 . -1 .'),
   },
+  // World 4 · اسكندرية: the café accordion over a light iskandarani lilt.
+  {
+    name: 'الكورنيش (عجم · أكورديون · اسكندراني)',
+    maqam: 'ajam',
+    root: 65,
+    bpm: 124,
+    rhythm: 'iskandarani',
+    lead: 'square',
+    timbre: 'accordion',
+    sea: true,
+    melody: seq(`
+      0 2 4 . 5 4 2 4   5 . 7 . 5 4 2 .   4 5 7 . 9 7 5 4   2 . 4 2 0 . . .
+      7 . 9 7 5 . 4 5   7 . 5 4 2 . 4 .   5 4 2 0 2 4 2 1   0 . . . 0 . . .`),
+    bass: seq('0 . 4 . 0 . 4 .   3 . 0 . 4 . . .'),
+  },
+  {
+    name: 'الترام (عجم · أكورديون · مقسوم)',
+    maqam: 'ajam',
+    root: 67,
+    bpm: 138,
+    rhythm: 'maqsum',
+    lead: 'square',
+    timbre: 'accordion',
+    melody: seq(`
+      4 4 5 4 2 . 0 2   4 . 5 7 5 . 4 .   2 2 4 2 0 . -1 0  2 . 4 . 2 . . .
+      7 7 9 7 5 . 4 5   7 . 9 . 7 5 4 .   5 4 2 4 2 0 -1 .  0 . . . 0 . . .`),
+    bass: seq('0 . 0 4 0 . 4 .   0 . 0 4 -3 . -1 .'),
+  },
+  {
+    name: 'كوبري ستانلي (نهاوند · أكورديون · اسكندراني)',
+    maqam: 'nahawand',
+    root: 64,
+    bpm: 112,
+    rhythm: 'iskandarani',
+    lead: 'square',
+    timbre: 'accordion',
+    sea: true,
+    melody: seq(`
+      4 . 5 4 3 . 2 3   4 . 2 . 0 . . .   3 4 5 . 7 . 5 4   3 . 2 . 3 4 2 .
+      7 . 6 5 4 . 5 6   7 . 5 . 4 . 3 .   2 3 4 3 2 1 0 .   0 . . . -1 0 . .`),
+    bass: seq('0 . . 0 -3 . . .   -2 . . -2 -3 . . .'),
+  },
+  {
+    name: 'قلعة قايتباي (سيكاه · أكورديون · مقسوم)',
+    maqam: 'sikah',
+    root: 62,
+    bpm: 120,
+    rhythm: 'maqsum',
+    lead: 'square',
+    timbre: 'accordion',
+    drone: true,
+    sea: true,
+    melody: seq(`
+      0 . 1 2 3 . 2 1   0 . 2 . 4 . 3 .   4 5 4 3 2 . 1 2   3 . 2 1 0 . . .
+      4 . 4 5 6 5 4 3   2 . 3 4 5 . 4 .   3 2 1 0 1 2 1 .   0 . . . 0 . . .`),
+    bass: seq('0 . 0 . -3 . -2 .   0 . 0 . 4 . 3 .'),
+  },
+  {
+    name: 'ريّس النوة (حجاز · أكورديون · فلاحي)',
+    maqam: 'hijaz',
+    root: 62,
+    bpm: 156,
+    rhythm: 'fallahi',
+    lead: 'square',
+    timbre: 'accordion',
+    drone: true,
+    sea: true,
+    boss: true,
+    melody: seq(`
+      0 1 2 . 1 0 -1 0  2 . 3 4 3 . 2 .   4 4 5 4 3 . 2 1   2 1 0 . -1 . 0 .
+      7 . 6 . 5 4 5 6   7 . 5 . 4 . 3 .   4 5 4 3 2 1 2 1   0 . 0 . 0 . . .`),
+    bass: seq('0 0 . 0 1 . 0 .   0 0 . 0 -2 . -1 .'),
+  },
 ];
 const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
 export function degreeToSemis(maqam: MaqamName, degree: number) {
@@ -1010,6 +1090,23 @@ export class Sound {
       }
       return;
     }
+    if (timbre === 'accordion') {
+      // Café accordion: two reeds a hair apart (the musette beat), a soft
+      // bellows swell into each note and a gentle tremolo.
+      const a = Math.min(0.05, dur / 4);
+      this.voice(f, time, dur, 'square', 0.07 * duck, bus, {
+        filter: 1900,
+        attack: a,
+        vibrato: 0.006,
+        bendFrom: ornament || undefined,
+      });
+      this.voice(f * 1.0045, time, dur, 'sawtooth', 0.05 * duck, bus, {
+        filter: 1500,
+        attack: a,
+      });
+      this.voice(f / 2, time, dur, 'triangle', 0.06 * duck, bus, { attack: a });
+      return;
+    }
     if (timbre === 'mizmar') {
       // Double reed: bright, nasal, a fast vibrato and a scoop into notes.
       this.voice(f, time, dur, 'sawtooth', 0.11 * duck, bus, {
@@ -1192,6 +1289,33 @@ export class Sound {
         break;
       case 'wind':
         this.noiseFx(1400, 1.2, 0.16);
+        break;
+      case 'wave':
+        // A wave breaking over the sea wall: a roar of foam.
+        this.noiseFx(900, 0.7, 0.45, 0, 'lowpass');
+        this.noiseFx(3200, 0.5, 0.25, 0.08);
+        break;
+      case 'tram':
+        // The tram's two-tone bell.
+        this.tone(1320, 0.25, 'triangle', 0.18);
+        this.tone(1760, 0.3, 'triangle', 0.14, 0.12);
+        break;
+      case 'thunder':
+        this.noiseFx(260, 1.4, 0.5, 0, 'lowpass');
+        this.tone(48, 0.9, 'sawtooth', 0.16, 0.05, 36);
+        break;
+      case 'pop':
+        this.tone(520, 0.08, 'square', 0.22, 0, 1400);
+        this.noiseFx(3000, 0.08, 0.3);
+        break;
+      case 'brolly':
+        // An umbrella snapping open.
+        this.noiseFx(2600, 0.12, 0.3);
+        this.tone(440, 0.12, 'triangle', 0.14, 0.03, 880);
+        break;
+      case 'screech':
+        this.tone(1500, 0.35, 'sawtooth', 0.14, 0, 700);
+        this.noiseFx(3500, 0.3, 0.2);
         break;
       case 'lantern':
         [72, 79, 84].forEach((n, i) =>

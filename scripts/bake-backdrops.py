@@ -30,6 +30,12 @@ JOBS = {
     'l10': ('bg-w3-workshop-interior', 0.74, 0.8, 0.88),
     'l11': ('bg-w3-damietta', 0.8, 0.85, 0.85, 'dusk'),
     'l12': ('bg-w3-damietta', 0.66, 0.72, 0.92, 'bluehour'),
+    # World 4 (Alexandria): the corniche on a bright morning, the tram ride
+    # at hot noon, Stanley at sunset and Qaitbay in a winter storm (نوة).
+    'l13': ('bg-w4-alexandria', 0.86, 0.84, 0.88, 'morning'),
+    'l14': ('bg-w4-alexandria', 0.96, 0.95, 0.9, 'noon'),
+    'l15': ('bg-w4-alexandria', 0.8, 0.86, 0.86, 'sunset'),
+    'l16': ('bg-w4-alexandria', 0.8, 0.6, 0.95, 'storm'),
 }
 # Per-channel multipliers and a lift towards a sky tint for each grade.
 GRADES = {
@@ -40,6 +46,8 @@ GRADES = {
     'morning': ((1.0, 1.02, 1.08), (200, 214, 230), 0.05),
     'lamplight': ((1.08, 0.82, 0.55), (60, 30, 10), 0.3),
     'bluehour': ((0.6, 0.75, 1.1), (30, 50, 90), 0.26),
+    'sunset': ((1.12, 0.9, 0.72), (240, 130, 70), 0.18),
+    'storm': ((0.66, 0.74, 0.86), (52, 62, 78), 0.38),
 }
 
 
@@ -59,6 +67,24 @@ def grade(im, name):
         mask.putdata([int(200 * max(0, 1 - y / (h * 0.42))) for y in range(h) for _ in range(w)])
         sky = (132, 184, 222) if name == 'noon' else (176, 200, 220)
         im = Image.composite(Image.new('RGB', (w, h), sky), im, mask)
+    if name == 'storm':
+        # A low bruised cloud deck rolls over the sky, and slanting rain.
+        w, h = im.size
+        mask = Image.new('L', (w, h))
+        mask.putdata([int(170 * max(0, 1 - y / (h * 0.5))) for y in range(h) for _ in range(w)])
+        im = Image.composite(Image.new('RGB', (w, h), (44, 50, 62)), im, mask)
+        from PIL import ImageDraw
+        d = ImageDraw.Draw(im, 'RGBA')
+        import random
+        rnd = random.Random(4)
+        for _ in range(520):
+            x, y = rnd.randrange(-60, w), rnd.randrange(-20, h)
+            d.line([(x, y), (x + 7, y + 22)], fill=(200, 214, 230, 46), width=1)
+    if name == 'sunset':
+        w, h = im.size
+        mask = Image.new('L', (w, h))
+        mask.putdata([int(110 * max(0, 1 - y / (h * 0.45))) for y in range(h) for _ in range(w)])
+        im = Image.composite(Image.new('RGB', (w, h), (232, 120, 84)), im, mask)
     return im
 
 

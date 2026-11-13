@@ -271,7 +271,7 @@ export function seaBed(
   row: number,
   below: string,
 ) {
-  if ('sUI'.includes(below)) return;
+  if ('sUI2'.includes(below)) return;
   rect(c, x, y + 16, T, 8, '#c8b088');
   rect(c, x, y + 16, T, 2, '#e0cca0');
   if (hash(col, row, 4) > 0.55) {

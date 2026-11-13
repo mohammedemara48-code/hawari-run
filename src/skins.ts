@@ -30,8 +30,10 @@ function tex(
   t.refresh();
 }
 
-export type Emblem = 'lamp' | 'star' | 'diamond' | 'gear' | 'pot' | 'crate';
-export type Collectible = 'coin' | 'wheat' | 'mishabek' | 'fish';
+export type Emblem =
+  'lamp' | 'star' | 'diamond' | 'gear' | 'pot' | 'crate' | 'fishcrate';
+export type Collectible =
+  'coin' | 'wheat' | 'mishabek' | 'fish' | 'freska' | 'icecream';
 export interface Skin {
   /** Brick: face, highlight, shadow, mortar. */
   brick: [string, string, string, string];
@@ -44,7 +46,7 @@ export interface Skin {
   coin: [string, string, string, string];
   collectible: Collectible;
   /** Brick pattern: running bond or mud-brick courses with straw flecks. */
-  bond: 'running' | 'mud' | 'block' | 'plank';
+  bond: 'running' | 'mud' | 'block' | 'plank' | 'tile';
 }
 
 export const SKINS: Record<string, Skin> = {
@@ -117,6 +119,28 @@ export const SKINS: Record<string, Skin> = {
     coin: ['#1a2a3a', '#9ab8cc', '#e0f0fa', '#ffffff'],
     collectible: 'fish',
     bond: 'plank',
+  },
+  // Alexandria corniche: blue-and-white glazed tiles, blue fishing crates,
+  // فريسكا wafers sold along the beach.
+  corniche: {
+    brick: ['#f4f8fa', '#ffffff', '#9ab8d8', '#2e6ab0'],
+    box: ['#2e7ac8', '#7ab8f0', '#1a4a8a', '#f4f8fa', '#bfe0ff', '#f0c84a'],
+    emblem: 'fishcrate',
+    used: ['#7a8a96', '#9aaab6', '#4e5a64'],
+    coin: ['#6a3a10', '#e0a040', '#f8d080', '#fff4d0'],
+    collectible: 'freska',
+    bond: 'tile',
+  },
+  // Qaitbay in the storm: rain-dark ashlar, crates, a cone of ice cream
+  // from the cart that braved the weather.
+  fort: {
+    brick: ['#9a9080', '#b4aa94', '#6e6658', '#4a443a'],
+    box: ['#2e7ac8', '#7ab8f0', '#1a4a8a', '#f4f8fa', '#bfe0ff', '#c8c8c0'],
+    emblem: 'fishcrate',
+    used: ['#5e5a52', '#7a766c', '#3e3a34'],
+    coin: ['#5a3418', '#d8a060', '#f8e8d0', '#ffffff'],
+    collectible: 'icecream',
+    bond: 'block',
   },
 };
 
@@ -213,6 +237,32 @@ function emblem(
     rect(c, 7, 7, 10, 9, dark);
     rect(c, 9, 9, 6, 5, light);
     rect(c, 11, 10, 2, 3, accent);
+  } else if (kind === 'fishcrate') {
+    // Blue plastic fishing crate: hand-hold slot, ribs and a fish stencil.
+    rect(c, 7, 5, 10, 3, dark);
+    rect(c, 8, 6, 8, 1, accent);
+    for (const x of [5, 9, 13, 17]) rect(c, x, 10, 2, 8, dark);
+    rect(c, 4, 9, 16, 1, dark);
+    poly(
+      c,
+      [
+        [7, 14],
+        [12, 11],
+        [16, 14],
+        [12, 17],
+      ],
+      light,
+    );
+    poly(
+      c,
+      [
+        [16, 14],
+        [19, 11],
+        [19, 17],
+      ],
+      light,
+    );
+    rect(c, 9, 13, 1, 1, dark);
   } else if (kind === 'crate') {
     // Slatted furniture crate stencilled with an eight-point star.
     for (const y of [6, 11, 16]) rect(c, 5, y, 14, 1, dark);
@@ -308,6 +358,24 @@ export function makeSkins(scene: Phaser.Scene) {
       rect(c, 2, 12, 3, 2, '#f0e060');
     });
   }
+  // Alexandria power-up: a skewer of grilled shrimp (جمبري مشوي).
+  if (!scene.textures.exists('corniche-food'))
+    for (const key of ['corniche-food', 'fort-food'])
+      tex(scene, key, 24, 20, (c) => {
+        rect(c, 0, 9, 24, 2, '#8a6a3a');
+        rect(c, 0, 9, 24, 1, '#c8a060');
+        for (const x of [2, 9, 16]) {
+          // A curled shrimp: pink-orange segments and a tail fan.
+          rect(c, x, 4, 7, 11, INK);
+          rect(c, x + 1, 5, 5, 9, '#f07a4a');
+          rect(c, x + 1, 5, 5, 2, '#ffb080');
+          for (const y of [7, 10]) rect(c, x + 1, y, 5, 1, '#c8502a');
+          rect(c, x + 2, 14, 3, 3, INK);
+          rect(c, x + 3, 15, 1, 1, '#f07a4a');
+        }
+        rect(c, 20, 3, 4, 3, '#7ac040');
+        rect(c, 21, 2, 2, 1, '#a8e060');
+      });
   for (const [theme, s] of Object.entries(SKINS)) {
     if (scene.textures.exists(`${theme}-box`)) continue;
     const [bf, bl, bs, bm] = s.brick;
@@ -347,6 +415,31 @@ export function makeSkins(scene: Phaser.Scene) {
           }
         }
       });
+      if (s.bond === 'tile') {
+        // Glazed tiles: a blue-and-white star motif on a white ground.
+        rect(c, 1, 1, 22, 22, bf);
+        rect(c, 11, 1, 1, 22, bs);
+        rect(c, 1, 11, 22, 1, bs);
+        for (const [x, y] of [
+          [6, 6],
+          [17, 6],
+          [6, 17],
+          [17, 17],
+        ]) {
+          poly(
+            c,
+            [
+              [x, y - 4],
+              [x + 4, y],
+              [x, y + 4],
+              [x - 4, y],
+            ],
+            bm,
+          );
+          rect(c, x - 1, y - 1, 2, 2, bf);
+        }
+        rect(c, 1, 1, 22, 1, bl);
+      }
       if (s.bond === 'plank') {
         // Carved boards: vertical grain and a peg.
         for (let x = 4; x < 22; x += 6) rect(c, x, 2, 1, 20, bs);
@@ -471,6 +564,61 @@ export function makeSkins(scene: Phaser.Scene) {
           c.restore();
           // Syrup drip.
           if (fr % 3 === 0) rect(c, 8, 17, 1, 2, cb);
+          return;
+        }
+        if (s.collectible === 'freska') {
+          // فريسكا: two golden wafer discs sandwiching honey and sesame,
+          // turning edge-on as it spins.
+          const sq = [1, 0.75, 0.35, 0.75, 1, 1][fr];
+          const w = Math.max(2, Math.round(14 * sq));
+          const x0 = 8 - w / 2;
+          rect(c, x0 - 1, 3, w + 2, 15, co);
+          rect(c, x0, 4, w, 13, cb);
+          rect(c, x0, 9, w, 3, '#b0601a');
+          rect(c, x0, 9, w, 1, '#f0a030');
+          if (w > 6) {
+            for (const yy of [5, 13])
+              for (let xx = x0 + 1; xx < x0 + w - 1; xx += 3)
+                rect(c, xx, yy, 1, 2, cl);
+            rect(c, x0 + 2, 10, 1, 1, '#fff4d0');
+            rect(c, x0 + w - 4, 11, 1, 1, '#fff4d0');
+          }
+          rect(c, x0, 4, Math.max(1, w - 2), 1, cs);
+          return;
+        }
+        if (s.collectible === 'icecream') {
+          // A cone of ice cream: mango and strawberry scoops, bobbing.
+          const bob = [0, 1, 1, 0, -1, -1][fr];
+          poly(
+            c,
+            [
+              [3, 9 + bob],
+              [13, 9 + bob],
+              [8, 20],
+            ],
+            co,
+          );
+          poly(
+            c,
+            [
+              [4, 10 + bob],
+              [12, 10 + bob],
+              [8, 18],
+            ],
+            '#d8a060',
+          );
+          rect(c, 6, 12 + bob, 1, 1, co);
+          rect(c, 9, 13 + bob, 1, 1, co);
+          rect(c, 7, 15 + bob, 1, 1, co);
+          for (const [x, y, col] of [
+            [5, 6, '#f8b040'],
+            [11, 6, '#f080a0'],
+            [8, 2, '#fff4e0'],
+          ] as const) {
+            rect(c, x - 3, y - 3 + bob, 7, 7, co);
+            rect(c, x - 2, y - 2 + bob, 5, 5, col);
+            rect(c, x - 2, y - 2 + bob, 2, 1, '#ffffff');
+          }
           return;
         }
         if (s.collectible === 'fish') {

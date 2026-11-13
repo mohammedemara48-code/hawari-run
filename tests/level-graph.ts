@@ -9,6 +9,7 @@ import {
   MOVERS,
   SAQIA,
   SOLID,
+  TRAM,
   WATER,
   type Parsed,
 } from '../src/level-parse';
@@ -80,6 +81,10 @@ export function surfaces(L: Parsed): Surface[] {
     for (let c = b.a.col; c < b.endCol + BOAT.width; c++)
       cell.set(key(c, sea.topRow + tideAmp - 1), { bounce: 0, solid: false });
   }
+  // The tram roof runs from its stop to the end marker.
+  for (const t of L.trams)
+    for (let c = t.a.col; c < t.endCol + TRAM.width; c++)
+      cell.set(key(c, t.a.row - TRAM.height + 1), { bounce: 0, solid: false });
   // Furniture stacks: stand on top; once toppled they bridge to the right.
   for (const p of L.stacks) {
     cell.set(key(p.col, p.row - STACK.height + 1), { bounce: 0, solid: true });

@@ -19,6 +19,19 @@ import {
   w3Window,
 } from './world3-art';
 
+import {
+  W4_PALETTES,
+  bridgeCell,
+  isW4,
+  w4Cap,
+  w4Ledge,
+  w4Near,
+  w4Slab,
+  w4Stone,
+  w4Window,
+  wetTile,
+  wireCell,
+} from './world4-art';
 import { disc, grad, hash, poly, rect, tex, type Palette } from './art-kit';
 export { disc, hash, poly, rect, tex, type Palette };
 
@@ -128,6 +141,7 @@ export const PALETTES: Record<Theme, Palette> = {
     fog: '#e8c08a',
   },
   ...W3_PALETTES,
+  ...W4_PALETTES,
 };
 
 /* ─────────────────────── Tile painting ─────────────────────── */
@@ -141,6 +155,7 @@ function stoneFill(
   theme: Theme,
 ) {
   if (isW3(theme)) return w3Stone(c, x, y, col, row, pal, theme);
+  if (isW4(theme)) return w4Stone(c, x, y, col, row, pal, theme);
   const h = hash(col, row),
     base = pal.stone[Math.floor(h * pal.stone.length)];
   rect(c, x, y, T, T, base);
@@ -202,6 +217,7 @@ function capTop(
   theme: Theme,
 ) {
   if (isW3(theme)) return w3Cap(c, x, y, col, row, pal, theme);
+  if (isW4(theme)) return w4Cap(c, x, y, col, row, pal, theme);
   const h = hash(col, row, 7);
   if (theme === 'farm') {
     // Field edge: dark soil under a grass lip with wheat and clover tufts.
@@ -264,6 +280,7 @@ function facadeWindow(
   theme: Theme,
 ) {
   if (isW3(theme)) return w3Window(c, x, y, col, row, pal, theme);
+  if (isW4(theme)) return w4Window(c, x, y, col, row, pal, theme);
   const h = hash(col, row, 3),
     lit = theme === 'night' ? h > 0.45 : theme === 'sewer' ? h > 0.8 : false;
   if (theme === 'farm') {
@@ -316,6 +333,7 @@ function slab(
   theme: Theme,
 ) {
   if (isW3(theme)) return w3Slab(c, x, y, col, row, pal, theme);
+  if (isW4(theme)) return w4Slab(c, x, y, col, row, pal, theme);
   const h = hash(col, row, 11);
   if (theme === 'farm') {
     // A split palm trunk laid flat: ringed bark.
@@ -357,6 +375,7 @@ function ledge(
   end: number,
 ) {
   if (isW3(theme)) return w3Ledge(c, x, y, col, row, pal, theme, end);
+  if (isW4(theme)) return w4Ledge(c, x, y, col, row, pal, theme, end);
   const h = hash(col, row, 5);
   if (theme === 'farm') {
     // Palm-rib (jareed) shelf lashed with rope, a few drying dates.
@@ -525,7 +544,31 @@ export function paintLevel(
             hayBale(c, x, y, col, row, L.at(col, row - 1) !== 'N');
           else if (ch === 'u') mudTile(c, x, y, col, row);
           else if (ch === '{' || ch === '}') beltBed(c, x, y, col);
-          else if (ch === 's' || ch === 'U' || ch === 'I')
+          else if (ch === '$')
+            wetTile(c, x, y, col, row, pal, theme, !solid(col, row - 1));
+          else if (ch === '|')
+            wireCell(
+              c,
+              x,
+              y,
+              L.at(col - 1, row) !== '|',
+              (() => {
+                let r = row + 1;
+                while (r < L.rows && !solid(col, r)) r++;
+                return r * T;
+              })(),
+            );
+          else if (ch === ':')
+            bridgeCell(
+              c,
+              x,
+              y,
+              col,
+              row,
+              L.at(col, row - 1) !== ':',
+              L.at(col, row + 1) !== ':',
+            );
+          else if (ch === 's' || ch === 'U' || ch === 'I' || ch === '2')
             seaBed(c, x, y, col, row, L.at(col, row + 1));
           else if (ch === '%')
             netCell(c, x, y, col, row, L.at(col, row - 1) !== '%');
@@ -1713,7 +1756,9 @@ export function makeParallax(scene: Phaser.Scene, theme: Theme) {
             : theme === 'farm'
               ? '#1e2a14'
               : '#050909';
-    if (isW3(theme)) {
+    if (isW4(theme)) {
+      w4Near(c, theme, W);
+    } else if (isW3(theme)) {
       w3Near(c, theme, W);
     } else if (theme === 'farm') {
       // Date-palm fronds drooping into the top of the view: a curved rib

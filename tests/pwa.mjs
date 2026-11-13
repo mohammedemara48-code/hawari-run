@@ -98,8 +98,8 @@ const sw = await (await fetch(ORIGIN + '/sw.js')).text();
 const version = sw.match(/const VERSION = "([0-9a-f]{12})"/)?.[1];
 assert.ok(version, 'build injected a cache version');
 const precache = JSON.parse(sw.match(/const FILES = (\[[^\]]*\])/)[1]);
-// Every level backdrop ships offline, worlds 2 and 3 included.
-for (let i = 1; i <= 12; i++)
+// Every level backdrop ships offline, worlds 2, 3 and 4 included.
+for (let i = 1; i <= 16; i++)
   assert.ok(precache.includes(`/bg/l${i}.webp`), `backdrop l${i} precached`);
 const poll = async (fn, arg, what, ms = 15000) => {
   const end = Date.now() + ms;

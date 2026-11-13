@@ -14,6 +14,7 @@ export const SOLID = new Set([
   'u',
   '{',
   '}',
+  '$',
 ]);
 export const LEDGE = new Set(['-', '~', 'A']);
 export const BOXES: Record<string, string> = {
@@ -39,9 +40,21 @@ export const ENEMY: Record<string, string> = {
   d: 'saw',
   e: 'plane',
   f: 'thief',
+  '1': 'skua',
+  '2': 'jelly',
+  '3': 'brolly',
+  '4': 'ball',
 };
-/** Flying enemies ignore gravity and floors. */
-export const FLYING = new Set(['bat', 'pigeon', 'crow', 'gull']);
+/** Flying enemies ignore gravity and floors (jellyfish swim). */
+export const FLYING = new Set([
+  'bat',
+  'pigeon',
+  'crow',
+  'gull',
+  'skua',
+  'jelly',
+  'brolly',
+]);
 /** Conveyor belts: push direction per cell. */
 export const BELT: Record<string, number> = { '}': 1, '{': -1 };
 /** Canal water: current direction per cell. */
@@ -109,6 +122,12 @@ export interface Parsed {
     c0: number;
     c1: number;
   }[];
+  /** World 4: wave spots, the tram run, wires/bridges, umbrella stands. */
+  waves: Pt[];
+  trams: { a: Pt; endCol: number }[];
+  /** Hazard rects (px) of overhead wires ('|') and low bridges (':'). */
+  wires: { x0: number; x1: number; y0: number; y1: number; bridge: boolean }[];
+  stands: Pt[];
 }
 const pt = (col: number, row: number): Pt => ({
   col,
@@ -157,6 +176,10 @@ export function parseLevel(index: number): Parsed {
     boats: [],
     nets: [],
     seas: [],
+    waves: [],
+    trams: [],
+    wires: [],
+    stands: [],
   };
   const carts: Pt[] = [],
     cartEnds: Pt[] = [];
@@ -165,6 +188,8 @@ export function parseLevel(index: number): Parsed {
   const windCells: Pt[] = [];
   const boats: Pt[] = [],
     boatEnds: Pt[] = [];
+  const trams: Pt[] = [],
+    tramEnds: Pt[] = [];
   let tankSeen = false;
   for (let r = 0; r < rows; r++)
     for (let c = 0; c < cols; c++) {
@@ -254,6 +279,18 @@ export function parseLevel(index: number): Parsed {
           case 'Q':
             out.fakes.push(p);
             break;
+          case '*':
+            out.waves.push(p);
+            break;
+          case '&':
+            trams.push(p);
+            break;
+          case '+':
+            tramEnds.push(p);
+            break;
+          case '(':
+            out.stands.push(p);
+            break;
           case 'H':
           case 'J':
             starts.push({ ...p, tag: ch.toLowerCase() } as Pt);
@@ -281,6 +318,36 @@ export function parseLevel(index: number): Parsed {
       .sort((x, y) => x.col - y.col)[0];
     out.boats.push({ a, endCol: end ? end.col : a.col + 6 });
   }
+  for (const a of trams) {
+    const end = tramEnds
+      .filter((e) => e.row === a.row && e.col > a.col)
+      .sort((x, y) => x.col - y.col)[0];
+    out.trams.push({ a, endCol: end ? end.col : a.col + 20 });
+  }
+  // Wires and bridges: per horizontal run; the hazard stops 16px above the
+  // bottom of the lowest cell, so a crouching hero on the tram passes under.
+  for (const ch of ['|', ':'])
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++) {
+        if (grid[r][c] !== ch || grid[r - 1]?.[c] === ch) continue;
+        let c1 = c;
+        while (
+          c1 + 1 < cols &&
+          grid[r][c1 + 1] === ch &&
+          grid[r - 1]?.[c1 + 1] !== ch
+        )
+          c1++;
+        let r1 = r;
+        while (r1 + 1 < rows && grid[r1 + 1][c] === ch) r1++;
+        out.wires.push({
+          x0: c * TILE,
+          x1: (c1 + 1) * TILE,
+          y0: r * TILE,
+          y1: (r1 + 1) * TILE - WIRE.gap,
+          bridge: ch === ':',
+        });
+        c = c1;
+      }
   // Conveyor belts: horizontal runs of one direction.
   for (let r = 0; r < rows; r++)
     for (let c = 0; c < cols; c++) {
@@ -294,7 +361,7 @@ export function parseLevel(index: number): Parsed {
   // Sea: contiguous water runs in their top (high-tide) row. Boat markers
   // sit in the water and count as sea.
   const isSea = (ch: string | undefined) =>
-    ch === 's' || ch === 'U' || ch === 'I';
+    ch === 's' || ch === 'U' || ch === 'I' || ch === '2';
   for (let r = 0; r < rows; r++) {
     let c = 0;
     while (c < cols) {
@@ -403,6 +470,28 @@ export function tideY(
     sea.top +
     tide.amp * TILE * (0.5 + 0.5 * Math.cos((2 * Math.PI * t) / tide.period))
   );
+}
+/** World 4 mechanics. The tram: tiles long and tall, speed (px/s). */
+export const TRAM = { width: 8, height: 3, speed: 120 };
+/** Wire/bridge hazards end this many px above their lowest cell's bottom. */
+export const WIRE = { gap: 16 };
+/** Umbrella glide: capped fall speed and how hard the wind pushes it. */
+export const GLIDE = { fall: 70, wind: 1.9, lift: 520 };
+/** Wet tiles: how fast you can change speed on them (vs 1000 / 1400). */
+export const WET = { accel: 240, decel: 110 };
+/** Default gusts (Cairo rooftops): push px/s, ms on, ms off. */
+export const GUST = { push: 150, on: 2600, off: 1600 };
+/** Is a wave at spot `col` breaking (or foaming) at time t (s)? */
+export function waveState(
+  w: { period: number; warn: number; crash: number },
+  col: number,
+  t: number,
+): 'calm' | 'warn' | 'crash' {
+  // Neighbouring spots break in a rolling sequence along the wall.
+  const k = (((t + col * 0.29) % w.period) + w.period) % w.period;
+  if (k < w.warn) return 'warn';
+  if (k < w.warn + w.crash) return 'crash';
+  return 'calm';
 }
 export const BOUNCE = {
   awning: 700,
