@@ -372,10 +372,14 @@ export function makeDamiettaProps(scene: Phaser.Scene) {
       rect(c, 1, y + 3, 2, 1, '#6a5438');
     }
   });
-  tex(scene, 'lamp-hook', 24, 10, (c) => {
-    rect(c, 0, 0, 24, 6, '#3a2414');
-    rect(c, 0, 0, 24, 2, '#8a5a32');
-    rect(c, 10, 6, 4, 4, '#8a9498');
+  // Carved beam with two iron eyes the swing ropes hang from.
+  tex(scene, 'lamp-hook', 56, 10, (c) => {
+    rect(c, 0, 0, 56, 6, '#3a2414');
+    rect(c, 0, 0, 56, 2, '#8a5a32');
+    for (const x of [6, 46]) {
+      rect(c, x, 5, 4, 5, '#2a2a2e');
+      rect(c, x + 1, 6, 2, 3, '#8a9498');
+    }
   });
   // Stacked furniture: a carved chest, a cabinet and a chair on top (24×72).
   tex(scene, 'stack', 24, 72, (c) => {

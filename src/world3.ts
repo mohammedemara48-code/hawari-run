@@ -40,6 +40,8 @@ export interface W3 {
   hanging: boolean;
   netCooldown: number;
 }
+/** Half the distance between a lamp's two ropes (px). */
+export const ROPE_SPREAD = 20;
 export const emptyW3 = (): W3 | undefined => undefined;
 
 /** Lamp platform top-left target and velocity at clock t. */
@@ -242,14 +244,25 @@ export function updateDamiettaWorld(s: Alley, time: number, dt: number) {
         q.vx + Phaser.Math.Clamp((q.x - 4 - m.img.x) * 8, -200, 200),
         q.vy + Phaser.Math.Clamp((q.y - m.img.y) * 8, -200, 200),
       );
-      // Ropes from the beam to both ends of the platform.
-      const cx = m.img.x + 4 + (LAMP.width * TILE) / 2;
-      w3.ropes.lineStyle(2, 0x3a2414, 1);
-      w3.ropes.lineBetween(m.lamp.px, m.lamp.py - 6, m.img.x + 6, m.img.y + 1);
-      w3.ropes.lineBetween(m.lamp.px, m.lamp.py - 6, m.img.x + 50, m.img.y + 1);
-      w3.ropes.lineStyle(1, 0xc8a878, 1);
-      w3.ropes.lineBetween(m.lamp.px, m.lamp.py - 6, cx, m.img.y);
-      m.img.rotation = Math.atan2(cx - m.lamp.px, m.img.y - m.lamp.py) * -0.3;
+      // Two parallel ropes from the beam to the ends of the platform: a
+      // parallelogram swing, so the platform stays level and the ropes
+      // always meet it exactly where they are drawn.
+      const ends: [number, number, number, number][] = [-1, 1].map((d) => [
+        m.lamp!.px + d * ROPE_SPREAD,
+        m.lamp!.py - 6,
+        m.img.x + 4 + (LAMP.width * TILE) / 2 + d * ROPE_SPREAD,
+        m.img.y + 1,
+      ]);
+      m.lamp.ropes = ends;
+      for (const [w, col] of [
+        [3, 0x2a180c],
+        [1, 0xc8a878],
+      ] as const) {
+        w3.ropes.lineStyle(w, col, 1);
+        for (const [x1, y1, x2, y2] of ends)
+          w3.ropes.lineBetween(x1, y1, x2, y2);
+      }
+      m.img.rotation = 0;
     } else if (m.boat) {
       const ty =
         seaLevel(s, m.boat.sea) -

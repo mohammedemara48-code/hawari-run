@@ -117,7 +117,13 @@ interface Mover {
   /** Donkey cart: runs to max while ridden, walks home when left. */
   donkey?: { min: number; max: number; leftAt: number; ridden: boolean };
   /** Swinging chandelier / lantern: pivot and phase. */
-  lamp?: { px: number; py: number; phase: number };
+  lamp?: {
+    px: number;
+    py: number;
+    phase: number;
+    /** Rope segments as drawn this frame: [x1, y1, x2, y2] each. */
+    ropes?: [number, number, number, number][];
+  };
   /** Fishing boat riding the tide on its sea. */
   boat?: { sea: { top: number }; seed: number };
 }
@@ -201,6 +207,8 @@ export class Alley extends Phaser.Scene {
   };
   zip: { line: number; dir: number } | null = null;
   zipCooldown = 0;
+  /** Standing on a swinging lamp or a bobbing boat this frame. */
+  riding = false;
   dropUntil = 0;
   downSince = 0;
   keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -2825,6 +2833,7 @@ export class Alley extends Phaser.Scene {
         this.skin('coin' + (Math.floor(time / 100 + obj.getData('phase')) % 6)),
       );
     // Ride carts and planks: carry the hero by the platform's own step.
+    this.riding = false;
     if (this.mode === 'play' && !this.zip) {
       const hb = body(this.hero);
       const on = this.moverList.find((m) => {
@@ -2837,6 +2846,11 @@ export class Alley extends Phaser.Scene {
         );
       });
       const ob = on && body(on.img);
+      this.riding = !!(
+        ob &&
+        (on.lamp || on.boat) &&
+        hb.velocity.y >= Math.min(0, ob.velocity.y) - 5
+      );
       if (ob && hb.velocity.y >= Math.min(0, ob.velocity.y) - 5) {
         this.hero.x += ob.velocity.x * dt;
         // Swinging lamps and bobbing boats also drop away under you: stick.
@@ -2934,7 +2948,9 @@ export class Alley extends Phaser.Scene {
       throwing = keyAction || touch.throw,
       down = this.keys.DOWN.isDown || this.keys.S.isDown || touch.down;
     const b = body(this.hero);
-    const grounded = b.blocked.down || b.touching.down;
+    // Riding a lamp or boat that drops away under you still counts as
+    // standing, so you can always jump off it.
+    const grounded = b.blocked.down || b.touching.down || this.riding;
     if (grounded) this.lastGround = time;
     if (jump && !this.jumpWas) this.lastPress = time;
     // Wind gusts: 2.6 s on, 1.6 s off.

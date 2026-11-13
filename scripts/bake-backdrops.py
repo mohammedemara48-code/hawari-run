@@ -23,10 +23,11 @@ JOBS = {
     'l6': ('bg-w2-countryside', 0.92, 0.8, 0.8, 'noon'),
     'l7': ('bg-w2-countryside', 0.78, 0.85, 0.85, 'dusk'),
     'l8': ('bg-w2-countryside', 0.62, 0.7, 0.9, 'night'),
-    # World 3 (Damietta): the workshop quay by morning, by lamplight indoors,
-    # at sunset over the harbour and in the blue hour at Ras El Bar.
+    # World 3 (Damietta): the workshop quay by morning, inside a carpenter's
+    # workshop (its own painting), at sunset over the harbour and in the blue
+    # hour at Ras El Bar.
     'l9': ('bg-w3-damietta', 0.84, 0.86, 0.9, 'morning'),
-    'l10': ('bg-w3-damietta', 0.6, 0.7, 0.9, 'lamplight'),
+    'l10': ('bg-w3-workshop-interior', 0.74, 0.8, 0.88),
     'l11': ('bg-w3-damietta', 0.8, 0.85, 0.85, 'dusk'),
     'l12': ('bg-w3-damietta', 0.66, 0.72, 0.92, 'bluehour'),
 }

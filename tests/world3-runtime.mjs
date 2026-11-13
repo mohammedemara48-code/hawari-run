@@ -73,7 +73,7 @@ await ev(() => {
         bottom: b.bottom,
         vx: b.velocity.x,
         vy: b.velocity.y,
-        grounded: b.blocked.down || b.touching.down,
+        grounded: b.blocked.down || b.touching.down || s.riding,
         swim: s.swimming,
         hang: !!s.w3?.hanging,
         mode: s.mode,
@@ -202,6 +202,26 @@ await shot('13-w3-level1.png');
   });
   const xs = track.map((t) => t[0]);
   assert.ok(Math.max(...xs) - Math.min(...xs) > 30, 'the lamp swings');
+  // The ropes stay parallel, equally long and end on the platform's edges.
+  const ropes = await sample(900, () => {
+    const m = window.T.s.moverList.find((m) => m.lamp);
+    return {
+      ropes: m.lamp.ropes,
+      rot: m.img.rotation,
+      left: m.img.body.left,
+      right: m.img.body.right,
+      top: m.img.body.top,
+    };
+  });
+  for (const { ropes: r, rot, left, right, top } of ropes) {
+    assert.equal(rot, 0, 'the swing platform stays level');
+    const len = r.map(([a, b, c, d]) => Math.hypot(c - a, d - b));
+    assert.ok(Math.abs(len[0] - len[1]) < 0.5, `ropes equal ${len}`);
+    for (const [, , x, y] of r) {
+      assert.ok(x > left && x < right, 'rope meets the platform');
+      assert.ok(Math.abs(y - top) < 3, 'rope ends at the platform top');
+    }
+  }
   for (const [x, y, px, py] of track) {
     const r = Math.hypot(x - px, y - py);
     assert.ok(Math.abs(r - 72) < 8, `lamp stays on its chain (${r | 0})`);
