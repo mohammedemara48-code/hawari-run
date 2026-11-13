@@ -290,9 +290,9 @@ const btn = await st();
 assert.ok(!btn.grounded && btn.vx > 100, 'jump button + stick move together');
 await up(2);
 await up(1);
-// 7. Sweep all four levels (ends, rooftops and boss arena), standing and mid-air,
+// 7. Sweep all eight levels (ends, rooftops and boss arena), standing and mid-air,
 // letting the real follow camera settle at each spot.
-for (const level of [0, 1, 2, 3]) {
+for (const level of [0, 1, 2, 3, 4, 5, 6, 7]) {
   const spec = await p.evaluate((level) => {
     const s = window.hawari.scene.getScene('alley');
     s.lives = 9;

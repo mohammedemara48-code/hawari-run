@@ -227,6 +227,30 @@ function emblem(
 }
 
 export function makeSkins(scene: Phaser.Scene) {
+  // The countryside power-up: a bunch of fresh dates (بلح) instead of foul.
+  if (!scene.textures.exists('farm-food'))
+    tex(scene, 'farm-food', 24, 20, (c) => {
+      rect(c, 11, 0, 2, 6, '#5a7a2a');
+      rect(c, 6, 2, 12, 2, '#7a9a3a');
+      const dates: [number, number][] = [
+        [5, 6],
+        [10, 5],
+        [15, 6],
+        [3, 10],
+        [8, 10],
+        [13, 10],
+        [18, 10],
+        [6, 14],
+        [11, 14],
+        [16, 14],
+        [9, 17],
+      ];
+      for (const [x, y] of dates) {
+        rect(c, x, y, 5, 5, INK);
+        rect(c, x + 1, y, 3, 4, '#b8401e');
+        rect(c, x + 1, y + 1, 1, 2, '#f08a4a');
+      }
+    });
   for (const [theme, s] of Object.entries(SKINS)) {
     if (scene.textures.exists(`${theme}-box`)) continue;
     const [bf, bl, bs, bm] = s.brick;
@@ -325,23 +349,31 @@ export function makeSkins(scene: Phaser.Scene) {
     for (let fr = 0; fr < 6; fr++)
       tex(scene, `${theme}-coin${fr}`, 16, 20, (c) => {
         if (s.collectible === 'wheat') {
-          // A sheaf of wheat that sways instead of spinning.
+          // A plump ear of wheat (سنبلة) that sways: two rows of kernels,
+          // long awns and a leaf on the stalk.
           const sway = [0, 1, 1, 0, -1, -1][fr];
-          rect(c, 7, 9, 2, 10, co);
-          rect(c, 7, 9, 1, 10, '#a8822a');
-          for (let i = 0; i < 4; i++) {
-            const y = 2 + i * 2,
-              x = 6 + sway * (i < 2 ? 1 : 0);
-            rect(c, x - 2, y, 3, 2, co);
-            rect(c, x + 3, y, 3, 2, co);
-            rect(c, x - 1, y, 2, 1, cb);
-            rect(c, x + 3, y, 2, 1, cb);
+          rect(c, 7, 12, 2, 8, co);
+          rect(c, 7, 12, 1, 8, '#c89a3a');
+          rect(c, 3, 14, 4, 2, co);
+          rect(c, 4, 14, 3, 1, '#9aa040');
+          for (let i = 0; i < 5; i++) {
+            const y = 3 + i * 2,
+              shift = i < 2 ? sway : i < 4 ? Math.sign(sway) * 0.5 : 0;
+            for (const side of [0, 1]) {
+              const x = Math.round(5 + side * 4 + shift);
+              if (i === 4 && side === 1) continue;
+              const kx = i === 4 ? 7 + Math.round(shift) : x;
+              rect(c, kx - 1, y - 1, 4, 4, co);
+              rect(c, kx, y, 2, 3, cb);
+              rect(c, kx, y, 1, 1, cl);
+              // Awns fanning out from each kernel.
+              rect(c, kx + (side ? 3 : -2), y - 2, 1, 2, cb);
+            }
           }
-          rect(c, 6 + sway, 0, 4, 11, co);
-          rect(c, 7 + sway, 1, 2, 9, cl);
-          rect(c, 7 + sway, 1, 1, 3, cs);
-          rect(c, 4, 13, 8, 2, '#8a5a2a');
-          rect(c, 4, 13, 8, 1, '#c8904a');
+          rect(c, 7 + sway, 0, 2, 3, co);
+          rect(c, 7 + sway, 1, 1, 2, cs);
+          rect(c, 5 + sway, 0, 1, 2, cb);
+          rect(c, 10 + sway, 0, 1, 2, cb);
           return;
         }
         const w = [6, 10, 14, 10, 6, 3][fr];

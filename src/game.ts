@@ -2,8 +2,10 @@ import Phaser from 'phaser';
 import { makeSkins, skinKey } from './skins';
 import { makeArt } from './art';
 import { makeCreatures } from './creatures';
+import { makeFarmCreatures } from './creatures-farm';
 import {
   hash,
+  makeFarmProps,
   makeParallax,
   makeProps,
   paintLevel,
@@ -12,11 +14,16 @@ import {
 import { HERO_FRAME, heroBody, heroPose } from './hero-state';
 import { approach, jumpAllowed, stomped, tally } from './rules';
 import { PHYSICS } from './levels';
-import { LEVELS, TILE } from './level-data';
+import { LEVELS, TILE, WORLDS } from './level-data';
 import {
   BOUNCE,
+  CANAL,
+  DONKEY,
+  FLYING,
   LEDGE,
   MOVERS,
+  MUD,
+  SAQIA,
   SOLID,
   parseLevel,
   type Parsed,
@@ -94,6 +101,20 @@ interface Mover {
   chains?: Phaser.GameObjects.TileSprite[];
   chainTop?: number;
   steam?: Phaser.GameObjects.Particles.ParticleEmitter;
+  /** Platforms that carry a rider sideways with their own motion. */
+  carry?: boolean;
+  /** Saqia bucket: wheel centre and its angular offset on the wheel. */
+  saqia?: { cx: number; cy: number; phase: number };
+  /** Donkey cart: runs to max while ridden, walks home when left. */
+  donkey?: { min: number; max: number; leftAt: number; ridden: boolean };
+}
+interface Canal {
+  x0: number;
+  x1: number;
+  top: number;
+  bottom: number;
+  dir: number;
+  surface: Phaser.GameObjects.TileSprite;
 }
 interface Water {
   top: Phaser.GameObjects.TileSprite;
@@ -128,6 +149,11 @@ export class Alley extends Phaser.Scene {
   shots!: Phaser.Physics.Arcade.Group;
   hazards!: Phaser.Physics.Arcade.Group;
   moverList: Mover[] = [];
+  canals: Canal[] = [];
+  wheels: Phaser.GameObjects.Image[] = [];
+  swimming = false;
+  onMud = false;
+  hints = new Set<string>();
   lanterns: Lantern[] = [];
   layers: Phaser.GameObjects.TileSprite[] = [];
   fakes: Phaser.GameObjects.Image[] = [];
@@ -204,7 +230,9 @@ export class Alley extends Phaser.Scene {
   create() {
     makeArt(this);
     makeCreatures(this);
+    makeFarmCreatures(this);
     makeProps(this);
+    makeFarmProps(this);
     makeSkins(this);
     for (const l of LEVELS) makeParallax(this, l.theme);
     this.keys = this.input.keyboard!.addKeys(
@@ -328,6 +356,10 @@ export class Alley extends Phaser.Scene {
     this.layers = [];
     this.lanterns = [];
     this.moverList = [];
+    this.canals = [];
+    this.wheels = [];
+    this.swimming = false;
+    this.onMud = false;
     this.fakes = [];
     this.fakeRect = undefined;
     this.windEmitters = [];
@@ -498,7 +530,7 @@ export class Alley extends Phaser.Scene {
         if (l.img.x < spawn.x) this.lightLantern(l, false);
     this.buildColliders();
     this.buildAtmosphere();
-    sound.setTrack(this.level);
+    sound.setTrack(meta.track);
     sound.setIntensity(0);
     bossBar(false);
     this.fitView();
@@ -534,6 +566,16 @@ export class Alley extends Phaser.Scene {
       this.terrain.add(
         this.add.zone(rc.centerX, rc.centerY, rc.width, rc.height),
       );
+    for (const ch of ['N', 'u'])
+      for (const [r, a, b] of this.runs(ch))
+        this.terrain.add(
+          this.add.zone(
+            ((a + b + 1) / 2) * TILE,
+            r * TILE + 12,
+            (b - a + 1) * TILE,
+            TILE,
+          ),
+        );
     for (const [r, a, b] of this.runs('='))
       this.terrain.add(
         this.add.zone(
@@ -657,7 +699,7 @@ export class Alley extends Phaser.Scene {
       s.setDepth(3).setData('home', { x: x.x, y: x.y });
     }
     for (const g of L.spikes) {
-      const s = this.hazards.create(g.x, g.y + 6, 'glass') as Sprite;
+      const s = this.hazards.create(g.x, g.y + 6, this.skin('glass')) as Sprite;
       body(s)
         .setAllowGravity(false)
         .setImmovable(true)
@@ -673,7 +715,11 @@ export class Alley extends Phaser.Scene {
       const img = this.movers.create(
         p.col * TILE,
         p.row * TILE,
-        kind === 'cart' ? 'vcart' : kind,
+        kind === 'cart'
+          ? 'vcart'
+          : kind === 'plank' && theme === 'farm'
+            ? 'log'
+            : kind,
       ) as Img;
       img.setOrigin(0, 0).setDepth(kind === 'cart' ? 3 : 2);
       const b = body(img);
@@ -698,6 +744,7 @@ export class Alley extends Phaser.Scene {
               min: p.col * TILE,
               max: (p.col + m.range) * TILE,
               speed: m.speed,
+              carry: true,
             };
       if (kind === 'lift') {
         let r = p.row - m.range - 1;
@@ -728,6 +775,7 @@ export class Alley extends Phaser.Scene {
     L.carts.forEach((p) => addMover(p, 'cart'));
     L.planks.forEach((p) => addMover(p, 'plank'));
     L.lifts.forEach((p) => addMover(p, 'lift'));
+    this.buildFarm();
     for (const e of L.enemies) this.enemy(e.x, e.y, e.kind);
     if (L.boss) this.makeBoss(L.boss.x, (L.boss.row + 1) * TILE);
     if (L.checkpoint)
@@ -820,6 +868,122 @@ export class Alley extends Phaser.Scene {
       }
     }
   }
+  /** World 2 pieces: saqia wheels, the donkey cart and canal water. */
+  buildFarm() {
+    const L = this.L;
+    for (const w of L.saqias) {
+      // Mud-brick post from the hub down to whatever is below it.
+      let r = w.row + 1;
+      while (r < L.rows && !SOLID.has(L.at(w.col, r))) r++;
+      this.add
+        .image(w.x, w.y, 'saqia-post')
+        .setOrigin(0.5, 0)
+        .setDisplaySize(40, Math.max(40, r * TILE - w.y))
+        .setDepth(-1);
+      this.wheels.push(this.add.image(w.x, w.y, 'saqia-wheel').setDepth(1));
+      for (let i = 0; i < SAQIA.buckets; i++) {
+        const phase = (i / SAQIA.buckets) * Math.PI * 2;
+        const img = this.movers.create(0, 0, 'bucket') as Img;
+        img.setOrigin(0, 0).setDepth(2);
+        const b = body(img);
+        b.setSize(SAQIA.width * TILE, 10).setOffset(0, 0);
+        oneWay(b);
+        const m: Mover = {
+          img,
+          axis: 'x',
+          min: 0,
+          max: 0,
+          speed: 0,
+          carry: true,
+          saqia: { cx: w.x, cy: w.y, phase },
+        };
+        const [x, y] = this.saqiaPos(m, this.clock);
+        img.setPosition(x, y);
+        b.reset(x, y);
+        this.moverList.push(m);
+      }
+    }
+    for (const d of L.donkeys) {
+      const img = this.movers.create(0, 0, 'donkey0') as Img;
+      img.setOrigin(0, 0).setDepth(3);
+      const x = d.a.col * TILE,
+        y = (d.a.row + 1) * TILE - 44;
+      img.setPosition(x, y);
+      const b = body(img);
+      b.setSize(DONKEY.width * TILE + 4, 10).setOffset(0, 12);
+      b.reset(x, y);
+      oneWay(b);
+      const max = (d.endCol - DONKEY.width + 1) * TILE;
+      this.moverList.push({
+        img,
+        axis: 'x',
+        min: x,
+        max,
+        speed: 0,
+        carry: true,
+        donkey: { min: x, max, leftAt: -1e9, ridden: false },
+      });
+      // A plank causeway where the track crosses open ground.
+      const g = this.add.graphics().setDepth(-1);
+      const ty = (d.a.row + 1) * TILE;
+      for (let c = d.a.col; c <= d.endCol; c++) {
+        if (SOLID.has(L.at(c, d.a.row + 1))) continue;
+        g.fillStyle(0x2a1a10, 1).fillRect(c * TILE, ty - 2, TILE, 8);
+        g.fillStyle(0x8a5e3a, 1).fillRect(c * TILE + 1, ty - 1, TILE - 3, 5);
+        g.fillStyle(0x5a3a22, 1).fillRect(c * TILE + 10, ty + 6, 3, 30);
+      }
+    }
+    for (const k of L.canals) {
+      const surface = this.add
+        .tileSprite(k.x0, k.top - 4, k.x1 - k.x0, 12, 'canal-top')
+        .setOrigin(0)
+        .setDepth(11);
+      this.add
+        .rectangle(
+          k.x0,
+          k.top + 8,
+          k.x1 - k.x0,
+          k.bottom - k.top - 8,
+          0x2a6a5a,
+          0.5,
+        )
+        .setOrigin(0)
+        .setDepth(11);
+      this.add
+        .particles(0, 0, 'streak', {
+          lifespan: 1100,
+          speedX: { min: 50 * k.dir, max: 90 * k.dir },
+          alpha: { start: 0.55, end: 0 },
+          scaleX: 0.6,
+          frequency: 180,
+          emitZone: randomZone(
+            new Phaser.Geom.Rectangle(k.x0, k.top + 2, k.x1 - k.x0, 14),
+          ),
+        })
+        .setDepth(12);
+      this.canals.push({ ...k, surface });
+    }
+  }
+  saqiaPos(m: Mover, t: number): [number, number] {
+    const q = m.saqia!,
+      a = q.phase + t * SAQIA.speed,
+      R = SAQIA.radius * TILE;
+    return [
+      q.cx + Math.cos(a) * R - (SAQIA.width * TILE) / 2,
+      q.cy + Math.sin(a) * R,
+    ];
+  }
+  canalAt(x: number, bottom: number) {
+    return this.canals.find(
+      (k) =>
+        x > k.x0 && x < k.x1 && bottom > k.top + 4 && bottom < k.bottom + 30,
+    );
+  }
+  hint(key: string, text: string) {
+    if (this.hints.has(key)) return;
+    this.hints.add(key);
+    toast(text);
+  }
   buildAtmosphere() {
     const L = this.L,
       meta = L.meta,
@@ -886,12 +1050,24 @@ export class Alley extends Phaser.Scene {
         frequency: 110,
         emitZone: zone(1000, 40),
       },
+      farm: {
+        // Chaff and pollen drifting off the fields.
+        lifespan: 5200,
+        speedX: { min: 12, max: 42 },
+        speedY: { min: -6, max: 10 },
+        rotate: { min: 0, max: 360 },
+        alpha: { start: 0.85, end: 0 },
+        tint: meta.timeOfDay === 'night' ? 0xc8d8ff : 0xffffff,
+        frequency: 150,
+        emitZone: zone(1000, 380),
+      },
     };
     const key = {
       night: 'firefly',
       market: 'mote',
       roof: 'feather',
       sewer: 'drip',
+      farm: meta.timeOfDay === 'night' ? 'firefly' : 'chaff',
     }[meta.theme];
     this.ambient = this.add
       .particles(0, 0, key, conf[meta.theme])
@@ -1013,8 +1189,13 @@ export class Alley extends Phaser.Scene {
     this.physics.add.overlap(hero, this.hazards, () => this.hurt());
     this.physics.add.collider(this.hazards, this.terrain, (h) => {
       const s = h as Sprite;
-      if (s.getData('kind') === 'bone') {
-        this.burst(s.x, s.y, 0xf3ead2, 4);
+      if (s.getData('kind') === 'bone' || s.getData('kind') === 'clod') {
+        this.burst(
+          s.x,
+          s.y,
+          s.getData('kind') === 'clod' ? 0x5a3a22 : 0xf3ead2,
+          4,
+        );
         s.destroy();
       }
     });
@@ -1030,7 +1211,7 @@ export class Alley extends Phaser.Scene {
         }
       });
     this.physics.add.overlap(this.shots, this.enemies, (shot, e) => {
-      this.killEnemy(e as Sprite);
+      this.damageEnemy(e as Sprite);
       shot.destroy();
     });
     this.physics.add.overlap(this.enemies, this.enemies, (a, b) => {
@@ -1067,7 +1248,7 @@ export class Alley extends Phaser.Scene {
     return s;
   }
   enemy(x: number, y: number, type: string) {
-    const flying = type === 'bat' || type === 'pigeon';
+    const flying = FLYING.has(type);
     const e = this.enemies.create(x, y, type + '0') as Sprite;
     const sizes: Record<string, [number, number, number, number]> = {
       cat: [24, 22, 4, 5],
@@ -1077,6 +1258,9 @@ export class Alley extends Phaser.Scene {
       rooster: [22, 26, 6, 5],
       pigeon: [20, 14, 5, 4],
       rat: [22, 12, 5, 5],
+      buffalo: [40, 28, 6, 8],
+      goose: [20, 22, 5, 4],
+      crow: [20, 14, 5, 4],
     };
     const [w, h, ox, oy] = sizes[type];
     const b = body(e);
@@ -1092,25 +1276,42 @@ export class Alley extends Phaser.Scene {
       .setData('until', 0)
       .setData('sleep', false)
       .setData('rolling', false)
-      .setData('seed', hash(x, y) * 10);
+      .setData('seed', hash(x, y) * 10)
+      .setData('hp', type === 'buffalo' ? 2 : 1);
     if (!flying) e.setVelocityX(-this.walkSpeed(type));
     return e;
   }
   walkSpeed(type: string) {
     return (
       (
-        { cat: 38, bug: 55, basket: 38, rooster: 34, rat: 92 } as Record<
-          string,
-          number
-        >
+        {
+          cat: 38,
+          bug: 55,
+          basket: 38,
+          rooster: 34,
+          rat: 92,
+          buffalo: 28,
+          goose: 46,
+        } as Record<string, number>
       )[type] ?? 40
     );
   }
+  get bossKind() {
+    return this.L.meta.bossKind ?? 'fatwa';
+  }
+  get bossName() {
+    return this.bossKind === 'buffalo' ? 'أبو قرون' : 'الفتوة برعي';
+  }
+  bossTex(pose: string) {
+    return (this.bossKind === 'buffalo' ? 'boss2-' : 'boss-') + pose;
+  }
   makeBoss(x: number, bottom: number) {
+    const buffalo = this.bossKind === 'buffalo';
     const boss = this.physics.add
-      .sprite(x, bottom - 32, 'boss-idle0')
+      .sprite(x, bottom - (buffalo ? 33 : 32), this.bossTex('idle0'))
       .setDepth(9);
-    body(boss).setSize(52, 54).setOffset(13, 10);
+    if (buffalo) body(boss).setSize(76, 50).setOffset(12, 14);
+    else body(boss).setSize(52, 54).setOffset(13, 10);
     boss.setFlipX(true);
     this.boss = boss;
   }
@@ -1126,7 +1327,9 @@ export class Alley extends Phaser.Scene {
       toast(
         power === 2
           ? 'شطة نار! دوس X أو زرار الشطة وارمي'
-          : 'سندوتش فول… بقيت أقوى!',
+          : this.L.meta.theme === 'farm'
+            ? 'بلح زغلول… بقيت أقوى!'
+            : 'سندوتش فول… بقيت أقوى!',
       );
       this.burst(this.hero.x, this.hero.y, 0xffc879, 16);
     }
@@ -1538,6 +1741,22 @@ export class Alley extends Phaser.Scene {
       });
     }
   }
+  /** Tough enemies (the buffalo) take two hits; the first leaves them dizzy. */
+  damageEnemy(e: Sprite) {
+    if (!e.active) return;
+    const hp = (e.getData('hp') as number) - 1;
+    if (hp > 0) {
+      e.setData('hp', hp).setData('state', 'dizzy');
+      e.setData('until', this.time.now + 1500).setVelocityX(0);
+      e.setTintFill(0xffffff);
+      this.time.delayedCall(70, () => e.active && e.clearTint());
+      this.burst(e.x, e.y - 10, 0xffe36a, 6);
+      sound.fx('moo');
+      this.score += 100;
+      return;
+    }
+    this.killEnemy(e);
+  }
   killEnemy(e: Sprite) {
     if (!e.active) return;
     this.score += 200;
@@ -1589,7 +1808,7 @@ export class Alley extends Phaser.Scene {
           e.setScale(1, 0.7);
         }
         sound.fx('stomp');
-      } else this.killEnemy(e);
+      } else this.damageEnemy(e);
       this.hero.setVelocityY(this.jumpWas ? -420 : -300);
       this.burst(this.hero.x, this.hero.y + 14, 0xeed9a4, 5);
     } else if (e.getData('sleep')) {
@@ -1677,10 +1896,18 @@ export class Alley extends Phaser.Scene {
       ) +
       row('مجموعك', String(this.score), 'total');
     if (this.level < LEVELS.length - 1) {
-      const next = LEVELS[this.level + 1];
-      document.getElementById('clear-title')!.textContent =
-        `${this.level + 1} · ${LEVELS[this.level].name}`;
-      document.getElementById('next-name')!.textContent = `على ${next.name} ◀`;
+      const cur = LEVELS[this.level],
+        next = LEVELS[this.level + 1];
+      const local = LEVELS.slice(0, this.level + 1).filter(
+        (l) => l.world === cur.world,
+      ).length;
+      const worldDone = next.world !== cur.world;
+      document.getElementById('clear-title')!.textContent = worldDone
+        ? `خلّصت ${WORLDS[cur.world].name}! الطريق مفتوح على ${WORLDS[next.world].name}`
+        : `${local} · ${cur.name}`;
+      document.getElementById('next-name')!.textContent = worldDone
+        ? `على ${WORLDS[next.world].name}: ${next.name} ◀`
+        : `على ${next.name} ◀`;
       screen('clear', details);
     } else {
       this.mode = 'win';
@@ -1709,9 +1936,29 @@ export class Alley extends Phaser.Scene {
     if (this.mode !== 'play' || s.defeated || !s.active) return;
     const b = body(this.hero),
       bb = body(boss);
-    if (b.velocity.y > 0 && b.prev.y + b.height <= bb.top + 16) {
+    const fromAbove = b.velocity.y > 0 && b.prev.y + b.height <= bb.top + 16;
+    if (this.bossKind === 'buffalo' && s.state !== 'dazed') {
+      // The buffalo's back is only open while it's dazed from a crash.
+      if (fromAbove) {
+        this.hero.setVelocity(this.hero.x < boss.x ? -200 : 200, -430);
+        this.hint('horns', 'ضهره ناشف دلوقتي! خلّيه يخبط في الحيطة ويدوخ');
+        return;
+      }
+      if (this.time.now < this.invincible)
+        this.hero.setVelocityX(this.hero.x < boss.x ? -260 : 260);
+      else if (s.state !== 'hurt') {
+        this.hurt();
+        if (this.mode === 'play')
+          this.hero.setVelocity(this.hero.x < boss.x ? -280 : 280, -300);
+      }
+      return;
+    }
+    if (fromAbove) {
       this.hero.setVelocityY(-430);
       if (this.time.now >= s.invuln) this.bossDamage(1);
+    } else if (this.bossKind === 'buffalo') {
+      // Dazed: brushing past is harmless.
+      this.hero.setVelocityX(this.hero.x < boss.x ? -120 : 120);
     } else if (this.time.now < this.invincible) {
       this.hero.setVelocityX(this.hero.x < boss.x ? -260 : 260);
     } else if (s.state !== 'hurt') {
@@ -1748,7 +1995,7 @@ export class Alley extends Phaser.Scene {
       () => this.mode === 'play' && this.physics.resume(),
     );
     this.popText(boss.x, boss.y - 40, '+٥٠٠', '#ffe08a');
-    bossBar(true, s.hp / 6, this.bossPhase());
+    bossBar(true, s.hp / 6, this.bossPhase(), this.bossName);
     if (s.hp <= 0) {
       this.bossDefeat();
       return;
@@ -1756,30 +2003,48 @@ export class Alley extends Phaser.Scene {
     if (this.bossPhase() !== before) {
       sound.bossPhase = this.bossPhase() - 1;
       sound.fx('roar');
+      const buffalo = this.bossKind === 'buffalo';
       toast(
         this.bossPhase() === 2
-          ? 'الفتوة برعي اتعصّب! بيرمي عضم سمك'
-          : 'آخر نَفَس! نطّ فوق الرجّة',
+          ? buffalo
+            ? 'أبو قرون اتجنن! لما يخبط الطين بيقع من فوق'
+            : 'الفتوة برعي اتعصّب! بيرمي عضم سمك'
+          : buffalo
+            ? 'آخر نَفَس! بينطّ ويرجّ الأرض… والغربان جاية'
+            : 'آخر نَفَس! نطّ فوق الرجّة',
       );
+      if (buffalo && this.bossPhase() === 3)
+        for (const dx of [-140, 140])
+          this.enemy(
+            Phaser.Math.Clamp(boss.x + dx, s.arenaX + 60, this.L.width - 60),
+            3 * TILE,
+            'crow',
+          );
     }
     this.bossSet('hurt', 450);
-    boss.setVelocity(boss.x < this.hero.x ? -200 : 200, -380);
+    if (this.bossKind === 'buffalo')
+      boss.setVelocity(boss.x < this.hero.x ? -150 : 150, -260);
+    else boss.setVelocity(boss.x < this.hero.x ? -200 : 200, -380);
   }
   bossDefeat() {
     const s = this.bossState,
       boss = this.boss!;
     s.defeated = true;
     this.bossSet('dead', 99999);
-    boss.setTexture('boss-dead').setFlipY(true);
+    boss.setTexture(this.bossTex('dead')).setFlipY(true);
     body(boss).checkCollision.none = true;
     boss.setVelocity(0, -300);
     this.hazards.clear(true, true);
     this.burst(boss.x, boss.y, 0xffd474, 40);
     sound.fx('clear');
-    sound.setTrack(this.level);
+    sound.setTrack(this.L.meta.track);
     sound.setIntensity(0);
     bossBar(false);
-    toast('الفتوة برعي اتهزم! باب الخروج اتفتح');
+    toast(
+      this.bossKind === 'buffalo'
+        ? 'أبو قرون قعد في الطين! باب الجرن اتفتح'
+        : 'الفتوة برعي اتهزم! باب الخروج اتفتح',
+    );
     this.kills++;
     this.score += 3000;
     this.cameras.main.setBounds(0, 0, this.L.width + EDGE, this.L.height);
@@ -1805,7 +2070,7 @@ export class Alley extends Phaser.Scene {
       return;
     }
     if (!s.active) {
-      boss.setTexture('boss-idle' + (Math.floor(time / 400) % 2));
+      boss.setTexture(this.bossTex('idle' + (Math.floor(time / 400) % 2)));
       if (this.hero.x > s.arenaX + TILE * 3) {
         s.active = true;
         this.cameras.main.setBounds(
@@ -1814,13 +2079,22 @@ export class Alley extends Phaser.Scene {
           this.L.width - s.arenaX,
           this.L.height,
         );
-        sound.setTrack(4);
-        sound.fx('roar');
-        bossBar(true, 1, 1);
-        toast('الفتوة برعي: «مين اللي داخل حارتي؟!» — اتنطّ على راسه');
+        sound.setTrack(this.L.meta.bossTrack ?? 4);
+        sound.fx(this.bossKind === 'buffalo' ? 'moo' : 'roar');
+        bossBar(true, 1, 1, this.bossName);
+        toast(
+          this.bossKind === 'buffalo'
+            ? 'أبو قرون: «مين داس على جرني؟!» — خلّيه يخبط ويدوخ واتنطّ على ضهره'
+            : 'الفتوة برعي: «مين اللي داخل حارتي؟!» — اتنطّ على راسه',
+        );
         this.bossSet('walk', 1600);
         this.cameras.main.shake(300, 0.006);
       }
+      return;
+    }
+    if (this.bossKind === 'buffalo') {
+      this.updateBuffalo(time);
+      this.updateHazards(time);
       return;
     }
     const phase = this.bossPhase();
@@ -1933,6 +2207,9 @@ export class Alley extends Phaser.Scene {
     }
     if (boss.x < s.arenaX + 40) boss.x = s.arenaX + 40;
     if (boss.x > this.L.width - 40) boss.x = this.L.width - 40;
+    this.updateHazards(time);
+  }
+  updateHazards(time: number) {
     for (const h of this.hazards.getChildren() as Sprite[]) {
       const k = h.getData('kind');
       if (
@@ -1942,10 +2219,149 @@ export class Alley extends Phaser.Scene {
           body(h).blocked.right)
       )
         h.destroy();
-      else if (k === 'bone') {
-        h.angle += 12;
+      else if (k === 'bone' || k === 'clod') {
+        h.angle += k === 'bone' ? 12 : 4;
         if (h.y > this.L.height + 40) h.destroy();
       }
+    }
+  }
+  /** «أبو قرون»: walk → snort (telegraph) → charge → crash → dazed. */
+  updateBuffalo(time: number) {
+    const boss = this.boss!,
+      s = this.bossState,
+      bb = body(boss);
+    const phase = this.bossPhase();
+    const grounded = bb.blocked.down;
+    const toHero = Math.sign(this.hero.x - boss.x) || 1;
+    const lo = s.arenaX + 50,
+      hi = this.L.width - 64;
+    if (!['charge', 'hurt', 'leap', 'slam'].includes(s.state))
+      boss.setFlipX(toHero < 0);
+    const over = time > s.until;
+    const tex = (pose: string) => boss.setTexture(this.bossTex(pose));
+    switch (s.state) {
+      case 'walk':
+        tex('idle' + (Math.floor(time / 200) % 2));
+        boss.setVelocityX(toHero * (phase === 3 ? 80 : 55));
+        if (over) {
+          boss.setVelocityX(0);
+          this.bossSet('telegraph', [800, 650, 500][phase - 1]);
+          sound.fx('moo');
+        }
+        break;
+      case 'telegraph':
+        tex('crouch');
+        boss.setVelocityX(Math.sin(time / 25) * 20);
+        boss.setTint(Math.floor(time / 80) % 2 ? 0xff9a7a : 0xffffff);
+        if (Math.floor(time / 100) % 2 === 0)
+          this.burst(boss.x + toHero * 50, boss.y + 8, 0xffffff, 1);
+        if (over) {
+          boss.clearTint();
+          s.volley = toHero;
+          this.bossSet('charge', 2600);
+          sound.fx('roar');
+        }
+        break;
+      case 'charge': {
+        tex('charge');
+        const d = s.volley || 1;
+        boss.setFlipX(d < 0);
+        boss.setVelocityX(d * [300, 350, 400][phase - 1]);
+        if (Math.floor(time / 60) % 2 === 0)
+          this.burst(boss.x - d * 40, bb.bottom, 0x8a6a4a, 2);
+        const wall =
+          bb.blocked.left ||
+          bb.blocked.right ||
+          (d < 0 && boss.x <= lo) ||
+          (d > 0 && boss.x >= hi);
+        if (wall || over) {
+          boss.setVelocityX(0);
+          boss.x = Phaser.Math.Clamp(boss.x, lo, hi);
+          sound.fx('shock');
+          this.cameras.main.shake(260, 0.014);
+          this.burst(boss.x + d * 44, boss.y - 10, 0xb8a888, 14);
+          if (phase >= 2) this.dropClods(phase === 2 ? 3 : 5);
+          this.bossSet('dazed', [1700, 1400, 1150][phase - 1]);
+        }
+        break;
+      }
+      case 'dazed':
+        tex('dazed');
+        boss.setVelocityX(0);
+        if (Math.floor(time / 120) % 3 === 0) {
+          const st = this.add
+            .image(boss.x + Math.cos(time / 150) * 30, boss.y - 40, 'star')
+            .setDepth(20);
+          this.tweens.add({
+            targets: st,
+            alpha: 0,
+            y: st.y - 8,
+            duration: 300,
+            onComplete: () => st.destroy(),
+          });
+        }
+        if (over)
+          if (phase === 3) this.bossSet('slamUp', 250);
+          else this.bossSet('walk', phase === 2 ? 900 : 1200);
+        break;
+      case 'slamUp':
+        tex('crouch');
+        boss.setVelocityX(0);
+        if (grounded && over) {
+          boss.setVelocity(toHero * 120, -600);
+          tex('leap');
+          this.bossSet('slam', 2000);
+        }
+        break;
+      case 'slam':
+        if (grounded && bb.velocity.y >= 0 && time > s.until - 1800) {
+          boss.setVelocityX(0);
+          sound.fx('shock');
+          this.cameras.main.shake(220, 0.012);
+          for (const d of [-1, 1]) {
+            const w = this.hazards.create(
+              boss.x + d * 46,
+              bb.bottom - 9,
+              'shock',
+            ) as Sprite;
+            body(w).setAllowGravity(false).setSize(26, 14).setOffset(4, 4);
+            w.setVelocityX(d * 240)
+              .setData('kind', 'shock')
+              .setData('born', time)
+              .setDepth(9)
+              .setFlipX(d < 0);
+          }
+          this.bossSet('walk', 800);
+        }
+        break;
+      case 'hurt':
+        tex('hurt');
+        if (over && grounded) {
+          boss.setVelocityX(0);
+          this.bossSet('walk', 700);
+        }
+        break;
+    }
+    if (boss.x < s.arenaX + 40) boss.x = s.arenaX + 40;
+    if (boss.x > this.L.width - 50) boss.x = this.L.width - 50;
+  }
+  /** Mud clods shaken loose from the barn roof when the buffalo crashes. */
+  dropClods(n: number) {
+    const s = this.bossState,
+      cam = this.cameras.main;
+    for (let i = 0; i < n; i++) {
+      const x = Phaser.Math.Clamp(
+        this.hero.x + (i - (n - 1) / 2) * 70 + (Math.random() - 0.5) * 30,
+        s.arenaX + 30,
+        this.L.width - 30,
+      );
+      const c = this.hazards.create(
+        x,
+        cam.scrollY - 10 - i * 30,
+        'clod',
+      ) as Sprite;
+      c.setData('kind', 'clod').setDepth(9);
+      body(c).setSize(10, 10).setMaxVelocity(0, 420);
     }
   }
   throwBone(boss: Sprite, phase: number) {
@@ -2045,16 +2461,52 @@ export class Alley extends Phaser.Scene {
       const on = this.moverList.find((m) => {
         const mb = body(m.img);
         return (
-          m.axis === 'x' &&
+          m.carry &&
           Math.abs(hb.bottom - mb.top) < 3 &&
           hb.right > mb.left + 2 &&
           hb.left < mb.right - 2
         );
       });
       if (on && hb.velocity.y >= 0) this.hero.x += body(on.img).velocity.x * dt;
+      for (const m of this.moverList)
+        if (m.donkey) {
+          const ridden = on === m && hb.velocity.y >= 0;
+          if (ridden && !m.donkey.ridden) sound.fx('cart');
+          m.donkey.ridden = ridden;
+          if (ridden) m.donkey.leftAt = time;
+        }
     }
+    for (const w of this.wheels) w.rotation = this.clock * SAQIA.speed;
+    for (const k of this.canals)
+      k.surface.tilePositionX = -this.clock * 30 * k.dir;
     for (const m of this.moverList) {
       const b = body(m.img);
+      if (m.saqia) {
+        // Follow the wheel: the rim's own velocity plus a gentle pull back
+        // onto the rim, so buckets glide instead of jittering.
+        const a = m.saqia.phase + this.clock * SAQIA.speed,
+          v = SAQIA.radius * TILE * SAQIA.speed;
+        const [tx, ty] = this.saqiaPos(m, this.clock);
+        b.setVelocity(
+          -Math.sin(a) * v + Phaser.Math.Clamp((tx - m.img.x) * 8, -200, 200),
+          Math.cos(a) * v + Phaser.Math.Clamp((ty - m.img.y) * 8, -200, 200),
+        );
+        continue;
+      }
+      if (m.donkey) {
+        const d = m.donkey;
+        let vx = 0;
+        if (d.ridden && m.img.x < d.max) vx = DONKEY.speed;
+        else if (!d.ridden && time - d.leftAt > 1200 && m.img.x > d.min)
+          vx = -DONKEY.back;
+        if (vx > 0 && m.img.x + vx * dt > d.max) vx = (d.max - m.img.x) / dt;
+        if (vx < 0 && m.img.x + vx * dt < d.min) vx = (d.min - m.img.x) / dt;
+        b.setVelocityX(vx);
+        m.img.setTexture(
+          vx ? 'donkey' + (Math.floor(time / 160) % 2) : 'donkey0',
+        );
+        continue;
+      }
       if (m.axis === 'x') {
         if (m.img.x <= m.min && b.velocity.x <= 0) b.setVelocityX(m.speed);
         if (m.img.x >= m.max && b.velocity.x >= 0) b.setVelocityX(-m.speed);
@@ -2130,6 +2582,45 @@ export class Alley extends Phaser.Scene {
         )
           windPush = w.dir * 150;
     const dir = Number(right) - Number(left);
+    // Countryside ground: mud bogs you down, canals float you and drag you.
+    const under = this.L.at(
+      Math.floor(b.center.x / TILE),
+      Math.floor((b.bottom + 2) / TILE),
+    );
+    this.onMud = grounded && under === 'u';
+    if (this.onMud) {
+      this.hint('mud', 'الطين بيمسك في رجلك… والنطّة من فوقه ضعيفة');
+      if (dir && Math.floor(time / 110) % 2 === 0)
+        this.burst(this.hero.x, b.bottom, 0x4a3020, 1);
+    }
+    const canal = this.zip ? undefined : this.canalAt(b.center.x, b.bottom);
+    if (canal && !this.swimming) {
+      sound.fx('splash');
+      this.burst(this.hero.x, canal.top, 0x8ad0b8, 8);
+      this.hint(
+        'canal',
+        canal.dir < 0
+          ? 'التيار ضدّك! اعوم واضغط نطّ عشان تطلع'
+          : 'التيار شايلك… اضغط نطّ عشان تطلع من الترعة',
+      );
+    }
+    this.swimming = !!canal;
+    if (canal) {
+      const depth = b.center.y - canal.top;
+      if (depth > -2)
+        b.velocity.y -= (1100 + Math.min(1, (depth + 2) / 14) * 900) * dt;
+      b.velocity.y *= Math.pow(0.9, dt * 60);
+      b.velocity.y = Phaser.Math.Clamp(b.velocity.y, -CANAL.swimJump, 150);
+      windPush += canal.dir * CANAL.current;
+      if (jump && !this.jumpWas && depth < 16) {
+        this.hero.setVelocityY(-CANAL.swimJump);
+        this.lastPress = -1000;
+        sound.fx('swim');
+        this.burst(this.hero.x, canal.top, 0x8ad0b8, 6);
+      }
+      if (Math.floor(time / 300) % 4 === 0 && Math.abs(b.velocity.x) > 20)
+        this.burst(this.hero.x - this.facing * 10, canal.top + 2, 0xc8fff0, 1);
+    }
     if (this.zip) this.updateZip(time, jump);
     else {
       if (!grounded && time > this.zipCooldown) this.tryGrab();
@@ -2137,7 +2628,10 @@ export class Alley extends Phaser.Scene {
         !this.zip &&
         jumpAllowed(time - this.lastGround, time - this.lastPress)
       ) {
-        this.hero.setVelocityY(action ? -PHYSICS.runJump : -PHYSICS.jump);
+        this.hero.setVelocityY(
+          (action ? -PHYSICS.runJump : -PHYSICS.jump) *
+            (this.onMud ? MUD.jump : 1),
+        );
         this.lastGround = -1000;
         this.lastPress = -1000;
         sound.fx('jump');
@@ -2150,7 +2644,10 @@ export class Alley extends Phaser.Scene {
         b.velocity.y > -PHYSICS.runJump - 5
       )
         this.hero.setVelocityY(b.velocity.y * 0.48);
-      const speed = action ? 245 : 157;
+      const speed =
+        (action ? 245 : 157) *
+        (this.onMud ? MUD.speed : 1) *
+        (this.swimming ? 0.6 : 1);
       b.velocity.x = approach(
         b.velocity.x,
         dir * speed + windPush,
@@ -2418,6 +2915,41 @@ export class Alley extends Phaser.Scene {
       e.setFlipX(eb.velocity.x > 0);
       return;
     }
+    if (kind === 'crow') {
+      // Patrols wide, then dive-bombs where the hero is heading and
+      // swoops back up past him (faster and meaner than the pigeon).
+      const seed = e.getData('seed');
+      if (state === 'walk') {
+        const tx = home.x + Math.sin(time / 1100 + seed) * 60,
+          ty = home.y + Math.sin(time / 380 + seed) * 10;
+        eb.setVelocity((tx - e.x) * 4, (ty - e.y) * 4);
+        frame(Math.floor(time / 80) % 3);
+        if (
+          Math.abs(dx) < 180 &&
+          dy > 10 &&
+          dy < 260 &&
+          time > e.getData('until')
+        ) {
+          e.setData('state', 'dive').setData('until', time + 1000);
+          const lead = body(this.hero).velocity.x * 0.35;
+          this.physics.moveTo(e, this.hero.x + lead, this.hero.y, 290);
+          sound.fx('caw');
+        }
+      } else if (state === 'dive') {
+        frame(3);
+        if (time > e.getData('until') || eb.blocked.down) {
+          e.setData('state', 'climb');
+          eb.setVelocity(eb.velocity.x * 0.8, -170);
+        }
+      } else {
+        if (e.y < home.y + 20) this.physics.moveTo(e, home.x, home.y, 150);
+        frame(Math.floor(time / 60) % 3);
+        if (dist(home.x, home.y) < 10)
+          e.setData('state', 'walk').setData('until', time + 1100);
+      }
+      e.setFlipX(eb.velocity.x > 0);
+      return;
+    }
     if (kind === 'pigeon') {
       // Hovers on a figure-eight, dives at the hero, climbs back.
       const seed = e.getData('seed');
@@ -2450,6 +2982,95 @@ export class Alley extends Phaser.Scene {
     }
     if (e.getData('sleep')) return;
     const rolling = e.getData('rolling');
+    if (kind === 'goose') {
+      // Spots you, honks and gives chase with flapping hops.
+      if (
+        state === 'walk' &&
+        Math.abs(dx) < 150 &&
+        Math.abs(dy) < 50 &&
+        time > e.getData('until')
+      ) {
+        e.setData('state', 'chase').setData('until', time + 2600);
+        sound.fx('honk');
+      }
+      if (state === 'chase') {
+        const d = Math.sign(dx) || 1;
+        const ahead = this.standable(
+          Math.floor((e.x + d * 16) / TILE),
+          Math.floor((eb.bottom + 2) / TILE),
+        );
+        e.setVelocityX(ahead || !eb.blocked.down ? d * 118 : 0);
+        if (eb.blocked.down && time > (e.getData('hop') || 0)) {
+          e.setVelocityY(-210);
+          e.setData('hop', time + 700);
+        }
+        e.setFlipX(d > 0);
+        frame(eb.blocked.down ? 2 : 3);
+        if (time > e.getData('until'))
+          e.setData('state', 'walk').setData('until', time + 1600);
+        return;
+      }
+    }
+    if (kind === 'buffalo') {
+      // Lowers its horns (telegraph), charges hard, knocks itself dizzy.
+      if (
+        state === 'walk' &&
+        Math.abs(dy) < 40 &&
+        Math.abs(dx) < 220 &&
+        time > e.getData('until')
+      ) {
+        e.setData('state', 'tell')
+          .setData('until', time + 650)
+          .setData('dir', Math.sign(dx) || 1);
+        e.setVelocityX(0);
+        sound.fx('moo');
+        return;
+      }
+      if (state === 'tell') {
+        frame(2);
+        e.setVelocityX(Math.sin(time / 25) * 18);
+        e.setFlipX(e.getData('dir') > 0);
+        if (Math.floor(time / 90) % 3 === 0)
+          this.burst(e.x - e.getData('dir') * 24, e.y + 4, 0xffffff, 1);
+        if (time > e.getData('until'))
+          e.setData('state', 'charge').setData('until', time + 1700);
+        return;
+      }
+      if (state === 'charge') {
+        frame(2);
+        const d = e.getData('dir');
+        e.setVelocityX(d * 270);
+        e.setFlipX(d > 0);
+        const ahead = this.standable(
+          Math.floor((e.x + d * 24) / TILE),
+          Math.floor((eb.bottom + 2) / TILE),
+        );
+        if (Math.floor(time / 70) % 2 === 0)
+          this.burst(e.x - d * 20, eb.bottom, 0x8a6a4a, 1);
+        if (
+          time > e.getData('until') ||
+          eb.blocked.left ||
+          eb.blocked.right ||
+          (eb.blocked.down && !ahead)
+        ) {
+          e.setVelocityX(0);
+          if (eb.blocked.left || eb.blocked.right)
+            this.cameras.main.shake(90, 0.004);
+          e.setData('state', 'dizzy').setData('until', time + 1300);
+          this.burst(e.x, e.y - 16, 0xffe36a, 5);
+        }
+        return;
+      }
+      if (state === 'dizzy') {
+        frame(3);
+        e.setVelocityX(0);
+        if (time > e.getData('until')) {
+          e.setData('state', 'walk').setData('until', time + 900);
+          e.setVelocityX(-(e.getData('dir') || 1) * this.walkSpeed(kind));
+        }
+        return;
+      }
+    }
     if (kind === 'rooster') {
       // Spots you, scratches the ground (telegraph), charges, gets dizzy.
       if (
@@ -2518,8 +3139,8 @@ export class Alley extends Phaser.Scene {
     }
     e.setFlipX(direction > 0);
     frame(
-      kind === 'rooster'
-        ? Math.floor(time / 160) % 2
+      kind === 'rooster' || kind === 'buffalo' || kind === 'goose'
+        ? Math.floor(time / (kind === 'buffalo' ? 220 : 160)) % 2
         : Math.floor(time / (rolling ? 45 : kind === 'rat' ? 70 : 150)) % 4,
     );
   }

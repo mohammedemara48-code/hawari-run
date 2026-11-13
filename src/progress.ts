@@ -1,4 +1,4 @@
-// Saved journey across the four levels (local only).
+// Saved journey across the levels of every world (local only).
 import { LEVELS } from './level-data';
 export interface Progress {
   unlocked: number;

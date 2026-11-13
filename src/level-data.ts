@@ -14,8 +14,14 @@
 //   G  golden fanoos (the level secret)  T  secret water tank (bonus room)
 //   c  checkpoint   P  start   E  exit
 //   enemies: g cat  b bug  k basket  t bat  r rooster  p pigeon  m rat  Z boss
+// World 2 (الأرياف)
+//   N  hay bale (solid)                  u  mud (solid, slows you, weak jump)
+//   w / x  irrigation canal water, current flowing right / left (swim)
+//   W  saqia waterwheel hub (four rotating bucket platforms)
+//   Y / y  donkey cart start / end of its run (rides while you stand on it)
+//   enemies: q buffalo  n goose  v crow
 export const TILE = 24;
-export type Theme = 'night' | 'market' | 'roof' | 'sewer';
+export type Theme = 'night' | 'market' | 'roof' | 'sewer' | 'farm';
 /** One region of the journey across Egypt. */
 export interface WorldMeta {
   id: string;
@@ -46,7 +52,7 @@ export const WORLDS: WorldMeta[] = [
     x: 0.41,
     y: 0.22,
     side: 'left',
-    playable: false,
+    playable: true,
   },
   {
     id: 'damietta',
@@ -99,6 +105,13 @@ export interface LevelMeta {
     speed: number;
   };
   boss?: boolean;
+  /** Which boss: the Cairo alley tough or the countryside buffalo. */
+  bossKind?: 'fatwa' | 'buffalo';
+  /** Music track for the level and for its boss fight (indices into TRACKS). */
+  track: number;
+  bossTrack?: number;
+  /** Time of day of the painted backdrop (world 2 grades one painting). */
+  timeOfDay?: string;
   mechanic: string;
   enemy: string;
   rows: string[];
@@ -129,6 +142,11 @@ class Grid {
   }
   ground(x0: number, x1: number, top = this.h - 2) {
     this.rect(x0, top, x1, this.h - 1, '#');
+  }
+  /** An irrigation canal: water down to a mud floor, current dir ±1. */
+  canal(x0: number, x1: number, dir: number, top = this.h - 3) {
+    this.rect(x0, top, x1, this.h - 2, dir > 0 ? 'w' : 'x');
+    this.run(x0, x1, this.h - 1, '#');
   }
   rows() {
     return this.cells.map((r) => r.join(''));
@@ -407,10 +425,244 @@ function underground() {
   return g.rows();
 }
 
+/* ───────────── World 2 · الأرياف (ground top row 12, canals 3 deep) ───────────── */
+const G2 = 12;
+
+/* 5 ─ غيطان الفجر: mud that bogs you down, hay-bale stairs, geese and buffalo. */
+function fields() {
+  const g = new Grid(200, 15);
+  g.ground(0, 30, G2);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(10, 8, 'BFB');
+  g.set(18, 11, 'n');
+  // Lesson: mud slows you and weighs your jump down.
+  g.run(21, 29, G2, 'u');
+  g.text(22, 10, 'o o o o');
+  g.ground(31, 62, G2);
+  // Hay stairs (you can't jump them from the mud).
+  g.rect(32, 10, 33, 11, 'N');
+  g.rect(36, 8, 37, 11, 'N');
+  g.text(36, 7, 'oo');
+  g.run(40, 44, 8, '-');
+  g.text(40, 7, 'ooooo');
+  g.set(47, 8, '?');
+  g.set(54, 11, 'q');
+  g.text(57, 11, 'o o');
+  g.text(64, 9, 'o o');
+  g.ground(68, 100, G2);
+  // A mud field patrolled by geese, hay steps out of it.
+  g.run(70, 80, G2, 'u');
+  g.set(74, 11, 'n');
+  g.set(79, 11, 'n');
+  g.rect(82, 11, 83, 11, 'N');
+  g.rect(85, 9, 86, 11, 'N');
+  g.run(89, 95, 7, '-');
+  g.text(89, 6, 'ooooooo');
+  g.text(97, 8, 'BCB');
+  g.set(93, 11, 'c');
+  // First canal: the current carries you downstream.
+  g.canal(101, 110, 1);
+  g.text(103, 10, 'o o o o');
+  g.ground(111, 199, G2);
+  // Buffalo strip: lure them into the hay so they knock themselves dizzy.
+  g.rect(118, 10, 118, 11, 'N');
+  g.text(121, 8, 'B?B');
+  g.set(126, 11, 'q');
+  g.rect(133, 10, 133, 11, 'N');
+  g.set(139, 11, 'q');
+  // Secret: a hay tower to the golden fanoos above the fields.
+  g.rect(143, 10, 144, 11, 'N');
+  g.rect(146, 8, 147, 11, 'N');
+  g.rect(149, 6, 150, 11, 'N');
+  g.run(152, 158, 4, '-');
+  g.text(152, 3, 'ooooo G');
+  g.set(162, 8, 'i');
+  g.set(166, 11, 'n');
+  g.set(172, 11, 'n');
+  g.text(176, 8, 'B?B');
+  g.text(182, 11, 'o o o');
+  g.set(194, 11, 'E');
+  g.set(44, 11, 'n');
+  g.set(91, 11, 'q');
+  g.set(187, 11, 'n');
+  g.set(158, 6, 'v');
+  return g.rows();
+}
+
+/* 6 ─ الترعة: canals with currents, floating palm logs and diving crows. */
+function canals() {
+  const g = new Grid(210, 15);
+  g.ground(0, 24, G2);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(11, 8, 'B?B');
+  g.set(17, 6, 'v');
+  // Against the current: ride a palm log across.
+  g.canal(25, 36, -1);
+  g.set(27, 11, 'M');
+  g.text(28, 9, 'o o');
+  g.ground(37, 70, G2);
+  g.run(40, 44, 8, '-');
+  g.text(40, 7, 'ooooo');
+  g.text(48, 8, 'BCB');
+  g.set(55, 8, '?');
+  g.set(45, 6, 'v');
+  g.set(58, 5, 'v');
+  g.set(63, 11, 'n');
+  // The long canal: two logs and a hay-bale island.
+  g.canal(71, 92, -1);
+  g.set(73, 11, 'M');
+  g.rect(81, 11, 82, 13, 'N');
+  g.set(84, 11, 'M');
+  g.text(75, 9, 'o o o');
+  g.text(86, 9, 'o o o');
+  g.set(81, 5, 'v');
+  g.ground(93, 120, G2);
+  g.set(96, 11, 'c');
+  g.text(100, 8, 'B?B');
+  g.set(106, 8, 'i');
+  g.set(112, 11, 'n');
+  // Set piece: the sluice race — swim with a strong current under crows.
+  g.canal(121, 140, 1);
+  g.text(123, 10, 'o o o o o o o o');
+  g.set(128, 6, 'v');
+  g.set(136, 6, 'v');
+  g.ground(141, 175, G2);
+  // Secret: palm-trunk steps to the golden fanoos.
+  g.run(146, 148, 9, '=');
+  g.run(151, 153, 6, '=');
+  g.run(156, 162, 4, '-');
+  g.text(156, 3, 'oooo  G');
+  g.set(165, 11, 'n');
+  g.set(170, 11, 'q');
+  g.canal(176, 186, -1);
+  g.set(178, 11, 'M');
+  g.text(179, 9, 'o o');
+  g.ground(187, 209, G2);
+  g.text(195, 8, 'BFB');
+  g.set(205, 11, 'E');
+  g.set(101, 5, 'v');
+  g.set(150, 11, 'n');
+  g.set(199, 11, 'n');
+  g.set(33, 5, 'v');
+  return g.rows();
+}
+
+/* 7 ─ الساقية: ride waterwheel buckets and the donkey cart over the ditch. */
+function waterwheels() {
+  const g = new Grid(220, 15);
+  g.ground(0, 26, G2);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(10, 8, 'B?B');
+  g.set(18, 11, 'n');
+  // Lesson: a saqia over a pit — ride a bucket up to the far ledge.
+  g.set(32, 7, 'W');
+  g.text(31, 2, 'ooo');
+  g.run(37, 44, 5, '-');
+  g.text(38, 4, 'oooooo');
+  g.ground(39, 72, G2);
+  g.text(48, 8, 'BCB');
+  g.set(56, 11, 'q');
+  g.set(62, 6, 'v');
+  // Set piece: the donkey cart crosses the dry ditch while crows dive.
+  g.set(68, 11, 'Y');
+  g.set(105, 11, 'y');
+  g.text(76, 8, 'o o o o o o o o o o o o');
+  g.set(80, 5, 'v');
+  g.set(89, 4, 'v');
+  g.set(97, 5, 'v');
+  g.ground(103, 111, G2);
+  g.set(107, 11, 'c');
+  // Two wheels in a row over a pit: jump bucket to bucket.
+  g.set(116, 7, 'W');
+  g.set(127, 7, 'W');
+  g.text(120, 4, 'ooo');
+  g.ground(136, 219, G2);
+  g.set(150, 11, 'q');
+  g.text(145, 8, 'B?B');
+  g.text(156, 8, 'BFB');
+  g.set(161, 11, 'n');
+  g.set(167, 11, 'n');
+  g.set(164, 8, 'i');
+  // Secret: a third wheel lifts you to the golden fanoos.
+  g.set(176, 7, 'W');
+  g.run(180, 185, 3, '-');
+  g.text(180, 2, 'oooo G');
+  g.set(195, 11, 'n');
+  g.set(200, 5, 'v');
+  g.text(203, 8, 'B?B');
+  g.set(214, 11, 'E');
+  g.set(44, 11, 'n');
+  g.set(141, 11, 'n');
+  g.set(153, 5, 'v');
+  g.set(208, 11, 'q');
+  return g.rows();
+}
+
+/* 8 ─ جرن القمح: everything at once by moonlight, then the buffalo «أبو قرون». */
+function threshingFloor() {
+  const g = new Grid(191, 15);
+  g.ground(0, 22, G2);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(10, 8, 'B?B');
+  g.set(16, 11, 'n');
+  g.set(20, 11, 'n');
+  g.ground(23, 50, G2);
+  g.run(25, 36, G2, 'u');
+  g.text(27, 10, 'o o o o');
+  g.rect(38, 11, 38, 11, 'N');
+  g.rect(40, 9, 41, 11, 'N');
+  g.run(44, 49, 7, '-');
+  g.text(44, 6, 'oooooo');
+  g.set(46, 11, 'q');
+  // Canal with a log, the current pushing you on.
+  g.canal(51, 66, 1);
+  g.set(53, 11, 'M');
+  g.text(55, 9, 'o o o');
+  g.ground(67, 95, G2);
+  g.set(70, 11, 'c');
+  g.text(74, 8, 'B?B');
+  g.set(80, 5, 'v');
+  g.set(88, 11, 'q');
+  // A saqia over the pit.
+  g.set(101, 7, 'W');
+  g.text(100, 2, 'ooo');
+  g.ground(108, 160, G2);
+  g.text(115, 8, 'BFB');
+  g.set(121, 8, 'i');
+  g.set(126, 11, 'n');
+  g.set(132, 5, 'v');
+  // Secret: hay tower to the golden fanoos.
+  g.rect(136, 10, 137, 11, 'N');
+  g.rect(139, 8, 140, 11, 'N');
+  g.run(142, 147, 6, '-');
+  g.text(142, 5, 'oooo G');
+  g.text(150, 8, 'BCB');
+  // Boss arena: climb the hay over the wall and drop into the threshing floor.
+  g.rect(156, 10, 157, 11, 'N');
+  g.rect(158, 7, 159, 11, 'N');
+  g.rect(160, 4, 160, 11, '#');
+  g.ground(160, 190, G2);
+  g.rect(190, 3, 190, 11, '#');
+  g.run(167, 169, 9, '-');
+  g.run(181, 183, 9, '-');
+  g.set(180, 11, 'Z');
+  g.set(187, 11, 'E');
+  g.set(77, 11, 'n');
+  g.set(112, 11, 'q');
+  g.set(146, 3, 'v');
+  g.set(60, 5, 'v');
+  return g.rows();
+}
+
 export const LEVELS: LevelMeta[] = [
   {
     world: 0,
     id: 'lanterns',
+    track: 0,
     name: 'حارة الفوانيس',
     subtitle: 'الليل طويل… نوّر الفوانيس تبان السكة',
     theme: 'night',
@@ -424,6 +676,7 @@ export const LEVELS: LevelMeta[] = [
   {
     world: 0,
     id: 'market',
+    track: 1,
     name: 'سوق تحت البلد',
     subtitle: 'تندات بتنطّط، عربيات ماشية، وصناديق مش مضمونة',
     theme: 'market',
@@ -436,6 +689,7 @@ export const LEVELS: LevelMeta[] = [
   {
     world: 0,
     id: 'roofs',
+    track: 2,
     name: 'فوق الأسطح',
     subtitle: 'اطلع لبرج الحمام… والهوا مش في صفّك',
     theme: 'roof',
@@ -448,6 +702,9 @@ export const LEVELS: LevelMeta[] = [
   {
     world: 0,
     id: 'metro',
+    track: 3,
+    bossTrack: 4,
+    bossKind: 'fatwa',
     name: 'تحت المترو',
     subtitle: 'المية طالعة… والفتوة برعي مستنيك',
     theme: 'sewer',
@@ -465,5 +722,64 @@ export const LEVELS: LevelMeta[] = [
     mechanic: 'مية طالعة ومنصّات ماشية',
     enemy: 'فار المجاري + الفتوة برعي',
     rows: underground(),
+  },
+  {
+    world: 1,
+    id: 'fields',
+    track: 5,
+    name: 'غيطان الفجر',
+    subtitle: 'الطين بيمسك في رجلك… والوز مش بيهزّر',
+    theme: 'farm',
+    timeOfDay: 'dawn',
+    time: 280,
+    dark: 0,
+    mechanic: 'طين بيبطّأ وتبن بيتطلع عليه',
+    enemy: 'الجاموسة الهايجة + الوز',
+    rows: fields(),
+  },
+  {
+    world: 1,
+    id: 'canals',
+    track: 6,
+    name: 'الترعة',
+    subtitle: 'التيار شادد… اركب جذع النخل وخلي بالك من الغربان',
+    theme: 'farm',
+    timeOfDay: 'noon',
+    time: 280,
+    dark: 0,
+    mechanic: 'ترع بتيار وجذوع نخل عايمة',
+    enemy: 'الغراب الغطّاس',
+    rows: canals(),
+  },
+  {
+    world: 1,
+    id: 'saqia',
+    track: 7,
+    name: 'الساقية',
+    subtitle: 'اركب قواديس الساقية… وعربية الحمار مستنياك',
+    theme: 'farm',
+    timeOfDay: 'dusk',
+    time: 300,
+    dark: 0,
+    mechanic: 'سواقي بتلف وعربية كارو',
+    enemy: 'الغربان + الجاموس',
+    rows: waterwheels(),
+  },
+  {
+    world: 1,
+    id: 'jurn',
+    track: 8,
+    bossTrack: 9,
+    bossKind: 'buffalo',
+    name: 'جرن القمح',
+    subtitle: 'بالليل في الجرن… وأبو قرون صاحي',
+    theme: 'farm',
+    timeOfDay: 'night',
+    time: 330,
+    dark: 0.3,
+    boss: true,
+    mechanic: 'كل حاجة مع بعض + الزعيم',
+    enemy: 'أبو قرون',
+    rows: threshingFloor(),
   },
 ];

@@ -143,7 +143,7 @@ assert.ok(
 );
 await ev(([x, y]) => window.T.place(x - 60, y + 20), [lant.x, lant.y]);
 await wait(400);
-await shot('11-level1.png');
+await shot('12-level1.png');
 log('L1 lanterns reveal', lant.ghosts.length, 'ghost ledges');
 
 /* 2 · Market: awning trampoline, moving cart carries, crate crumbles. */
@@ -201,7 +201,7 @@ assert.equal(
 );
 await ev(([x, t]) => window.T.place(x - 30, t - 40), [aw.x, aw.top]);
 await wait(350);
-await shot('11-level2.png');
+await shot('12-level2.png');
 log(
   'L2 awning vy',
   Math.round(awVy),
@@ -260,7 +260,7 @@ const push = Math.max(...windVx.map((v) => v * wind.dir));
 assert.ok(push > 90, `wind gust pushes the hero (${Math.round(push)} px/s)`);
 await ev(([x, t]) => window.T.place(x - 40, t - 2), [dish.x, dish.top]);
 await wait(400);
-await shot('11-level3.png');
+await shot('12-level3.png');
 log('L3 dish vy', Math.round(dVy), 'zip ok, wind', Math.round(push));
 
 /* 4 · Metro: rising water kills, lifts move, boss runs 3 phases → exit. */
@@ -354,7 +354,7 @@ assert.ok(
   ['walk', 'telegraph', 'leap', 'dazed'].every((s) => statesSeen.has(s)),
   `phase 1 pattern ${[...statesSeen]}`,
 );
-await shot('11-boss-phase1.png');
+await shot('12-boss-phase1.png');
 const hp0 = await ev(() => window.T.s.bossState.hp);
 await stomp();
 await wait(300);
@@ -391,7 +391,7 @@ assert.equal(await ev(() => window.T.s.bossPhase()), 2, 'phase 2 at 4 hearts');
 statesSeen.clear();
 await watch(3500);
 assert.ok(statesSeen.has('throw'), 'phase 2 throws bones');
-await shot('11-boss-phase2.png');
+await shot('12-boss-phase2.png');
 await stomp();
 await wait(1100);
 await stomp();
@@ -420,7 +420,7 @@ assert.ok(
   statesSeen.has('slam') && shock >= 2,
   'phase 3 slams with two shockwaves',
 );
-await shot('11-boss-phase3.png');
+await shot('12-boss-phase3.png');
 await wait(800);
 await stomp();
 await wait(1200);
@@ -443,8 +443,20 @@ await ev(() => {
 await wait(500);
 assert.equal(
   await ev(() => window.T.s.mode),
-  'win',
-  'leaving through the door wins the game',
+  'clear',
+  'leaving through the door clears Cairo',
+);
+assert.match(
+  await page.locator('#clear-title').textContent(),
+  /الأرياف/,
+  'clearing Cairo opens the road to the countryside',
+);
+assert.equal(
+  await ev(
+    () => JSON.parse(window.localStorage.getItem('hawari-progress')).unlocked,
+  ),
+  4,
+  "Cairo's boss unlocks world 2",
 );
 log('L4 water + lifts + boss', [...statesSeen].join('/'));
 
@@ -464,12 +476,35 @@ for (const i of [0, 1, 2]) {
 }
 await ev(() => window.T.s.action('map'));
 await wait(400);
+// The map opens on the newest world: the countryside, first level open.
+assert.equal(
+  await page.locator('.world-pin.selected').getAttribute('data-world'),
+  '1',
+);
+assert.equal(
+  await page.locator('.map-node').count(),
+  4,
+  'four countryside levels',
+);
+assert.equal(
+  await page.locator('.map-node:not([disabled])').count(),
+  1,
+  'only the first countryside level is open',
+);
+assert.equal(
+  await page.locator('.world-pin.soon').count(),
+  3,
+  'Damietta, Alexandria and Luxor are coming soon',
+);
+await shot('12-map-world2.png');
+await page.locator('.world-pin[data-world="0"]').click();
+await wait(300);
 assert.equal(
   await page.locator('.map-node:not([disabled])').count(),
   4,
-  'all levels unlocked after clearing',
+  'all Cairo levels open after clearing',
 );
-await shot('11-map.png');
+await shot('12-map.png');
 log('exits + progress map');
 assert.deepEqual(errors, []);
 console.log('PASS levels-runtime');

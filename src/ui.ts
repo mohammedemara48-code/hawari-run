@@ -244,10 +244,16 @@ export function hud(
   setThrowReady(power === 2);
 }
 /** The boss health bar under the HUD. */
-export function bossBar(visible: boolean, fraction = 1, phase = 1) {
+export function bossBar(
+  visible: boolean,
+  fraction = 1,
+  phase = 1,
+  name?: string,
+) {
   const el = document.getElementById('boss-bar');
   if (!el) return;
   el.hidden = !visible;
+  if (name) (el.querySelector('.boss-name') as HTMLElement).textContent = name;
   el.dataset.phase = String(phase);
   (el.querySelector('.boss-fill') as HTMLElement).style.width =
     `${Math.round(fraction * 100)}%`;
@@ -260,8 +266,10 @@ const THEME_ICON: Record<string, string> = {
   roof: '<path d="M3 21V9h4v12zm6 0V4h6v17zm8 0v-9h4v9z" fill="#c8a070"/><path d="M11 6h2v2h-2zm0 4h2v2h-2zm-6 1h1v1H5zm13 3h1v1h-1z" fill="#3e5a6e"/><path d="M14 2c3 0 5 2 5 4h-5z" fill="#e8ecef"/>',
   sewer:
     '<path d="M2 21V9a10 10 0 0 1 20 0v12h-4V10a6 6 0 0 0-12 0v11z" fill="#4b5c5e"/><path d="M6 17h12v4H6z" fill="#1f6a6a"/><path d="M8 16h8v1H8z" fill="#6fd0c0"/>',
+  farm: '<path d="M11 10h2v12h-2z" fill="#a8822a"/><path d="M10 2h4v2h1v6h-1v2h-4v-2H9V4h1z" fill="#f0c860"/><path d="M11 3h1v7h-1z" fill="#fff0b0"/><path d="M5 9h3v2h1v3H8v1H6v-1H5zm11 0h3v5h-1v1h-2v-1h-1v-3h1z" fill="#e0b040"/><path d="M2 20h20v2H2z" fill="#6a9a3a"/>',
 };
 let selectedWorld: number | undefined;
+let lastUnlocked = -1;
 let lastMap: { progress: Progress; levels: LevelMeta[] } | undefined;
 /** World states for the Egypt map, from progress. */
 export function worldStates(
@@ -288,6 +296,11 @@ export function renderMap(
   lastMap = { progress, levels };
   const states = worldStates(progress, levels);
   const current = levels[Math.min(progress.unlocked, levels.length - 1)].world;
+  // A newly unlocked level pulls the map to its world; otherwise keep
+  // whichever world the player was browsing.
+  if (world === undefined && progress.unlocked !== lastUnlocked)
+    selectedWorld = current;
+  lastUnlocked = progress.unlocked;
   selectedWorld = world ?? selectedWorld ?? current;
   if (states[selectedWorld] === 'soon' || states[selectedWorld] === 'locked')
     selectedWorld = current;

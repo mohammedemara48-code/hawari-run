@@ -1,7 +1,18 @@
 // Pure parsing of authored level maps (shared by the scene and the tests).
 import { LEVELS, TILE, type LevelMeta } from './level-data';
 
-export const SOLID = new Set(['#', '=', 'B', '?', 'F', 'C', 'S', 'T']);
+export const SOLID = new Set([
+  '#',
+  '=',
+  'B',
+  '?',
+  'F',
+  'C',
+  'S',
+  'T',
+  'N',
+  'u',
+]);
 export const LEDGE = new Set(['-', '~', 'A']);
 export const BOXES: Record<string, string> = {
   '?': 'coin',
@@ -18,7 +29,14 @@ export const ENEMY: Record<string, string> = {
   r: 'rooster',
   p: 'pigeon',
   m: 'rat',
+  q: 'buffalo',
+  n: 'goose',
+  v: 'crow',
 };
+/** Flying enemies ignore gravity and floors. */
+export const FLYING = new Set(['bat', 'pigeon', 'crow']);
+/** Canal water: current direction per cell. */
+export const WATER: Record<string, number> = { w: 1, x: -1 };
 export interface Pt {
   col: number;
   row: number;
@@ -54,6 +72,19 @@ export interface Parsed {
   enemies: (Pt & { kind: string })[];
   lines: { a: Pt; b: Pt }[];
   wind: { x0: number; x1: number; y0: number; y1: number; dir: number }[];
+  saqias: Pt[];
+  donkeys: { a: Pt; endCol: number }[];
+  /** Canal water bodies: pixel rect of the water plus current direction. */
+  canals: {
+    x0: number;
+    x1: number;
+    top: number;
+    bottom: number;
+    dir: number;
+    topRow: number;
+    c0: number;
+    c1: number;
+  }[];
 }
 const pt = (col: number, row: number): Pt => ({
   col,
@@ -93,7 +124,12 @@ export function parseLevel(index: number): Parsed {
     enemies: [],
     lines: [],
     wind: [],
+    saqias: [],
+    donkeys: [],
+    canals: [],
   };
+  const carts: Pt[] = [],
+    cartEnds: Pt[] = [];
   const starts: Pt[] = [],
     ends: Pt[] = [];
   const windCells: Pt[] = [];
@@ -159,6 +195,15 @@ export function parseLevel(index: number): Parsed {
           case '^':
             out.spikes.push(p);
             break;
+          case 'W':
+            out.saqias.push(p);
+            break;
+          case 'Y':
+            carts.push(p);
+            break;
+          case 'y':
+            cartEnds.push(p);
+            break;
           case 'Q':
             out.fakes.push(p);
             break;
@@ -176,6 +221,43 @@ export function parseLevel(index: number): Parsed {
             break;
         }
     }
+  // Donkey carts run along their row to the nearest end marker on the right.
+  for (const a of carts) {
+    const end = cartEnds
+      .filter((e) => e.row === a.row && e.col > a.col)
+      .sort((x, y) => x.col - y.col)[0];
+    out.donkeys.push({ a, endCol: end ? end.col : a.col + 8 });
+  }
+  // Canals: contiguous runs of water in their top row.
+  for (let r = 0; r < rows; r++) {
+    let c = 0;
+    while (c < cols) {
+      const ch = grid[r][c];
+      const above = r > 0 ? grid[r - 1][c] : '.';
+      if (ch in WATER && !(above in WATER)) {
+        let c1 = c;
+        while (
+          c1 + 1 < cols &&
+          grid[r][c1 + 1] === ch &&
+          !(grid[r - 1]?.[c1 + 1] in WATER)
+        )
+          c1++;
+        let r1 = r;
+        while (r1 + 1 < rows && grid[r1 + 1][c] in WATER) r1++;
+        out.canals.push({
+          x0: c * TILE,
+          x1: (c1 + 1) * TILE,
+          top: r * TILE,
+          bottom: (r1 + 1) * TILE,
+          dir: WATER[ch],
+          topRow: r,
+          c0: c,
+          c1,
+        });
+        c = c1 + 1;
+      } else c++;
+    }
+  }
   // Each zip line runs from H to h (or J to j).
   type Tagged = Pt & { tag?: string };
   for (const a of starts as Tagged[]) {
@@ -204,6 +286,11 @@ export const MOVERS = {
   plank: { width: 2, range: 4, speed: 46 },
   lift: { width: 2, range: 5, speed: 40 },
 };
+/** World 2 mechanics, shared by the scene and the reachability tests. */
+export const SAQIA = { radius: 3, buckets: 4, width: 2, speed: 0.55 };
+export const DONKEY = { width: 4, speed: 115, back: 70 };
+export const MUD = { speed: 0.5, jump: 0.78 };
+export const CANAL = { current: 85, swimJump: 460 };
 export const BOUNCE = {
   awning: 700,
   awningHold: 790,

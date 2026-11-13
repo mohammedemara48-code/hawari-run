@@ -1,13 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS } from '../src/level-data';
-import { SOLID, parseLevel } from '../src/level-parse';
+import { LEVELS, WORLDS } from '../src/level-data';
+import { FLYING, SOLID, parseLevel } from '../src/level-parse';
 import { onSurface, reach, standable } from './level-graph';
 
 describe('authored levels', () => {
-  it('has four distinct levels', () => {
-    expect(LEVELS.length).toBe(4);
-    expect(new Set(LEVELS.map((l) => l.theme)).size).toBe(4);
-    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(4);
+  it('has two playable worlds of four distinct levels each', () => {
+    expect(LEVELS.length).toBe(8);
+    const cairo = LEVELS.filter((l) => l.world === 0),
+      rif = LEVELS.filter((l) => l.world === 1);
+    expect(cairo.length).toBe(4);
+    expect(rif.length).toBe(4);
+    expect(new Set(cairo.map((l) => l.theme)).size).toBe(4);
+    expect(new Set(rif.map((l) => l.timeOfDay)).size).toBe(4);
+    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(8);
+    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(8);
+    // Levels are grouped by world in order, and each world ends with a boss.
+    expect(LEVELS.map((l) => l.world)).toEqual([0, 0, 0, 0, 1, 1, 1, 1]);
+    expect(LEVELS[3].boss && LEVELS[7].boss).toBe(true);
+    expect(WORLDS.filter((w) => w.playable).length).toBe(2);
+    expect(WORLDS.map((w) => w.name)).toEqual([
+      'القاهرة',
+      'الأرياف',
+      'دمياط',
+      'اسكندرية',
+      'الأقصر',
+    ]);
   });
   LEVELS.forEach((meta, index) => {
     const L = parseLevel(index);
@@ -46,6 +63,7 @@ describe('authored levels', () => {
           const ok = S.some(
             (s, i) =>
               seen.has(i) &&
+              !s.mud &&
               s.c0 <= b.col &&
               s.c1 >= b.col &&
               s.row - b.row - 1 >= 3 &&
@@ -100,7 +118,7 @@ describe('authored levels', () => {
       });
       it('enemies stand on something or fly', () => {
         for (const e of L.enemies) {
-          if (['bat', 'pigeon'].includes(e.kind)) continue;
+          if (FLYING.has(e.kind)) continue;
           expect(
             standable(L.at(e.col, e.row + 1)),
             `${e.kind} ${e.col},${e.row}`,
@@ -110,7 +128,7 @@ describe('authored levels', () => {
     });
   });
   it('each level has its own signature pieces', () => {
-    const [a, b, c, d] = LEVELS.map((_, i) => parseLevel(i));
+    const [a, b, c, d, e, f, g, h] = LEVELS.map((_, i) => parseLevel(i));
     expect(a.lanterns.length).toBeGreaterThanOrEqual(5);
     expect(a.ghosts.length).toBeGreaterThan(10);
     expect(b.awnings.length).toBeGreaterThan(6);
@@ -125,13 +143,38 @@ describe('authored levels', () => {
     expect(d.meta.water).toBeTruthy();
     expect(
       new Set(
-        [a, b, c, d].map((l) =>
+        [a, b, c, d, e, f, g].map((l) =>
           l.enemies
             .map((e) => e.kind)
             .sort()
             .join(),
         ),
       ),
-    ).toHaveProperty('size', 4);
+    ).toHaveProperty('size', 7);
+    // World 2: mud, canals with both currents, saqias, the donkey cart.
+    const mud = (l: typeof e) => l.meta.rows.join('').split('u').length - 1;
+    const hay = (l: typeof e) => l.meta.rows.join('').split('N').length - 1;
+    expect(mud(e)).toBeGreaterThanOrEqual(15);
+    expect(hay(e)).toBeGreaterThanOrEqual(20);
+    expect(f.canals.length).toBeGreaterThanOrEqual(4);
+    expect(new Set(f.canals.map((k) => k.dir)).size).toBe(2);
+    expect(f.planks.length).toBeGreaterThanOrEqual(3);
+    expect(g.saqias.length).toBeGreaterThanOrEqual(3);
+    expect(g.donkeys.length).toBe(1);
+    expect(g.donkeys[0].endCol - g.donkeys[0].a.col).toBeGreaterThan(25);
+    expect(h.boss && h.meta.bossKind).toBe('buffalo');
+    expect(mud(h) && h.canals.length && h.saqias.length).toBeTruthy();
+    const kinds = (l: typeof e) => new Set(l.enemies.map((x) => x.kind));
+    for (const k of ['buffalo', 'goose', 'crow'])
+      expect(
+        [e, f, g, h].some((l) => kinds(l).has(k)),
+        k,
+      ).toBe(true);
+    // A clear step up from Cairo: more enemies per screen and less time.
+    const density = (ls: (typeof e)[]) =>
+      ls.reduce((n, l) => n + l.enemies.length, 0) /
+      ls.reduce((n, l) => n + l.cols, 0);
+    expect(density([e, f, g, h])).toBeGreaterThan(density([a, b, d]));
+    expect(e.meta.time).toBeLessThan(a.meta.time);
   });
 });

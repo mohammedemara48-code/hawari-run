@@ -157,6 +157,23 @@ export const PALETTES: Record<Theme, Palette> = {
     windowLit: '#e8d07a',
     fog: '#173032',
   },
+  // Countryside: sun-baked mud brick, green fields, palm wood.
+  farm: {
+    sky: [
+      [0, '#e8925a'],
+      [0.6, '#f4c27a'],
+      [1, '#ffe3a8'],
+    ],
+    stone: ['#8a5e3a', '#946640', '#7e5434', '#9c6c44'],
+    mortar: '#4e321e',
+    top: ['#6a9a3a', '#7aaa44', '#5a8a32'],
+    wood: ['#7a5232', '#9a6a40', '#4e3420'],
+    accent: '#f4c86a',
+    glow: '#ffd27a',
+    window: '#3a2416',
+    windowLit: '#ffcf7a',
+    fog: '#e8c08a',
+  },
 };
 
 /* ─────────────────────── Tile painting ─────────────────────── */
@@ -172,6 +189,24 @@ function stoneFill(
   const h = hash(col, row),
     base = pal.stone[Math.floor(h * pal.stone.length)];
   rect(c, x, y, T, T, base);
+  if (theme === 'farm') {
+    // Sun-dried mud brick (tob): short courses, soft mortar, straw flecks.
+    const off = row % 2 ? 0 : 8;
+    for (const yy of [7, 15, 23]) rect(c, x, y + yy, T, 1, pal.mortar);
+    for (let k = 0; k < 3; k++) {
+      const yy = k * 8;
+      rect(c, x + ((off + k * 4 + 16) % T), y + yy, 1, 7, pal.mortar);
+      rect(c, x + ((off + k * 4) % T), y + yy, 1, 7, pal.mortar);
+    }
+    rect(c, x + 1, y + 1, 6, 1, '#ffffff14');
+    for (let i = 0; i < 5; i++) {
+      const fx = Math.floor(hash(col, row, i + 20) * 22),
+        fy = Math.floor(hash(col, row, i + 30) * 22);
+      rect(c, x + fx, y + fy, 2, 1, i % 2 ? '#c8a060' : '#5a3a20');
+    }
+    if (h > 0.85) rect(c, x + 4, y + 9, 8, 5, '#00000022');
+    return;
+  }
   // Staggered block courses with varied widths.
   const off = row % 2 ? 0 : 12;
   rect(c, x, y + 11, T, 1, pal.mortar);
@@ -212,6 +247,23 @@ function capTop(
   theme: Theme,
 ) {
   const h = hash(col, row, 7);
+  if (theme === 'farm') {
+    // Field edge: dark soil under a grass lip with wheat and clover tufts.
+    rect(c, x, y, T, 9, '#5a3c22');
+    rect(c, x, y, T, 4, pal.top[Math.floor(h * 3)]);
+    rect(c, x, y, T, 1, '#b8d878');
+    for (let i = 0; i < 4; i++) {
+      const gx = x + Math.floor(hash(col, row, i + 40) * 22);
+      rect(c, gx, y - 2, 1, 3, '#8ac04a');
+      rect(c, gx + 2, y - 1, 1, 2, '#6a9a3a');
+    }
+    if (h > 0.7) {
+      rect(c, x + 14, y - 5, 1, 6, '#c8a048');
+      rect(c, x + 13, y - 6, 3, 3, '#f0c860');
+    }
+    rect(c, x, y + 9, T, 1, '#3a2614');
+    return;
+  }
   if (theme === 'night') {
     // Cobblestones with a moonlit rim.
     rect(c, x, y, T, 8, pal.top[2]);
@@ -257,6 +309,22 @@ function facadeWindow(
 ) {
   const h = hash(col, row, 3),
     lit = theme === 'night' ? h > 0.45 : theme === 'sewer' ? h > 0.8 : false;
+  if (theme === 'farm') {
+    // Small arched window in the mud wall, sometimes a pigeon hole row.
+    if (h > 0.6) {
+      for (let i = 0; i < 3; i++) {
+        rect(c, x + 3 + i * 7, y + 8, 4, 5, '#2a1a10');
+        rect(c, x + 2 + i * 7, y + 13, 6, 1, '#c8a070');
+      }
+      return;
+    }
+    rect(c, x + 6, y + 6, 12, 14, '#2a1a10');
+    disc(c, x + 12, y + 7, 6, '#2a1a10', Math.PI, 0);
+    rect(c, x + 7, y + 7, 10, 13, pal.window);
+    rect(c, x + 12, y + 7, 1, 13, '#5a3a20');
+    rect(c, x + 5, y + 20, 14, 2, '#b08a5a');
+    return;
+  }
   if (theme === 'sewer') {
     // Vent grille.
     rect(c, x + 3, y + 5, 18, 14, '#151d1e');
@@ -291,6 +359,16 @@ function slab(
   theme: Theme,
 ) {
   const h = hash(col, row, 11);
+  if (theme === 'farm') {
+    // A split palm trunk laid flat: ringed bark.
+    rect(c, x, y, T, 12, '#7a5232');
+    rect(c, x, y, T, 2, '#c8945a');
+    for (let i = 2; i < T; i += 4) rect(c, x + i, y + 3, 2, 8, '#5a3a22');
+    rect(c, x, y + 6, T, 1, '#9a6a40');
+    rect(c, x, y + 12, T, 2, '#3a2414');
+    if (h > 0.6) rect(c, x + 8, y + 13, 1, 5, '#4a7a2a');
+    return;
+  }
   if (theme === 'sewer') {
     rect(c, x, y, T, 10, '#56636a');
     rect(c, x, y, T, 2, '#9aa9ae');
@@ -321,7 +399,18 @@ function ledge(
   end: number,
 ) {
   const h = hash(col, row, 5);
-  if (theme === 'night') {
+  if (theme === 'farm') {
+    // Palm-rib (jareed) shelf lashed with rope, a few drying dates.
+    rect(c, x, y, T, 5, '#b08a4a');
+    rect(c, x, y, T, 1, '#e8c888');
+    for (let i = 1; i < T; i += 3) rect(c, x + i, y + 1, 1, 4, '#8a6a32');
+    rect(c, x, y + 5, T, 1, '#5a4020');
+    if (col % 3 === 0) rect(c, x + 10, y - 1, 2, 7, '#d8b878');
+    if (h > 0.6) {
+      rect(c, x + 4, y + 6, 3, 4, '#8a2e1a');
+      rect(c, x + 6, y + 6, 3, 3, '#a8401e');
+    }
+  } else if (theme === 'night') {
     // Wooden balcony plank on a mashrabiya rail.
     rect(c, x, y, T, 5, pal.wood[1]);
     rect(c, x, y, T, 1, '#c79a72');
@@ -359,6 +448,65 @@ function ledge(
   }
 }
 
+function hayBale(
+  c: C,
+  x: number,
+  y: number,
+  col: number,
+  row: number,
+  top: boolean,
+) {
+  // A tied straw bale: golden stalks, two twine bands.
+  rect(c, x, y, T, T, '#3a2a10');
+  rect(c, x + 1, y + 1, 22, 22, '#d8a840');
+  for (let i = 0; i < 9; i++) {
+    const sx = Math.floor(hash(col, row, i + 50) * 21),
+      sy = Math.floor(hash(col, row, i + 60) * 20);
+    rect(c, x + 1 + sx, y + 1 + sy, 1, 3, i % 2 ? '#f4d070' : '#a87a28');
+  }
+  rect(c, x + 1, y + 1, 22, 2, '#f4d878');
+  rect(c, x + 1, y + 21, 22, 2, '#9a7022');
+  for (const bx of [6, 16]) rect(c, x + bx, y + 1, 2, 22, '#7a4a1e');
+  if (top) {
+    for (let i = 0; i < 6; i++)
+      rect(c, x + 2 + i * 4, y - 2 + (i % 2), 1, 3, '#f0c860');
+  }
+}
+function mudTile(c: C, x: number, y: number, col: number, row: number) {
+  // Wet black Nile mud: glossy puddles and sunk footprints.
+  rect(c, x, y, T, T, '#3a2618');
+  rect(c, x, y, T, 7, '#4a3020');
+  rect(c, x, y, T, 2, '#6a4a30');
+  const h = hash(col, row, 70);
+  rect(c, x + 3 + Math.floor(h * 10), y + 2, 8, 2, '#8a6a4a');
+  rect(c, x + 4 + Math.floor(h * 10), y + 2, 3, 1, '#c8a888');
+  if (h > 0.5) {
+    rect(c, x + 14, y + 4, 4, 2, '#2a1a10');
+    rect(c, x + 5, y + 5, 3, 2, '#2a1a10');
+  }
+  for (let i = 0; i < 4; i++)
+    rect(
+      c,
+      x + Math.floor(hash(col, row, i + 80) * 22),
+      y + 9 + i * 3,
+      2,
+      2,
+      '#2a1a10',
+    );
+}
+function canalBed(
+  c: C,
+  x: number,
+  y: number,
+  col: number,
+  row: number,
+  above: string,
+) {
+  // Murky canal water body (the animated surface is drawn by the scene).
+  rect(c, x, y, T, T, above === 'w' || above === 'x' ? '#2a5a52' : '#3a6a5a');
+  if (hash(col, row, 90) > 0.6) rect(c, x + 4, y + 10, 10, 1, '#4a8a7a');
+  if (hash(col, row, 91) > 0.75) rect(c, x + 12, y + 18, 2, 3, '#4a7a3a');
+}
 /** Paints a level's static terrain into chunked canvas textures. */
 export function paintLevel(
   scene: Phaser.Scene,
@@ -414,7 +562,12 @@ export function paintLevel(
             if (!solid(col - 1, row)) rect(c, x, y, 2, T, '#ffffff16');
             if (!solid(col + 1, row)) rect(c, x + T - 2, y, 2, T, '#00000033');
             if (depth >= 2) rect(c, x, y, T, T, '#0000000c');
-          } else if (ch === '=') slab(c, x, y, col, row, pal, theme);
+          } else if (ch === 'N')
+            hayBale(c, x, y, col, row, L.at(col, row - 1) !== 'N');
+          else if (ch === 'u') mudTile(c, x, y, col, row);
+          else if (ch === 'w' || ch === 'x')
+            canalBed(c, x, y, col, row, L.at(col, row - 1));
+          else if (ch === '=') slab(c, x, y, col, row, pal, theme);
           else if (ch === '-') {
             const end =
               L.at(col - 1, row) !== '-'
@@ -914,6 +1067,186 @@ export function makeProps(scene: Phaser.Scene) {
   });
 }
 
+/* ─────────────────────── World 2 props ─────────────────────── */
+function palm(c: C, x: number, base: number, h: number, col: string, lean = 0) {
+  // Date palm silhouette: ringed trunk and drooping fronds.
+  for (let i = 0; i < h; i += 3) {
+    const px = x + (lean * i * i) / (h * h);
+    rect(c, px - 2, base - i - 3, 5, 3, col);
+  }
+  const tx = x + lean,
+    ty = base - h;
+  for (let k = 0; k < 7; k++) {
+    const a = Math.PI + (k / 6) * Math.PI;
+    const len = 22 + (k % 2) * 6;
+    for (let t = 0; t < len; t += 2) {
+      const fx = tx + Math.cos(a) * t,
+        fy = ty + Math.sin(a) * t * 0.55 + (t * t) / (len * 1.6);
+      rect(c, fx - 1, fy, 3, 2, col);
+    }
+  }
+  rect(c, tx - 3, ty - 2, 7, 5, col);
+}
+export function makeFarmProps(scene: Phaser.Scene) {
+  if (scene.textures.exists('saqia-wheel')) return;
+  // The saqia: a big wooden wheel with spokes and clay pots on the rim.
+  tex(scene, 'saqia-wheel', 176, 176, (c) => {
+    const cx = 88,
+      cy = 88;
+    c.lineWidth = 6;
+    c.strokeStyle = '#2a1a10';
+    c.beginPath();
+    c.arc(cx, cy, 80, 0, Math.PI * 2);
+    c.stroke();
+    c.lineWidth = 4;
+    c.strokeStyle = '#7a5232';
+    c.beginPath();
+    c.arc(cx, cy, 80, 0, Math.PI * 2);
+    c.stroke();
+    c.lineWidth = 2;
+    c.strokeStyle = '#a87a4a';
+    c.beginPath();
+    c.arc(cx, cy, 70, 0, Math.PI * 2);
+    c.stroke();
+    for (let k = 0; k < 12; k++) {
+      const a = (k / 12) * Math.PI * 2;
+      c.lineWidth = 4;
+      c.strokeStyle = '#2a1a10';
+      c.beginPath();
+      c.moveTo(cx, cy);
+      c.lineTo(cx + Math.cos(a) * 80, cy + Math.sin(a) * 80);
+      c.stroke();
+      c.lineWidth = 2;
+      c.strokeStyle = '#8a6038';
+      c.stroke();
+      // Clay pots (qawadis) tied to the rim.
+      const px = cx + Math.cos(a + 0.26) * 82,
+        py = cy + Math.sin(a + 0.26) * 82;
+      disc(c, px, py, 5, '#2a1a10');
+      disc(c, px, py, 4, '#c0683a');
+      rect(c, px - 1, py - 3, 2, 1, '#f0a070');
+    }
+    disc(c, cx, cy, 13, '#2a1a10');
+    disc(c, cx, cy, 11, '#6a4428');
+    disc(c, cx, cy, 5, '#c8945a');
+  });
+  // Mud-brick wheel tower (the hub support) and the buckets you ride.
+  tex(scene, 'saqia-post', 40, 120, (c) => {
+    poly(
+      c,
+      [
+        [8, 0],
+        [32, 0],
+        [40, 120],
+        [0, 120],
+      ],
+      '#2a1a10',
+    );
+    poly(
+      c,
+      [
+        [10, 2],
+        [30, 2],
+        [37, 118],
+        [3, 118],
+      ],
+      '#8a5e3a',
+    );
+    for (let y = 8; y < 120; y += 8) rect(c, 4, y, 32, 1, '#5a3a20');
+    rect(c, 16, 0, 8, 8, '#c8945a');
+  });
+  tex(scene, 'bucket', 48, 16, (c) => {
+    rect(c, 0, 0, 48, 7, '#2a1a10');
+    rect(c, 1, 1, 46, 5, '#9a6a40');
+    rect(c, 1, 1, 46, 1, '#e0b070');
+    for (const bx of [6, 22, 38]) {
+      disc(c, bx + 2, 10, 5, '#2a1a10');
+      disc(c, bx + 2, 10, 4, '#c0683a');
+      rect(c, bx, 6, 4, 2, '#8a3e1e');
+    }
+  });
+  // Floating palm log.
+  tex(scene, 'log', 48, 14, (c) => {
+    rect(c, 0, 0, 48, 12, '#2a1a10');
+    rect(c, 1, 1, 46, 10, '#8a5a32');
+    rect(c, 1, 1, 46, 2, '#c08a52');
+    for (let i = 4; i < 46; i += 5) rect(c, i, 3, 2, 7, '#5a3a20');
+    disc(c, 4, 6, 4, '#c8945a');
+    disc(c, 4, 6, 2, '#8a5a32');
+    rect(c, 2, 11, 44, 3, '#4a8a7a');
+  });
+  // Donkey cart (karo): a flat bed on two wheels pulled by a grey donkey.
+  for (let f = 0; f < 2; f++)
+    tex(scene, 'donkey' + f, 112, 46, (c) => {
+      // Cart bed.
+      rect(c, 0, 12, 72, 10, '#2a1a10');
+      rect(c, 1, 13, 70, 8, '#a8743e');
+      rect(c, 1, 13, 70, 2, '#e0b070');
+      for (let i = 8; i < 70; i += 14) rect(c, i, 13, 2, 8, '#6a4422');
+      // Wheel.
+      disc(c, 30, 32, 12, '#2a1a10');
+      disc(c, 30, 32, 10, '#7a5232');
+      disc(c, 30, 32, 3, '#e0b070');
+      const a = f * 0.4;
+      for (let k = 0; k < 4; k++) {
+        const ang = a + (k * Math.PI) / 4;
+        c.strokeStyle = '#2a1a10';
+        c.lineWidth = 2;
+        c.beginPath();
+        c.moveTo(30 - Math.cos(ang) * 10, 32 - Math.sin(ang) * 10);
+        c.lineTo(30 + Math.cos(ang) * 10, 32 + Math.sin(ang) * 10);
+        c.stroke();
+      }
+      // Shafts.
+      rect(c, 70, 18, 16, 2, '#5a3a20');
+      // Donkey.
+      const step = f ? 2 : -2;
+      rect(c, 80, 14, 24, 14, '#2a2428');
+      rect(c, 81, 15, 22, 12, '#8a8890');
+      rect(c, 81, 23, 22, 4, '#c8c4c8');
+      for (const [lx, d] of [
+        [83, step],
+        [99, -step],
+      ] as [number, number][]) {
+        rect(c, lx + d, 27, 4, 15, '#2a2428');
+        rect(c, lx + d + 1, 27, 2, 14, '#6a6870');
+      }
+      rect(c, 100, 4, 10, 16, '#2a2428');
+      rect(c, 101, 5, 8, 14, '#8a8890');
+      rect(c, 105, 14, 6, 6, '#c8c4c8');
+      rect(c, 101, 0, 3, 7, '#2a2428');
+      rect(c, 106, 0, 3, 7, '#2a2428');
+      rect(c, 103, 8, 2, 2, '#1d1416');
+      rect(c, 92, 13, 6, 3, '#c83a3a');
+      rect(c, 77, 16, 4, 8, '#2a2428');
+    });
+  tex(scene, 'canal-top', 48, 12, (c) => {
+    rect(c, 0, 3, 48, 9, '#3a7a6acc');
+    for (let i = 0; i < 48; i += 12) {
+      rect(c, i, 2, 7, 2, '#8ad0b8');
+      rect(c, i + 2, 1, 3, 1, '#e0fff0');
+    }
+    rect(c, 0, 7, 48, 1, '#5aa08a');
+  });
+  tex(scene, 'clod', 14, 12, (c) => {
+    disc(c, 7, 6, 6, '#2a1a10');
+    disc(c, 7, 6, 5, '#5a3a22');
+    rect(c, 4, 3, 3, 2, '#8a6a4a');
+  });
+  tex(scene, 'chaff', 4, 2, (c) => rect(c, 0, 0, 4, 1, '#f4d070'));
+  tex(scene, 'farm-glass', 24, 12, (c) => {
+    // Prickly-pear (sabr) pads with spines.
+    for (const [x, w] of [
+      [2, 9],
+      [12, 10],
+    ] as [number, number][]) {
+      rect(c, x, 3, w, 9, '#2a4a1a');
+      rect(c, x + 1, 4, w - 2, 7, '#5a8a3a');
+      for (let i = 0; i < w; i += 3) rect(c, x + i, 2, 1, 2, '#f0f0c0');
+    }
+  });
+}
+
 /* ─────────────────────── Parallax layers ─────────────────────── */
 function citadel(
   c: C,
@@ -1181,6 +1514,15 @@ export function makeParallax(scene: Phaser.Scene, theme: Theme) {
         rect(c, x, y, 120 + hash(i, 7) * 80, 6, '#f8b8a0aa');
         rect(c, x + 20, y - 5, 70, 5, '#ffd0b8aa');
       }
+    } else if (theme === 'farm') {
+      disc(c, 200, 230, 50, '#ffe0a0');
+      disc(c, 200, 230, 36, '#fff4d0');
+      for (let i = 0; i < 6; i++) {
+        const x = hash(i, 29) * W,
+          y = 40 + hash(i, 28) * 110;
+        rect(c, x, y, 110 + hash(i, 27) * 70, 6, '#f8c0a0bb');
+        rect(c, x + 16, y - 5, 60, 5, '#ffd8c0bb');
+      }
     } else if (theme === 'roof') {
       disc(c, 150, 70, 30, '#fff8d8');
       for (let i = 0; i < 7; i++) {
@@ -1221,6 +1563,18 @@ export function makeParallax(scene: Phaser.Scene, theme: Theme) {
       rect(c, 546, 220, 68, 80, '#c86a5a');
       for (let i = 0; i < 5; i++) rect(c, 530 + i * 24, 172, 12, 10, col);
       citadel(c, 820, 290, 0.6, col, '');
+    } else if (theme === 'farm') {
+      // Village of mud towers and palms on the horizon.
+      const col = '#a07050';
+      rect(c, 0, 300, W, 60, '#8a9a5a');
+      for (let x = 20; x < W; x += 130) {
+        const h = 40 + hash(x, 3) * 40;
+        rect(c, x, 300 - h, 60, h, col);
+        rect(c, x + 20, 300 - h - 40, 18, 40, col);
+        disc(c, x + 29, 300 - h - 40, 9, col, Math.PI, 0);
+      }
+      for (let x = 60; x < W; x += 90)
+        palm(c, x, 302, 60 + hash(x, 5) * 30, '#6a6a3a', 6);
     } else if (theme === 'roof') {
       const pyr = '#e8c890',
         pyrShade = '#c8a070';
@@ -1341,6 +1695,13 @@ export function makeParallax(scene: Phaser.Scene, theme: Theme) {
             );
         }
       }
+    } else if (theme === 'farm') {
+      // Fields in stripes with palms along the canal.
+      for (let y = 260; y < H; y += 14)
+        rect(c, 0, y, W, 14, (y / 14) % 2 ? '#6a8a3a' : '#7a9a44');
+      rect(c, 0, 300, W, 8, '#4a8a8a');
+      for (let x = 30; x < W; x += 140)
+        palm(c, x, 300, 110 + hash(x, 9) * 40, '#3a4a2a', -8);
     } else if (theme === 'roof') {
       houseRow(c, 360, 120, 13, ['#c09a78', '#b08a6a', '#cca684'], '', false);
       // Pigeon towers (gheyya).
@@ -1385,8 +1746,51 @@ export function makeParallax(scene: Phaser.Scene, theme: Theme) {
           ? '#3a1d18'
           : theme === 'roof'
             ? '#5a4a3a'
-            : '#050909';
-    if (theme === 'market') {
+            : theme === 'farm'
+              ? '#1e2a14'
+              : '#050909';
+    if (theme === 'farm') {
+      // Date-palm fronds drooping into the top of the view: a curved rib
+      // with leaflets hanging off both sides, thinning towards the tip.
+      const frond = (x0: number, dir: number, len: number, drop: number) => {
+        const pt = (t: number) => {
+          const mx = x0 + dir * len * 0.45,
+            my = -12;
+          const ex = x0 + dir * len,
+            ey = drop;
+          return [
+            (1 - t) ** 2 * x0 + 2 * (1 - t) * t * mx + t * t * ex,
+            (1 - t) ** 2 * -6 + 2 * (1 - t) * t * my + t * t * ey,
+          ];
+        };
+        c.strokeStyle = col;
+        c.lineCap = 'round';
+        for (let t = 0; t < 1; t += 0.035) {
+          const [x, y] = pt(t),
+            [x2, y2] = pt(t + 0.035);
+          c.lineWidth = 3.5 - t * 2;
+          c.beginPath();
+          c.moveTo(x, y);
+          c.lineTo(x2, y2);
+          c.stroke();
+          const ang = Math.atan2(y2 - y, x2 - x);
+          const l = 26 * (1 - t * 0.7);
+          c.lineWidth = 2;
+          for (const side of [-1, 1]) {
+            const a = ang + side * 1.15 + 0.35 * dir;
+            c.beginPath();
+            c.moveTo(x, y);
+            c.lineTo(x + Math.cos(a) * l * 0.6, y + Math.abs(Math.sin(a)) * l);
+            c.stroke();
+          }
+        }
+      };
+      for (let x = 0; x < W; x += 480) {
+        frond(x, 1, 150, 46);
+        frond(x + 10, 1, 110, 70);
+        frond(x + 20, -1, 120, 52);
+      }
+    } else if (theme === 'market') {
       // Hanging fabric and lanterns from the top edge.
       for (let x = 0; x < W; x += 80) {
         const h = 14 + hash(x, 3) * 22;

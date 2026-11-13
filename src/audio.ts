@@ -10,6 +10,7 @@ export const MAQAM = {
   rast: [0, 2, 3.5, 5, 7, 9, 10.5],
   kurd: [0, 1, 3, 5, 7, 8, 10],
   bayati: [0, 1.5, 3, 5, 7, 8, 10],
+  saba: [0, 1.5, 3, 4, 7, 8, 10],
 } as const;
 type MaqamName = keyof typeof MAQAM;
 /** Darbuka patterns over 8 eighth-notes: D = doum, T = tek, k = ka, . = rest. */
@@ -32,8 +33,18 @@ interface Track {
   melody: (number | null)[];
   bass: (number | null)[];
   drone?: boolean;
+  /** Folk lead colour: a nasal double-reed mizmar or a bowed rababa. */
+  timbre?: 'mizmar' | 'rababa';
+  /** Boss tracks run at full intensity from the start. */
+  boss?: boolean;
 }
 const _ = null;
+/** Compact melody notation: scale degrees separated by spaces, "." = rest. */
+const seq = (s: string) =>
+  s
+    .trim()
+    .split(/\s+/)
+    .map((t) => (t === '.' ? null : Number(t)));
 export const TRACKS: Track[] = [
   {
     name: 'حارة الفوانيس (نهاوند · مقسوم)',
@@ -344,6 +355,7 @@ export const TRACKS: Track[] = [
     rhythm: 'fallahi',
     lead: 'sawtooth',
     drone: true,
+    boss: true,
     melody: [
       0,
       1,
@@ -411,6 +423,74 @@ export const TRACKS: Track[] = [
       _,
     ],
     bass: [0, 0, _, 0, 1, _, 0, _, 0, 0, _, 0, -2, _, -1, _],
+  },
+  // World 2 · الأرياف: mizmar and rababa over saidi / baladi drums.
+  {
+    name: 'غيطان الفجر (بياتي · مزمار · صعيدي)',
+    maqam: 'bayati',
+    root: 62,
+    bpm: 112,
+    rhythm: 'saidi',
+    lead: 'sawtooth',
+    timbre: 'mizmar',
+    melody: seq(`
+      0 1 2 . 3 2 1 0   2 . 3 4 3 . 2 .   4 5 4 3 2 . 1 .   2 1 0 . -1 . 0 .
+      7 . 6 5 4 . 5 4   3 4 3 2 1 . 2 .   4 . 3 2 1 2 1 0   0 . . . -1 0 . .`),
+    bass: seq('0 . 0 . 3 . . .   -3 . -3 . 0 . . .'),
+  },
+  {
+    name: 'الترعة (راست · ربابة · بلدي)',
+    maqam: 'rast',
+    root: 60,
+    bpm: 100,
+    rhythm: 'baladi',
+    lead: 'sawtooth',
+    timbre: 'rababa',
+    melody: seq(`
+      4 . . 5 4 3 2 .   3 . 2 1 2 . . .   0 1 2 3 4 . 5 .   4 3 2 . 3 . . .
+      7 . 6 . 5 4 5 .   4 . 3 2 1 . 2 .   3 2 1 0 1 . 2 1   0 . . . . . . .`),
+    bass: seq('0 . . 0 4 . . .   3 . . 3 4 . . .'),
+  },
+  {
+    name: 'الساقية (صبا · ربابة · مقسوم)',
+    maqam: 'saba',
+    root: 64,
+    bpm: 96,
+    rhythm: 'maqsum',
+    lead: 'sawtooth',
+    timbre: 'rababa',
+    melody: seq(`
+      2 . 3 2 1 . 2 3   4 . 3 . 2 1 2 .   1 2 3 4 5 4 3 2   3 . 2 . 1 . . .
+      0 1 2 . 3 . 2 1   2 3 4 . 3 2 1 .   2 . 1 0 -1 . 0 .  0 . . . . . . .`),
+    bass: seq('0 . . . -2 . 0 .   -3 . . . -2 . . .'),
+  },
+  {
+    name: 'جرن القمح (حجاز · مزمار · صعيدي)',
+    maqam: 'hijaz',
+    root: 62,
+    bpm: 120,
+    rhythm: 'saidi',
+    lead: 'sawtooth',
+    timbre: 'mizmar',
+    melody: seq(`
+      0 1 2 1 0 . 4 .   3 2 1 . 2 . . .   4 5 4 . 3 2 1 2   1 . 0 . . . . .
+      7 . 6 5 6 . 5 4   5 4 3 . 2 . 1 .   2 3 2 1 0 1 0 -1  0 . . . 0 . . .`),
+    bass: seq('0 . 0 1 0 . . .   -1 . 0 . -3 . . .'),
+  },
+  {
+    name: 'أبو قرون (كرد · مزمار · فلاحي)',
+    maqam: 'kurd',
+    root: 57,
+    bpm: 146,
+    rhythm: 'fallahi',
+    lead: 'sawtooth',
+    timbre: 'mizmar',
+    drone: true,
+    boss: true,
+    melody: seq(`
+      0 0 1 0 2 . 1 0   3 . 2 1 2 . 0 .   4 4 3 2 3 . 2 1   2 1 0 . -1 . 0 .
+      7 . 6 . 5 4 3 4   5 . 4 3 2 . 1 .   0 1 2 3 4 3 2 1   0 . 0 . 0 . . .`),
+    bass: seq('0 0 . 0 1 . 0 .   0 0 . 0 -2 . -1 .'),
   },
 ];
 const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
@@ -604,6 +684,10 @@ export class Sound {
       bendFrom?: number;
       vibrato?: number;
       filter?: number;
+      /** Band-pass centre (nasal reed formant). */
+      band?: number;
+      /** Attack time in seconds (bowed swell). */
+      attack?: number;
     } = {},
   ) {
     const ctx = this.ctx!;
@@ -621,10 +705,11 @@ export class Sound {
     if (opts.slide)
       o.frequency.exponentialRampToValueAtTime(opts.slide, t + dur);
     let out: AudioNode = o;
-    if (opts.filter) {
+    if (opts.filter || opts.band) {
       const f = ctx.createBiquadFilter();
-      f.type = 'lowpass';
-      f.frequency.value = opts.filter;
+      f.type = opts.band ? 'bandpass' : 'lowpass';
+      f.frequency.value = opts.band ?? opts.filter!;
+      if (opts.band) f.Q.value = 1.8;
       o.connect(f);
       out = f;
     }
@@ -638,9 +723,14 @@ export class Sound {
       lfo.start(t + 0.08);
       lfo.stop(t + dur + 0.05);
     }
+    const attack = opts.attack ?? 0.006;
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(vol, t + 0.006);
-    g.gain.setTargetAtTime(vol * 0.6, t + 0.03, 0.06);
+    g.gain.linearRampToValueAtTime(vol * (opts.band ? 2.2 : 1), t + attack);
+    g.gain.setTargetAtTime(
+      vol * (opts.band ? 1.5 : 0.6),
+      t + attack + 0.024,
+      0.06,
+    );
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     out.connect(g);
     g.connect(bus);
@@ -716,10 +806,7 @@ export class Sound {
       s = this.step;
     const duck = time < this.duckUntil ? 0.35 : 1;
     const eighth = 60 / t.bpm / 2;
-    const level = Math.max(
-      this.intensity,
-      this.track === 4 ? 1 + this.bossPhase : 0,
-    );
+    const level = Math.max(this.intensity, t.boss ? 1 + this.bossPhase : 0);
     // Darbuka.
     const ch = RHYTHM[t.rhythm][s % 8];
     if (ch === 'D') this.hit(time, 'doum', 0.55 * duck, bus);
@@ -744,18 +831,21 @@ export class Sound {
       while (len < 4 && t.melody[(s + len) % t.melody.length] === null) len++;
       const f = midi(t.root + degreeToSemis(t.maqam, m));
       const ornament = (s * 7) % 11 === 0 ? 0.97 : 0;
-      this.voice(
-        f,
-        time,
-        eighth * len * 0.95,
-        t.lead,
-        (t.lead === 'triangle' ? 0.3 : 0.15) * duck,
-        bus,
-        {
-          bendFrom: ornament || undefined,
-          vibrato: len > 1 ? 0.012 : 0,
-        },
-      );
+      if (t.timbre)
+        this.folk(t.timbre, f, time, eighth * len * 0.95, duck, ornament);
+      else
+        this.voice(
+          f,
+          time,
+          eighth * len * 0.95,
+          t.lead,
+          (t.lead === 'triangle' ? 0.3 : 0.15) * duck,
+          bus,
+          {
+            bendFrom: ornament || undefined,
+            vibrato: len > 1 ? 0.012 : 0,
+          },
+        );
       // Layered lead: an octave-up shimmer, joined by a detuned saw when intense.
       if (level >= 1)
         this.voice(
@@ -790,6 +880,39 @@ export class Sound {
         bus,
         { filter: 1400 },
       );
+    }
+  }
+  /** Countryside lead voices built from the same oscillators. */
+  private folk(
+    timbre: 'mizmar' | 'rababa',
+    f: number,
+    time: number,
+    dur: number,
+    duck: number,
+    ornament: number,
+  ) {
+    const bus = this.musicBus!;
+    if (timbre === 'mizmar') {
+      // Double reed: bright, nasal, a fast vibrato and a scoop into notes.
+      this.voice(f, time, dur, 'sawtooth', 0.11 * duck, bus, {
+        band: 1500,
+        vibrato: 0.016,
+        bendFrom: ornament || 0.985,
+      });
+      this.voice(f * 1.006, time, dur, 'square', 0.05 * duck, bus, {
+        filter: 2400,
+      });
+    } else {
+      // Bowed rababa: a slow swell, a warm low-passed saw and wide vibrato.
+      this.voice(f, time, dur, 'sawtooth', 0.12 * duck, bus, {
+        filter: 1150,
+        vibrato: 0.022,
+        attack: Math.min(0.09, dur / 3),
+        bendFrom: ornament || undefined,
+      });
+      this.voice(f / 2, time, dur, 'triangle', 0.08 * duck, bus, {
+        attack: Math.min(0.09, dur / 3),
+      });
     }
   }
   /* ── Effects ── */
@@ -890,6 +1013,27 @@ export class Sound {
       case 'bounce':
         this.tone(150, 0.2, 'triangle', 0.4, 0, 520);
         this.tone(300, 0.14, 'square', 0.1, 0.02, 900);
+        break;
+      case 'honk':
+        // Goose: two nasal blasts.
+        this.tone(520, 0.09, 'sawtooth', 0.16, 0, 470);
+        this.tone(560, 0.12, 'sawtooth', 0.16, 0.12, 430);
+        break;
+      case 'moo':
+        // Buffalo snort and low bellow.
+        this.noiseFx(600, 0.25, 0.35);
+        this.tone(98, 0.45, 'sawtooth', 0.22, 0.05, 82);
+        break;
+      case 'caw':
+        this.tone(900, 0.12, 'square', 0.12, 0, 600);
+        this.noiseFx(2500, 0.1, 0.2);
+        break;
+      case 'swim':
+        this.noiseFx(1400, 0.18, 0.25, 0, 'lowpass');
+        break;
+      case 'cart':
+        this.tone(330, 0.08, 'square', 0.12);
+        this.tone(262, 0.12, 'square', 0.12, 0.09);
         break;
       case 'zip':
         this.noiseFx(5000, 0.35, 0.18, 0, 'highpass');
