@@ -14,7 +14,7 @@
     "lint": "eslint src tests",
     "format": "prettier --write .",
     "check": "tsc --noEmit && npm run lint && prettier --check . && npm test && vite build",
-    "test:browser": "node tests/smoke.mjs && node tests/levels-runtime.mjs && node tests/hero-runtime.mjs && node tests/world2-runtime.mjs && node tests/world3-runtime.mjs && node tests/mobile.mjs",
+    "test:browser": "node tests/smoke.mjs && node tests/levels-runtime.mjs && node tests/hero-runtime.mjs && node tests/world2-runtime.mjs && node tests/world3-runtime.mjs && node tests/world4-runtime.mjs && node tests/mobile.mjs",
     "test:offline": "node tests/offline.mjs",
     "test:hero": "node tests/hero-runtime.mjs",
     "shots:hero": "node tests/hero-shots.mjs",
@@ -24,6 +24,7 @@
     "test:levels": "node tests/levels-runtime.mjs",
     "test:world2": "node tests/world2-runtime.mjs",
     "test:world3": "node tests/world3-runtime.mjs",
+    "test:world4": "node tests/world4-runtime.mjs",
     "shots:v2": "node tests/shots-v2.mjs"
   },
   "keywords": [],

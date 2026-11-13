@@ -21,20 +21,24 @@ level stays completable in the reachability graph).
 Seconds per column = level timer ÷ level width: lower means less time to
 spare. Enemies /100 = enemies per 100 columns.
 
-| #   | Level             | World   |      Cols | Timer | s/col | Enemies                          | /100 | Checkpoint | New idea                                                       |
-| --- | ----------------- | ------- | --------: | ----: | ----: | -------------------------------- | ---: | ---------: | -------------------------------------------------------------- |
-| 1   | حارة الفوانيس     | القاهرة |       170 |   300 |  1.76 | 5 cats, 3 bats, 2 bugs           |  5.9 |     col 84 | dark alley, lanterns reveal ghost ledges                       |
-| 2   | سوق تحت البلد     | القاهرة |       180 |   300 |  1.67 | 5 roosters, 4 baskets            |  5.0 |     col 96 | bouncy awnings, rolling carts, charging roosters               |
-| 3   | فوق الأسطح        | القاهرة | 40 (tall) |   300 |     — | 3 pigeons, 2 roosters, 1 cat     |    — |     col 36 | climb: dishes, zip-lines, wind                                 |
-| 4   | تحت المترو + boss | القاهرة |       151 |   360 |  2.38 | 5 rats, 1 bug                    |  4.0 |     col 86 | rising water, lifts; boss الفتوة برعي (6 hearts)               |
-| 5   | غيطان الفجر       | الأرياف |       200 |   280 |  1.40 | 7 geese, 4 buffalo, 1 crow       |  6.0 |     col 93 | mud slows you, first calm canal (→)                            |
-| 6   | الترعة            | الأرياف |       210 |   280 |  1.33 | 8 crows, 5 geese, 1 buffalo      |  6.7 |     col 96 | canal currents, against you (←) 4 of 5 times                   |
-| 7   | الساقية           | الأرياف |       220 |   300 |  1.36 | 6 crows, 6 geese, 3 buffalo      |  6.8 |    col 107 | 4 rotating saqia wheels over pits, donkey-cart ride            |
-| 8   | جرن القمح + boss  | الأرياف |       191 |   330 |  1.73 | 4 crows, 4 geese, 3 buffalo      |  5.8 |     col 70 | everything mixed at dusk (dark 0.3); boss أبو قرون             |
-| 9   | شارع الموبيليا    | دمياط   |       236 |   285 |  1.21 | 6 saws, 6 thief cats, 5 planes   |  7.2 |    col 108 | conveyor belts (both ways), toppling furniture stacks          |
-| 10  | جوه الورشة        | دمياط   |       240 |   290 |  1.21 | 7 saws, 7 planes, 5 thief cats   |  7.9 |    col 102 | swinging chandeliers over pits, lamplight (dark 0.45)          |
-| 11  | ميناء الصيد       | دمياط   |       240 |   285 |  1.19 | 8 crabs, 7 gulls, 4 thief cats   |  7.9 |     col 86 | the tide (2 rows / 10 s), drifting boats, climbable nets       |
-| 12  | رأس البر + boss   | دمياط   |       191 |   300 |  1.57 | 5 crabs, 4 gulls, 3 saws, 3 cats |  7.9 |     col 90 | everything mixed at blue hour, faster tide (8 s); boss أبو مقص |
+| #   | Level               | World    |      Cols | Timer | s/col | Enemies                                                     | /100 | Checkpoint | New idea                                                                                      |
+| --- | ------------------- | -------- | --------: | ----: | ----: | ----------------------------------------------------------- | ---: | ---------: | --------------------------------------------------------------------------------------------- |
+| 1   | حارة الفوانيس       | القاهرة  |       170 |   300 |  1.76 | 5 cats, 3 bats, 2 bugs                                      |  5.9 |     col 84 | dark alley, lanterns reveal ghost ledges                                                      |
+| 2   | سوق تحت البلد       | القاهرة  |       180 |   300 |  1.67 | 5 roosters, 4 baskets                                       |  5.0 |     col 96 | bouncy awnings, rolling carts, charging roosters                                              |
+| 3   | فوق الأسطح          | القاهرة  | 40 (tall) |   300 |     — | 3 pigeons, 2 roosters, 1 cat                                |    — |     col 36 | climb: dishes, zip-lines, wind                                                                |
+| 4   | تحت المترو + boss   | القاهرة  |       151 |   360 |  2.38 | 5 rats, 1 bug                                               |  4.0 |     col 86 | rising water, lifts; boss الفتوة برعي (6 hearts)                                              |
+| 5   | غيطان الفجر         | الأرياف  |       200 |   280 |  1.40 | 7 geese, 4 buffalo, 1 crow                                  |  6.0 |     col 93 | mud slows you, first calm canal (→)                                                           |
+| 6   | الترعة              | الأرياف  |       210 |   280 |  1.33 | 8 crows, 5 geese, 1 buffalo                                 |  6.7 |     col 96 | canal currents, against you (←) 4 of 5 times                                                  |
+| 7   | الساقية             | الأرياف  |       220 |   300 |  1.36 | 6 crows, 6 geese, 3 buffalo                                 |  6.8 |    col 107 | 4 rotating saqia wheels over pits, donkey-cart ride                                           |
+| 8   | جرن القمح + boss    | الأرياف  |       191 |   330 |  1.73 | 4 crows, 4 geese, 3 buffalo                                 |  5.8 |     col 70 | everything mixed at dusk (dark 0.3); boss أبو قرون                                            |
+| 9   | شارع الموبيليا      | دمياط    |       236 |   285 |  1.21 | 6 saws, 6 thief cats, 5 planes                              |  7.2 |    col 108 | conveyor belts (both ways), toppling furniture stacks                                         |
+| 10  | جوه الورشة          | دمياط    |       240 |   290 |  1.21 | 7 saws, 7 planes, 5 thief cats                              |  7.9 |    col 102 | swinging chandeliers over pits, lamplight (dark 0.45)                                         |
+| 11  | ميناء الصيد         | دمياط    |       240 |   285 |  1.19 | 8 crabs, 7 gulls, 4 thief cats                              |  7.9 |     col 86 | the tide (2 rows / 10 s), drifting boats, climbable nets                                      |
+| 12  | رأس البر + boss     | دمياط    |       191 |   300 |  1.57 | 5 crabs, 4 gulls, 3 saws, 3 cats                            |  7.9 |     col 90 | everything mixed at blue hour, faster tide (8 s); boss أبو مقص                                |
+| 13  | الكورنيش            | اسكندرية |       250 |   270 |  1.08 | 8 beach balls, 4 storm gulls, 3 umbrellas, 3 jellyfish, +2  |  8.0 |     col 79 | breaking waves on a timer (3.4 s), slippery wet tiles, umbrella stands (glide)                |
+| 14  | الترام              | اسكندرية |       232 |   200 |  0.86 | 7 beach balls, 6 storm gulls, 4 umbrellas, +2               |  8.2 |    col 120 | ride the tram roof: auto-scrolling view, 9 wires + 3 low bridges to duck                      |
+| 15  | كوبري ستانلي        | اسكندرية |       240 |   255 |  1.06 | 10 beach balls, 5 storm gulls, 5 jellyfish, 4 umbrellas, +1 | 10.4 |    col 100 | headwind gale in pulses (185 px/s, 2.4 s on / 1.7 s off) over the sea                         |
+| 16  | قلعة قايتباي + boss | اسكندرية |       214 |   250 |  1.17 | 5 storm gulls, 5 beach balls, 3 umbrellas, 3 jellyfish      |  7.5 |     col 76 | the نوة storm (dark, rain, lightning), faster waves (2.8 s), gusts both ways; boss ريّس النوة |
 
 ## Cairo → الأرياف: what makes World 2 a clear step up
 
@@ -112,6 +116,52 @@ spare. Enemies /100 = enemies per 100 columns.
    - In comparison, أبو قرون only had to be baited into a wall once per
      heart.
 
+## دمياط → اسكندرية: what makes World 4 a clear step up
+
+1. **Much less time.** 0.86–1.17 s per column (average 1.04) against
+   1.19–1.57 (average 1.28) in Damietta. The tram level gives 200 s for
+   232 columns, and the tram won't wait for you anyway.
+2. **More enemies, from every direction.** 80 enemies over 936 columns
+   (8.5 per 100) against 70 over 907 (7.7) in Damietta. كوبري ستانلي
+   reaches 10.4.
+   - **Storm gull (نورس النوة):** wheels over you, then dives at where you're
+     _heading_ (it leads your speed by 0.45 s) at 320 px/s.
+   - **Jellyfish (قنديل):** drifts in the sea sections and **can't be
+     stomped**: landing on it stings. Go around it or burn it with chili.
+   - **Loose umbrella (شمسية طايرة):** tumbles along on the wind in long
+     arcs. Stomp it and you keep it as a glider.
+   - **Beach ball (كورة):** bounces along at 78 px/s, alternating high and
+     low hops. Stomp it and it pops and launches you (−560), which is
+     useful and dangerous.
+3. **The sea and the weather join in.** These hazards come on top of the
+   enemies:
+   - **Breaking waves (موج):** 11 on الكورنيش, 9 at قايتباي. Each one is
+     calm, foams for a 1.0 s warning, then crashes for 0.8 s and knocks you
+     back. The period is 3.4 s, and 2.8 s in the storm. Neighbouring waves
+     are out of phase, so you have to read a whole row.
+   - **Wet tiles (بلاط مبلول):** acceleration 240 instead of 1400, and
+     braking 110. You keep sliding about 3× as far, often towards a pit or a
+     wave.
+   - **Wind gusts:** a pulsing headwind on the bridge, and gusts both ways
+     in the storm. Each is a ramped envelope, so it builds and fades
+     instead of snapping on.
+   - **The tram (الترام):** boarding it starts it at 120 px/s, and the view
+     scrolls with it. Wires (9) only clear a crouched hero, and so do the
+     low bridges (3). Fall off and you lose the ride. After a death it waits
+     at the checkpoint.
+   - **Umbrella glider:** take one from a stand (or a loose umbrella) and
+     hold jump while falling. You sink at 70 px/s, and wind pushes you
+     1.9× harder. Any hit blows it away.
+4. **A boss in three dimensions.** ريّس النوة flies, so stomping him in the
+   air just bounces you off. He hovers, screeches (the tell), and dives at
+   you. If he misses, his beak sticks in the roof stones. **Only then** can
+   you stomp him (6 hearts).
+   - Phase 2 adds a wing-beat gale (240 px/s) after every dive.
+   - Phase 3 adds lightning: 3 marks flash under you and strike 0.8 s
+     later. Two storm gulls join in.
+   - In comparison, أبو مقص stayed on the ground, and his only phase-3
+     extra was waves.
+
 ## Inside each world
 
 Every world follows the same four-beat shape so players feel the ramp:
@@ -123,12 +173,11 @@ Every world follows the same four-beat shape so players feel the ramp:
 4. **Exam + boss.** A shorter mixed run, an early checkpoint (col 70 in
    جرن القمح) and then the boss arena.
 
-## Planned ramp for later worlds (World 3 is built; see above)
+## Planned ramp for later worlds (Worlds 1–4 are built; see above)
 
-| World      | Extra pressure (planned)                                                                       |
-| ---------- | ---------------------------------------------------------------------------------------------- |
-| 4 اسكندرية | Wind and waves pushing sideways, slippery wet stone; enemies that throw                        |
-| 5 الأقصر   | Crumbling temple floors, traps on timers, darkness with torches; ≈1.1 s/col and the final boss |
+| World    | Extra pressure (planned)                                                                       |
+| -------- | ---------------------------------------------------------------------------------------------- |
+| 5 الأقصر | Crumbling temple floors, traps on timers, darkness with torches; ≈1.1 s/col and the final boss |
 
 When adding a world, keep these invariants and add a test like the World 2
 density test: enemies per 100 columns and seconds per column must both get
