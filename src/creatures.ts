@@ -521,9 +521,11 @@ export function makeCreatures(scene: Phaser.Scene) {
   if (scene.textures.exists('bat0')) return;
   for (let f = 0; f < 4; f++) {
     make(scene, 'bat' + f, 32, 25, (p) => bat(p, f));
-    make(scene, 'rooster' + f, 34, 32, (p) => rooster(p, f));
+    // Walkers face left in their textures (the game flips them to walk
+    // right); the rooster and rat are drawn facing right, so mirror them.
+    make(scene, 'rooster' + f, 34, 32, (p) => rooster(p, f), true);
     make(scene, 'pigeon' + f, 30, 22, (p) => pigeon(p, f));
-    make(scene, 'rat' + f, 31, 18, (p) => rat(p, f));
+    make(scene, 'rat' + f, 31, 18, (p) => rat(p, f), true);
   }
   for (const pose of BOSS_POSES)
     make(scene, 'boss-' + pose, 78, 64, (p) => boss(p, pose));

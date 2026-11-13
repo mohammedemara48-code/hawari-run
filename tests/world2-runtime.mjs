@@ -191,7 +191,7 @@ log('map opens world 2, track', audio.track);
     Math.sign(drift) === k.dir && Math.abs(drift) > 15,
     `the current carries him (${drift | 0})`,
   );
-  await shot('12-w2-canal.png');
+  await shot('13-w2-canal.png');
   const vy = await jumpPeak();
   assert.ok(vy < -380, `swim jump (${vy | 0})`);
   log(`L${li - 3} canal drift ${drift | 0}, swim jump ${vy | 0}`);
@@ -238,7 +238,7 @@ log('map opens world 2, track', audio.track);
     ride.dy < 4 && ride.dx < 28 && ride.grounded,
     `the bucket carries him ${JSON.stringify(ride)}`,
   );
-  await shot('12-w2-saqia.png');
+  await shot('13-w2-saqia.png');
   log(`L${li - 3} saqia ride`, JSON.stringify(ride));
 }
 
@@ -260,7 +260,7 @@ log('map opens world 2, track', audio.track);
   }));
   assert.ok(rode.ridden && rode.on, 'riding the cart');
   assert.ok(rode.x - start > 100, `the cart trots on (${rode.x - start})`);
-  await shot('12-w2-donkey.png');
+  await shot('13-w2-donkey.png');
   await ev(() => {
     const s = window.T.s;
     window.T.place(s.spec.start.x, s.spec.start.y + 13);
@@ -372,10 +372,24 @@ const watch = async (ms) => {
   for (const st of await sample(ms, () => window.T.s.bossState.state))
     seen.add(st);
 };
+/** How far the boss sprite pokes out of the view while the hero-boss gap
+ * still lets the camera show both (0 = fully framed). */
+let worstCut = 0;
 const waitState = async (st, ms = 8000) => {
   const t0 = Date.now();
   while (Date.now() - t0 < ms) {
-    const s = await ev(() => window.T.s.bossState.state);
+    const [s, cut] = await ev(() => {
+      const g = window.T.s,
+        b = g.boss,
+        v = g.cameras.main.worldView;
+      const half = b.displayWidth / 2;
+      const fits = Math.abs(g.hero.x - b.x) < v.width - 40 - half - 20;
+      const cut = fits
+        ? Math.max(0, v.x - (b.x - half), b.x + half - (v.x + v.width))
+        : 0;
+      return [g.bossState.state, cut];
+    });
+    worstCut = Math.max(worstCut, cut);
     seen.add(s);
     if (s === st) return;
     await wait(16);
@@ -415,7 +429,7 @@ assert.ok(
   ['walk', 'telegraph', 'charge', 'dazed'].every((s) => seen.has(s)),
   `phase 1 pattern ${[...seen]}`,
 );
-await shot('12-w2-boss-phase1.png');
+await shot('13-w2-boss-phase1.png');
 await stomp();
 await stomp();
 assert.equal(await ev(() => window.T.s.bossPhase()), 2, 'phase 2 at 4 hearts');
@@ -428,7 +442,7 @@ const clods = await ev(
       .length,
 );
 assert.ok(clods >= 3, `phase 2 crashes drop clods (${clods})`);
-await shot('12-w2-boss-phase2.png');
+await shot('13-w2-boss-phase2.png');
 await stomp();
 await stomp();
 assert.equal(await ev(() => window.T.s.bossPhase()), 3, 'phase 3 at 2 hearts');
@@ -446,7 +460,7 @@ assert.equal(
 );
 seen.clear();
 await waitState('slam', 12000);
-await shot('12-w2-boss-phase3.png');
+await shot('13-w2-boss-phase3.png');
 await stomp();
 await stomp();
 await wait(600);
@@ -455,6 +469,10 @@ assert.equal(
   true,
   'boss beaten',
 );
+assert.ok(
+  worstCut <= 4,
+  `the camera keeps the boss in frame (cut ${worstCut})`,
+);
 assert.equal(await ev(() => window.T.s.exitDoor.visible), true, 'exit opens');
 await ev(() => {
   const s = window.T.s;
@@ -462,7 +480,7 @@ await ev(() => {
 });
 await wait(500);
 assert.equal(await ev(() => window.T.s.mode), 'win', 'world 2 done: the win');
-await shot('12-w2-win.png');
+await shot('13-w2-win.png');
 log('boss: hard back, 3 phases, clods, crows, win');
 
 assert.deepEqual(errors, [], 'no console errors');

@@ -169,6 +169,8 @@ export class Alley extends Phaser.Scene {
   windEmitters: Phaser.GameObjects.Particles.ParticleEmitter[] = [];
   ambient?: Phaser.GameObjects.Particles.ParticleEmitter;
   boss?: Sprite;
+  /** Invisible point the camera follows during a boss fight. */
+  camFocus?: Phaser.GameObjects.Zone;
   bossState = {
     active: false,
     hp: 6,
@@ -366,6 +368,7 @@ export class Alley extends Phaser.Scene {
     this.water = undefined;
     this.dark = undefined;
     this.boss = undefined;
+    this.camFocus = undefined;
     this.secret = undefined;
     this.zip = null;
     const L = (this.L = parseLevel(this.level));
@@ -2048,6 +2051,18 @@ export class Alley extends Phaser.Scene {
     this.kills++;
     this.score += 3000;
     this.cameras.main.setBounds(0, 0, this.L.width + EDGE, this.L.height);
+    this.cameras.main
+      .startFollow(
+        this.hero,
+        true,
+        0.12,
+        0.2,
+        0,
+        this.cameras.main.followOffset.y,
+      )
+      .setDeadzone(90, 70);
+    this.camFocus?.destroy();
+    this.camFocus = undefined;
     this.exitDoor!.setVisible(true).setAlpha(0).setScale(1, 0.2);
     (
       this.children.getByName('exit-glow') as Phaser.GameObjects.Image | null
@@ -2073,6 +2088,17 @@ export class Alley extends Phaser.Scene {
       boss.setTexture(this.bossTex('idle' + (Math.floor(time / 400) % 2)));
       if (this.hero.x > s.arenaX + TILE * 3) {
         s.active = true;
+        this.camFocus = this.add.zone(this.hero.x, this.hero.y, 1, 1);
+        this.cameras.main
+          .startFollow(
+            this.camFocus,
+            true,
+            0.14,
+            0.2,
+            0,
+            this.cameras.main.followOffset.y,
+          )
+          .setDeadzone(0, 70);
         this.cameras.main.setBounds(
           s.arenaX,
           0,
@@ -2205,9 +2231,43 @@ export class Alley extends Phaser.Scene {
         }
         break;
     }
-    if (boss.x < s.arenaX + 40) boss.x = s.arenaX + 40;
-    if (boss.x > this.L.width - 40) boss.x = this.L.width - 40;
+    this.clampBoss();
     this.updateHazards(time);
+  }
+  /** Where the boss's centre may go: its whole sprite stays between the
+   * arena's left camera edge and the right wall, so it is never cut off. */
+  bossRange(): [number, number] {
+    const half = (this.boss?.displayWidth ?? 80) / 2;
+    return [this.bossState.arenaX + half + 4, this.L.width - TILE - half + 6];
+  }
+  clampBoss() {
+    const [lo, hi] = this.bossRange();
+    this.boss!.x = Phaser.Math.Clamp(this.boss!.x, lo, hi);
+  }
+  /** Boss-fight camera: frame hero and boss together inside the arena,
+   * always keeping the hero on screen and, whenever the gap allows, the
+   * whole boss too. */
+  frameBossFight() {
+    const cam = this.cameras.main,
+      boss = this.boss!,
+      w = cam.width;
+    const half = boss.displayWidth / 2 + 6;
+    let lo = this.hero.x - w / 2 + 40,
+      hi = this.hero.x + w / 2 - 40;
+    const blo = boss.x + half - w / 2,
+      bhi = boss.x - half + w / 2;
+    if (Math.max(lo, blo) <= Math.min(hi, bhi)) {
+      lo = Math.max(lo, blo);
+      hi = Math.min(hi, bhi);
+    }
+    const left = this.bossState.arenaX,
+      right = this.L.width;
+    let cx = Phaser.Math.Clamp((this.hero.x + boss.x) / 2, lo, hi);
+    cx =
+      right - left <= w
+        ? (left + right) / 2
+        : Phaser.Math.Clamp(cx, left + w / 2, right - w / 2);
+    this.camFocus!.setPosition(cx, this.hero.y);
   }
   updateHazards(time: number) {
     for (const h of this.hazards.getChildren() as Sprite[]) {
@@ -2233,8 +2293,7 @@ export class Alley extends Phaser.Scene {
     const phase = this.bossPhase();
     const grounded = bb.blocked.down;
     const toHero = Math.sign(this.hero.x - boss.x) || 1;
-    const lo = s.arenaX + 50,
-      hi = this.L.width - 64;
+    const [lo, hi] = this.bossRange();
     if (!['charge', 'hurt', 'leap', 'slam'].includes(s.state))
       boss.setFlipX(toHero < 0);
     const over = time > s.until;
@@ -2342,8 +2401,7 @@ export class Alley extends Phaser.Scene {
         }
         break;
     }
-    if (boss.x < s.arenaX + 40) boss.x = s.arenaX + 40;
-    if (boss.x > this.L.width - 50) boss.x = this.L.width - 50;
+    this.clampBoss();
   }
   /** Mud clods shaken loose from the barn roof when the buffalo crashes. */
   dropClods(n: number) {
@@ -2714,6 +2772,7 @@ export class Alley extends Phaser.Scene {
     }
     this.updateItems();
     if (this.boss?.active) this.updateBoss(time);
+    if (this.camFocus && this.boss?.active) this.frameBossFight();
     for (const l of this.lanterns)
       if (
         !l.lit &&

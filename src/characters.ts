@@ -105,10 +105,23 @@ export function make(
   w: number,
   h: number,
   paint: (p: Pixels) => void,
+  /** Mirror the finished drawing (art drawn facing right, game wants left). */
+  mirror = false,
 ) {
   const t = scene.textures.createCanvas(key, w, h)!;
   t.context.imageSmoothingEnabled = false;
   paint(new Pixels(t.context));
+  if (mirror) {
+    const copy = document.createElement('canvas');
+    copy.width = w;
+    copy.height = h;
+    copy.getContext('2d')!.drawImage(t.canvas, 0, 0);
+    t.context.clearRect(0, 0, w, h);
+    t.context.save();
+    t.context.scale(-1, 1);
+    t.context.drawImage(copy, -w, 0);
+    t.context.restore();
+  }
   t.refresh();
 }
 function heroBrush(raw: Pixels): Pick<Pixels, 'r' | 'box' | 'poly' | 'line'> {

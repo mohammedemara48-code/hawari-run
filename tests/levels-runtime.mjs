@@ -143,7 +143,7 @@ assert.ok(
 );
 await ev(([x, y]) => window.T.place(x - 60, y + 20), [lant.x, lant.y]);
 await wait(400);
-await shot('12-level1.png');
+await shot('13-level1.png');
 log('L1 lanterns reveal', lant.ghosts.length, 'ghost ledges');
 
 /* 2 · Market: awning trampoline, moving cart carries, crate crumbles. */
@@ -201,7 +201,7 @@ assert.equal(
 );
 await ev(([x, t]) => window.T.place(x - 30, t - 40), [aw.x, aw.top]);
 await wait(350);
-await shot('12-level2.png');
+await shot('13-level2.png');
 log(
   'L2 awning vy',
   Math.round(awVy),
@@ -260,7 +260,7 @@ const push = Math.max(...windVx.map((v) => v * wind.dir));
 assert.ok(push > 90, `wind gust pushes the hero (${Math.round(push)} px/s)`);
 await ev(([x, t]) => window.T.place(x - 40, t - 2), [dish.x, dish.top]);
 await wait(400);
-await shot('12-level3.png');
+await shot('13-level3.png');
 log('L3 dish vy', Math.round(dVy), 'zip ok, wind', Math.round(push));
 
 /* 4 · Metro: rising water kills, lifts move, boss runs 3 phases → exit. */
@@ -354,7 +354,7 @@ assert.ok(
   ['walk', 'telegraph', 'leap', 'dazed'].every((s) => statesSeen.has(s)),
   `phase 1 pattern ${[...statesSeen]}`,
 );
-await shot('12-boss-phase1.png');
+await shot('13-boss-phase1.png');
 const hp0 = await ev(() => window.T.s.bossState.hp);
 await stomp();
 await wait(300);
@@ -391,7 +391,7 @@ assert.equal(await ev(() => window.T.s.bossPhase()), 2, 'phase 2 at 4 hearts');
 statesSeen.clear();
 await watch(3500);
 assert.ok(statesSeen.has('throw'), 'phase 2 throws bones');
-await shot('12-boss-phase2.png');
+await shot('13-boss-phase2.png');
 await stomp();
 await wait(1100);
 await stomp();
@@ -420,7 +420,7 @@ assert.ok(
   statesSeen.has('slam') && shock >= 2,
   'phase 3 slams with two shockwaves',
 );
-await shot('12-boss-phase3.png');
+await shot('13-boss-phase3.png');
 await wait(800);
 await stomp();
 await wait(1200);
@@ -496,7 +496,7 @@ assert.equal(
   3,
   'Damietta, Alexandria and Luxor are coming soon',
 );
-await shot('12-map-world2.png');
+await shot('13-map-world2.png');
 await page.locator('.world-pin[data-world="0"]').click();
 await wait(300);
 assert.equal(
@@ -504,8 +504,53 @@ assert.equal(
   4,
   'all Cairo levels open after clearing',
 );
-await shot('12-map.png');
+await shot('13-map.png');
 log('exits + progress map');
+
+/* Walkers' textures face left (the game flips them to walk right): the
+   rooster's beak and the rat's eye must sit in the left half, and a walker
+   heading right is flipped so it looks where it's going. */
+const facing = await ev(() => {
+  const s = window.T.s;
+  const find = (key, hex) => {
+    const img = s.textures.get(key).getSourceImage();
+    const g = Object.assign(document.createElement('canvas'), {
+      width: img.width,
+      height: img.height,
+    }).getContext('2d');
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, img.width, img.height).data;
+    const [r, gg, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    let sum = 0,
+      n = 0;
+    for (let i = 0; i < d.length; i += 4)
+      if (d[i] === r && d[i + 1] === gg && d[i + 2] === b && d[i + 3] > 200) {
+        sum += (i / 4) % img.width;
+        n++;
+      }
+    return n ? sum / n / img.width : -1;
+  };
+  return {
+    rooster: find('rooster0', '#f2b33a'),
+    rat: find('rat0', '#ff4d4d'),
+  };
+});
+assert.ok(
+  facing.rooster > 0 && facing.rooster < 0.5,
+  `rooster texture faces left (${facing.rooster})`,
+);
+assert.ok(facing.rat > 0 && facing.rat < 0.5, `rat faces left (${facing.rat})`);
+await ev(() => window.T.go(1));
+const walk = await ev(async () => {
+  const s = window.T.s;
+  const e = s.enemy(s.spec.start.x + 300, s.spec.start.y, 'rooster');
+  e.setData('until', 1e12);
+  e.setVelocityX(40);
+  await new Promise((r) => setTimeout(r, 300));
+  return { vx: e.body.velocity.x, flip: e.flipX };
+});
+assert.equal(walk.flip, walk.vx > 0, 'a rooster walking right is flipped');
+log('walkers face where they walk', JSON.stringify(facing));
 assert.deepEqual(errors, []);
 console.log('PASS levels-runtime');
 await browser.close();
