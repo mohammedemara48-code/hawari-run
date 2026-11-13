@@ -21,7 +21,8 @@
     "test:boxes": "vitest run tests/levels.test.ts tests/physics.test.ts",
     "test:pwa": "vite build && node tests/pwa.mjs",
     "icons": "node scripts/make-icons.mjs",
-    "test:levels": "node tests/levels-runtime.mjs"
+    "test:levels": "node tests/levels-runtime.mjs",
+    "shots:v2": "node tests/shots-v2.mjs"
   },
   "keywords": [],
   "author": "",
