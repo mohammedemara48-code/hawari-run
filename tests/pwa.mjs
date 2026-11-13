@@ -274,6 +274,7 @@ await p.waitForFunction(() => window.hawari?.scene.getScene('alley')?.hero);
 await p.goto(ORIGIN + '/some/deep/link?x=1');
 await p.waitForFunction(() => window.hawari?.scene.getScene('alley')?.hero);
 await p.locator('[data-screen="title"] [data-action="start"]').click();
+await p.locator('.map-node[data-node="0"]').click();
 assert.equal(
   await p.evaluate(() => window.hawari.scene.getScene('alley').mode),
   'play',
@@ -312,6 +313,7 @@ await ctx.setOffline(false);
   // The fullscreen button is hidden on landscape phones; trigger it directly.
   await page.evaluate(() => document.getElementById('fullscreen-btn').click());
   await page.locator('[data-screen="title"] [data-action="start"]').click();
+  await page.locator('.map-node[data-node="0"]').click();
   assert.equal(
     await page.evaluate(() => window.hawari.scene.getScene('alley').mode),
     'play',

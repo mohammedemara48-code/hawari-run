@@ -21,6 +21,11 @@ await p.waitForFunction(() => window.hawari?.scene.getScene('alley')?.hero);
 await p.locator('[data-screen="title"] button').click();
 assert.equal(
   await p.evaluate(() => window.hawari.scene.getScene('alley').mode),
+  'map',
+);
+await p.locator('.map-node[data-node="0"]').click();
+assert.equal(
+  await p.evaluate(() => window.hawari.scene.getScene('alley').mode),
   'play',
 );
 console.log('PASS: production game loads and starts with network disabled');

@@ -80,9 +80,11 @@ await writeFile(
   Buffer.from(png, 'base64'),
 );
 await p.locator('[data-screen="title"] button').click();
+await p.locator('.map-node[data-node="0"]').click();
 await p.evaluate(() => {
   const s = window.hawari.scene.getScene('alley');
-  s.hero.body.reset(350, 280);
+  s.enemies.clear(true, true);
+  s.hero.body.reset(350, s.spec.start.y - 40);
   s.setPower(0, false);
   s.hurtUntil = 0;
   s.invincible = 0;

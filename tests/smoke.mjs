@@ -17,6 +17,8 @@ await page.screenshot({
   fullPage: true,
 });
 await page.locator('[data-screen="title"] [data-action="start"]').click();
+await page.waitForTimeout(300);
+await page.locator('.map-node[data-node="0"]').click();
 await page.waitForTimeout(500);
 await page.keyboard.down('ArrowRight');
 await page.waitForTimeout(1400);

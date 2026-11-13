@@ -2,8 +2,8 @@ import { defineConfig } from 'vite';
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 export default defineConfig({
-  // Phaser's complete renderer/physics bundle is budgeted at 1.3 MB raw (~333 KB gzip).
-  build: { chunkSizeWarningLimit: 1300 },
+  // Phaser's complete renderer/physics bundle is plus the game budgeted at 1.4 MB raw (~370 KB gzip).
+  build: { chunkSizeWarningLimit: 1400 },
   plugins: [
     {
       name: 'offline-game',

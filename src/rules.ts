@@ -13,33 +13,3 @@ export const tally = (seconds: number, coins: number, enemies: number) => ({
   enemies: enemies * 200,
   total: seconds * 10 + coins * 100 + enemies * 200,
 });
-export function levelSpec(index: number) {
-  return index === 0
-    ? {
-        name: 'حارة الفوانيس',
-        width: 4992,
-        gaps: [
-          [1104, 1176],
-          [2112, 2208],
-          [3336, 3408],
-          [4104, 4200],
-        ] as [number, number][],
-        checkpoint: 2496,
-        portal: 1632,
-        exit: 4848,
-      }
-    : {
-        name: 'سوق تحت البلد',
-        width: 5376,
-        gaps: [
-          [984, 1056],
-          [1848, 1944],
-          [3072, 3168],
-          [3936, 4008],
-          [4512, 4608],
-        ] as [number, number][],
-        checkpoint: 2688,
-        portal: 2352,
-        exit: 5232,
-      };
-}

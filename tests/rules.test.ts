@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { approach, jumpAllowed, levelSpec, tally, stomped } from '../src/rules';
+import { approach, jumpAllowed, tally, stomped } from '../src/rules';
 describe('tight platforming rules', () => {
   it('accelerates without overshooting', () => {
     expect(approach(0, 180, 20)).toBe(20);
@@ -22,15 +22,5 @@ describe('tight platforming rules', () => {
       enemies: 800,
       total: 2300,
     });
-  });
-  it('provides distinct long levels with safe starts and finishes', () => {
-    for (let i = 0; i < 2; i++) {
-      const l = levelSpec(i);
-      expect(l.width).toBeGreaterThan(4500);
-      expect(
-        l.gaps.every(([a, b]) => a > 650 && b < l.width - 500 && b - a <= 96),
-      ).toBe(true);
-    }
-    expect(levelSpec(0).gaps).not.toEqual(levelSpec(1).gaps);
   });
 });

@@ -13,6 +13,14 @@ p.on('pageerror', (e) => errors.push(e.message));
 await p.goto(process.env.GAME_URL || 'http://localhost:5173');
 await p.waitForFunction(() => window.hawari?.scene.getScene('alley')?.hero);
 await p.locator('[data-screen="title"] button').click();
+await p.waitForTimeout(250);
+await p.locator('.map-node[data-node="0"]').click();
+await p.waitForFunction(
+  () => window.hawari.scene.getScene('alley').mode === 'play',
+);
+await p.evaluate(() =>
+  window.hawari.scene.getScene('alley').enemies.clear(true, true),
+);
 await p.waitForTimeout(150);
 assert.equal(await p.locator('.touch-controls').isVisible(), true);
 assert.equal(
@@ -66,7 +74,7 @@ const heroVsControls = () =>
     const s = window.hawari.scene.getScene('alley'),
       cam = s.cameras.main,
       c = document.querySelector('#game canvas').getBoundingClientRect(),
-      k = c.width / 640,
+      k = c.width / s.scale.gameSize.width,
       h = s.hero.getBounds(),
       hero = {
         left: c.left + (h.left - cam.scrollX) * k,
@@ -114,7 +122,8 @@ const reset = (x = 160, power = 0) =>
       const s = window.hawari.scene.getScene('alley');
       s.enemies.clear(true, true);
       s.setPower(power, false);
-      s.hero.body.reset(x, 312 - s.hero.height / 2);
+      s.hurtUntil = s.time.now + 1e8;
+      s.hero.body.reset(x, s.spec.start.y - s.hero.height / 2);
       s.hero.setVelocity(0, 0);
     },
     [x, power],
@@ -281,48 +290,56 @@ const btn = await st();
 assert.ok(!btn.grounded && btn.vx > 100, 'jump button + stick move together');
 await up(2);
 await up(1);
-// 7. Sweep both streets (ends included) and the secret room, standing and mid-jump.
-for (const level of [0, 1]) {
-  await p.evaluate((level) => {
+// 7. Sweep all four levels (ends, rooftops and boss arena), standing and mid-air,
+// letting the real follow camera settle at each spot.
+for (const level of [0, 1, 2, 3]) {
+  const spec = await p.evaluate((level) => {
     const s = window.hawari.scene.getScene('alley');
-    s.level = level;
-    s.bonus = false;
-    s.loadLevel();
+    s.lives = 9;
+    s.checkpoint = false;
+    s.startLevel(level);
     s.enemies.clear(true, true);
     s.remaining = 999;
+    s.hurtUntil = s.time.now + 1e8;
+    return { width: s.spec.width, height: s.spec.height };
   }, level);
-  const width = await p.evaluate(
-    () => window.hawari.scene.getScene('alley').spec.width,
-  );
-  const exit = await p.evaluate(
-    () => window.hawari.scene.getScene('alley').spec.exit,
-  );
-  for (let x = 20; x < exit - 20; x += 96) {
-    for (const y of [280, 200]) {
+  const ys = [];
+  for (let y = 60; y < spec.height - 20; y += 96) ys.push(y);
+  for (let x = 20; x < spec.width - 10; x += 120) {
+    for (const y of ys) {
       await p.evaluate(
         ([x, y]) => {
           const s = window.hawari.scene.getScene('alley');
           s.hero.body.reset(x, y);
           s.hero.setVelocity(0, 0);
-          s.cameras.main.centerOn(x + 100, 180);
-          s.cameras.main.preRender();
+          s.physics.pause();
+          const cam = s.cameras.main;
+          cam.stopFollow();
+          cam.startFollow(s.hero, true, 1, 1, 0, cam.followOffset.y);
+          cam.preRender();
         },
         [x, y],
       );
       await p.waitForTimeout(16);
       const o = await heroVsControls();
-      overlaps.push(...o.hits);
+      overlaps.push(...o.hits.map((h) => ({ level, ...h })));
     }
   }
-  console.log(`swept level ${level + 1} (${width}px)`);
+  await p.evaluate(() => {
+    const s = window.hawari.scene.getScene('alley');
+    s.hero.body.reset(s.spec.start.x, s.spec.start.y - 40);
+    s.cameras.main.startFollow(s.hero, true, 0.12, 0.2);
+    s.physics.resume();
+  });
+  console.log(`swept level ${level + 1} (${spec.width}×${spec.height}px)`);
 }
 // Walking to the very start with real input, the camera keeps the hero clear.
 await p.evaluate(() => {
   const s = window.hawari.scene.getScene('alley');
-  s.level = 0;
   s.checkpoint = false;
-  s.loadLevel();
+  s.startLevel(0);
   s.enemies.clear(true, true);
+  s.hurtUntil = s.time.now + 1e8;
 });
 await down(1, sx, sy);
 await move(1, sx - R * 0.9, sy);

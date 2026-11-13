@@ -1,6 +1,6 @@
 {
   "name": "hawari-run",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "بلبل في الحواري — لعبة منصات مصرية أصلية",
   "main": "index.js",
   "directories": {
@@ -14,14 +14,14 @@
     "lint": "eslint src tests",
     "format": "prettier --write .",
     "check": "tsc --noEmit && npm run lint && prettier --check . && npm test && vite build",
-    "test:browser": "node tests/smoke.mjs && node tests/runtime.mjs && node tests/bonus.mjs && node tests/mobile.mjs && node tests/boxes-runtime.mjs",
-    "test:routes": "node tests/traverse.mjs",
+    "test:browser": "node tests/smoke.mjs && node tests/levels-runtime.mjs && node tests/hero-runtime.mjs && node tests/mobile.mjs",
     "test:offline": "node tests/offline.mjs",
     "test:hero": "node tests/hero-runtime.mjs",
     "shots:hero": "node tests/hero-shots.mjs",
-    "test:boxes": "vitest run tests/boxes.test.ts && node tests/boxes-runtime.mjs",
+    "test:boxes": "vitest run tests/levels.test.ts tests/physics.test.ts",
     "test:pwa": "vite build && node tests/pwa.mjs",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "test:levels": "node tests/levels-runtime.mjs"
   },
   "keywords": [],
   "author": "",

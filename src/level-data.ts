@@ -221,6 +221,7 @@ function rooftops() {
   g.run(5, 9, 55, '-');
   g.rect(11, 52, 18, 57, '#');
   g.text(12, 51, 'o o o');
+  g.text(13, 48, '? C');
   g.set(21, 57, 'D');
   g.text(21, 54, 'o');
   g.set(25, 57, 'g');
@@ -236,6 +237,8 @@ function rooftops() {
   g.set(8, 41, 'h');
   g.text(14, 39, 'o o o');
   g.rect(0, 43, 9, 43, '=');
+  g.set(8, 39, 'F');
+  g.set(38, 39, '?');
   g.text(2, 42, 'o o o');
   // West climb with a dish on an AC unit.
   g.run(2, 6, 40, '-');
@@ -349,7 +352,7 @@ export const LEVELS: LevelMeta[] = [
     subtitle: 'الليل طويل… نوّر الفوانيس تبان السكة',
     theme: 'night',
     time: 300,
-    dark: 0.74,
+    dark: 0.9,
     lanternRadius: 9,
     mechanic: 'فوانيس بتنوّر سلالم مخفية',
     enemy: 'الوطواط',
@@ -383,7 +386,7 @@ export const LEVELS: LevelMeta[] = [
     subtitle: 'المية طالعة… والمعلّم برعي مستنيك',
     theme: 'sewer',
     time: 360,
-    dark: 0.58,
+    dark: 0.8,
     water: {
       triggerCol: 92,
       col0: 91,

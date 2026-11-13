@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { HERO_POSES, HERO_FRAME, type HeroPose } from './hero-state';
-type Point = [number, number];
-const P = {
+export type Point = [number, number];
+export const P = {
   ink: '#0b1125',
   skin: '#d99568',
   skinLight: '#f6c28a',
@@ -30,7 +30,7 @@ const P = {
 };
 // Integer rasterizer: all generated pixels are opaque palette entries or transparent.
 // No antialiasing, fractional transforms, vector strokes, or scaled-up source art.
-class Pixels {
+export class Pixels {
   c: CanvasRenderingContext2D;
   constructor(c: CanvasRenderingContext2D) {
     this.c = c;
@@ -99,7 +99,7 @@ class Pixels {
     this.r(x, y, w, h, color);
   }
 }
-function make(
+export function make(
   scene: Phaser.Scene,
   key: string,
   w: number,

@@ -1,4 +1,9 @@
-export type Screen = 'title' | 'pause' | 'clear' | 'over' | 'win' | 'hidden';
+import { MAP_SPOTS, paintMap } from './map-art';
+import { sound } from './audio';
+import type { LevelMeta } from './level-data';
+import type { Progress } from './progress';
+export type Screen =
+  'title' | 'map' | 'pause' | 'clear' | 'over' | 'win' | 'hidden';
 export const touch = {
   left: false,
   right: false,
@@ -136,11 +141,11 @@ export function setThrowReady(ready: boolean) {
 let handler: (action: string) => void = () => {};
 export function bindUI(fn: (action: string) => void) {
   handler = fn;
-  document
-    .querySelectorAll<HTMLButtonElement>('[data-action]')
-    .forEach((b) =>
-      b.addEventListener('click', () => handler(b.dataset.action!)),
-    );
+  // Delegated so buttons rendered later (the map) work too.
+  document.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
+    if (b && !b.hasAttribute('disabled')) handler(b.dataset.action!);
+  });
   document.querySelectorAll<HTMLButtonElement>('[data-touch]').forEach((b) => {
     const key = b.dataset.touch as Flag;
     b.addEventListener('pointerdown', (e) => {
@@ -169,6 +174,27 @@ export function bindUI(fn: (action: string) => void) {
     releaseAll();
     handler('blur');
   });
+  // Volume sliders in the pause menu (saved, default high).
+  const music = document.getElementById(
+      'music-volume',
+    ) as HTMLInputElement | null,
+    sfx = document.getElementById('sfx-volume') as HTMLInputElement | null;
+  if (music && sfx) {
+    music.value = String(Math.round(sound.musicVolume * 100));
+    sfx.value = String(Math.round(sound.sfxVolume * 100));
+    const apply = () => {
+      sound.setVolumes(Number(music.value) / 100, Number(sfx.value) / 100);
+      music.style.setProperty('--fill', music.value + '%');
+      sfx.style.setProperty('--fill', sfx.value + '%');
+    };
+    music.addEventListener('input', apply);
+    sfx.addEventListener('input', () => {
+      apply();
+      sound.fx('coin');
+    });
+    music.style.setProperty('--fill', music.value + '%');
+    sfx.style.setProperty('--fill', sfx.value + '%');
+  }
 }
 export function screen(which: Screen, details = '') {
   document
@@ -184,9 +210,13 @@ export function screen(which: Screen, details = '') {
     .getElementById('pause-btn')!
     .setAttribute('aria-label', which === 'pause' ? 'كمّل اللعب' : 'وقف مؤقت');
   if (which !== 'hidden') {
-    const first = document.querySelector<HTMLButtonElement>(
-      `[data-screen="${which}"] button`,
-    );
+    const first =
+      document.querySelector<HTMLButtonElement>(
+        `[data-screen="${which}"] .map-node.current`,
+      ) ??
+      document.querySelector<HTMLButtonElement>(
+        `[data-screen="${which}"] button`,
+      );
     first?.focus();
   }
 }
@@ -199,17 +229,83 @@ export function hud(
   coins: number,
   lives: number,
   timer: number,
-  level: number,
+  level: string,
   power: number,
+  secret = false,
 ) {
   text('score', String(score).padStart(6, '0'));
   text('coins', String(coins).padStart(2, '0'));
   text('lives', String(lives));
   text('time', String(timer));
-  text('world', `١ – ${level === 0 ? '١' : '٢'}`);
+  text('world', level);
   text('power', ['على قدّه', 'شطارة الفول', 'شطة نار'][power]);
+  document.getElementById('time')!.classList.toggle('hurry', timer < 100);
+  document.getElementById('secret-icon')?.classList.toggle('found', secret);
   setThrowReady(power === 2);
 }
+/** The boss health bar under the HUD. */
+export function bossBar(visible: boolean, fraction = 1, phase = 1) {
+  const el = document.getElementById('boss-bar');
+  if (!el) return;
+  el.hidden = !visible;
+  el.dataset.phase = String(phase);
+  (el.querySelector('.boss-fill') as HTMLElement).style.width =
+    `${Math.round(fraction * 100)}%`;
+}
+const THEME_ICON: Record<string, string> = {
+  night:
+    '<path d="M10 2h4v2h2v2h1v8h-1v3h-2v2h-4v-2H8v-3H7V6h1V4h2z" fill="#ffd36b"/><path d="M10 6h2v9h-2z" fill="#fff6c8"/><path d="M11 19h2v3h-2z" fill="#b8862a"/>',
+  market:
+    '<path d="M2 6h20v4l-2 2-2-2-2 2-2-2-2 2-2-2-2 2-2-2-2 2z" fill="#d8443a"/><path d="M5 6h3v4H5zm6 0h3v4h-3zm6 0h3v4h-3z" fill="#f4ead2"/><path d="M4 12h16v9H4z" fill="#7a4b2e"/><path d="M9 14h6v7H9z" fill="#ffd36b"/>',
+  roof: '<path d="M3 21V9h4v12zm6 0V4h6v17zm8 0v-9h4v9z" fill="#c8a070"/><path d="M11 6h2v2h-2zm0 4h2v2h-2zm-6 1h1v1H5zm13 3h1v1h-1z" fill="#3e5a6e"/><path d="M14 2c3 0 5 2 5 4h-5z" fill="#e8ecef"/>',
+  sewer:
+    '<path d="M2 21V9a10 10 0 0 1 20 0v12h-4V10a6 6 0 0 0-12 0v11z" fill="#4b5c5e"/><path d="M6 17h12v4H6z" fill="#1f6a6a"/><path d="M8 16h8v1H8z" fill="#6fd0c0"/>',
+};
+export function renderMap(progress: Progress, levels: LevelMeta[]) {
+  const nodes = document.getElementById('map-nodes');
+  if (!nodes) return;
+  const total = levels.filter((l) => progress.secrets[l.id]).length;
+  text('map-secrets', `${total} / ${levels.length}`);
+  nodes.innerHTML = levels
+    .map((l, i) => {
+      const locked = i > progress.unlocked,
+        cleared = progress.cleared[l.id],
+        secret = progress.secrets[l.id];
+      const best = progress.best[l.id];
+      const spot = MAP_SPOTS[i];
+      const state = locked
+        ? 'locked'
+        : cleared
+          ? 'cleared'
+          : i === progress.unlocked
+            ? 'current'
+            : '';
+      return `<button class="map-node ${state}" data-node="${i}" ${locked ? 'disabled aria-disabled="true"' : `data-action="play-${i}"`} style="--x:${spot.x * 100}%;--y:${spot.y * 100}%" aria-label="${i + 1} · ${l.name}">
+        <span class="node-badge"><svg viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true">${locked ? LOCK_ICON : THEME_ICON[l.theme]}</svg><b>${i + 1}</b>${cleared ? '<em class="tick">✔</em>' : ''}</span>
+        <span class="node-text"><strong>${l.name}</strong><small>${locked ? 'مقفولة — خلّص اللي قبلها' : l.mechanic}</small>
+        <span class="node-meta"><i class="fanoos ${secret ? 'found' : ''}" title="الفانوس الدهبي">${secret ? '★' : '☆'} فانوس</i>${best ? `<i>أعلى ${best}</i>` : ''}${l.boss ? '<i class="boss">زعيم</i>' : ''}</span></span>
+      </button>`;
+    })
+    .join('');
+  const canvas = document.getElementById(
+    'map-canvas',
+  ) as HTMLCanvasElement | null;
+  if (canvas) {
+    const paint = () =>
+      paintMap(
+        canvas,
+        levels.map((l) => !!progress.cleared[l.id]),
+        progress.unlocked,
+      );
+    requestAnimationFrame(paint);
+    mapResize?.disconnect();
+    mapResize = new ResizeObserver(paint);
+    mapResize.observe(canvas.parentElement!);
+  }
+}
+let mapResize: ResizeObserver | undefined;
+const LOCK_ICON =
+  '<path d="M8 10V7a4 4 0 0 1 8 0v3h-2V7a2 2 0 0 0-4 0v3z" fill="#9aa39a"/><path d="M6 10h12v10H6z" fill="#6c766e"/><path d="M11 13h2v4h-2z" fill="#2a322e"/>';
 export function toast(text: string) {
   const el = document.getElementById('toast')!;
   el.textContent = text;

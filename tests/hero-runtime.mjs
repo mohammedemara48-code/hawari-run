@@ -10,6 +10,15 @@ page.on('pageerror', (e) => errors.push(e.message));
 await page.goto(process.env.GAME_URL || 'http://localhost:5173');
 await page.waitForFunction(() => window.hawari?.scene.getScene('alley')?.hero);
 await page.locator('[data-screen="title"] button').click();
+await page.locator('.map-node[data-node="0"]').click();
+await page.waitForFunction(
+  () => window.hawari.scene.getScene('alley').mode === 'play',
+);
+const ground = await page.evaluate(() => {
+  const s = window.hawari.scene.getScene('alley');
+  s.enemies.clear(true, true);
+  return s.spec.start.y;
+});
 const s = () =>
   page.evaluate(() => {
     const s = window.hawari.scene.getScene('alley'),
@@ -38,11 +47,11 @@ await page.keyboard.down('ArrowDown');
 await page.waitForTimeout(75);
 assert.equal((await s()).pose, 'crouch');
 assert.equal((await s()).height, 32);
-assert.equal((await s()).bottom, 312);
+assert.equal((await s()).bottom, ground);
 await page.keyboard.up('ArrowDown');
 await page.waitForTimeout(80);
 assert.equal((await s()).height, 46);
-assert.equal((await s()).bottom, 312);
+assert.equal((await s()).bottom, ground);
 await page.keyboard.down('Space');
 await page.waitForTimeout(120);
 assert.equal((await s()).pose, 'rise');

@@ -33,7 +33,7 @@
         >
         <div class="edition">
           <span class="live-dot"></span>مغامرة مصرية على أصولها
-          <span class="edition-number">الإصدار ١٫٢</span>
+          <span class="edition-number">الإصدار ٢٫٠</span>
         </div>
         <div class="top-tools">
           <button id="sound-btn" data-action="sound">الصوت: شغّال</button
@@ -54,20 +54,91 @@
         <div id="game"></div>
         <div class="hud" aria-label="نتيجة اللعب">
           <div class="hud-world">
-            <span class="hud-label">العالم</span><b id="world">١ – ١</b>
+            <svg
+              class="hud-icon"
+              viewBox="0 0 12 12"
+              shape-rendering="crispEdges"
+              aria-hidden="true"
+            >
+              <path d="M5 0h2v1h1v1h1v6H8v2H4V8H3V2h1V1h1z" fill="#ffd36b" />
+              <path d="M5 3h1v5H5z" fill="#fff6c8" />
+              <path d="M5 10h2v2H5z" fill="#b8862a" />
+            </svg>
+            <b id="world">١ · حارة الفوانيس</b>
           </div>
-          <div>
+          <div class="hud-score">
             <span class="hud-label">المجموع</span><b id="score">000000</b>
           </div>
-          <div>
-            <span class="hud-label">الفكة <i class="coin-dot"></i></span
-            ><b id="coins">00</b>
+          <div class="hud-chip">
+            <svg
+              class="hud-icon"
+              viewBox="0 0 12 12"
+              shape-rendering="crispEdges"
+              aria-hidden="true"
+            >
+              <path
+                d="M4 0h4v1h1v1h1v8H9v1H8v1H4v-1H3v-1H2V2h1V1h1z"
+                fill="#7e533e"
+              />
+              <path d="M4 1h4v1h1v8H8v1H4v-1H3V2h1z" fill="#e6a941" />
+              <path d="M5 2h2v8H5z" fill="#ffdb7a" />
+            </svg>
+            <b id="coins">00</b>
           </div>
-          <div>
-            <span class="hud-label">المحاولات</span
-            ><b>♥ <span id="lives">3</span></b>
+          <div class="hud-chip">
+            <svg
+              class="hud-icon"
+              viewBox="0 0 12 12"
+              shape-rendering="crispEdges"
+              aria-hidden="true"
+            >
+              <path
+                d="M1 2h4v1h2V2h4v1h1v4h-1v1h-1v1H9v1H8v1H4v-1H3V9H2V8H1V7H0V3h1z"
+                fill="#3a1218"
+              />
+              <path
+                d="M2 3h3v1h2V3h3v4H9v1H8v1H7v1H5V9H4V8H3V7H2z"
+                fill="#e6324e"
+              />
+              <path d="M3 4h1v1H3z" fill="#ff8692" />
+            </svg>
+            <b id="lives">3</b>
           </div>
-          <div><span class="hud-label">الوقت</span><b id="time">240</b></div>
+          <div class="hud-chip">
+            <svg
+              class="hud-icon"
+              viewBox="0 0 12 12"
+              shape-rendering="crispEdges"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 0h6v1h1v1h1v1h1v6h-1v1h-1v1H9v1H3v-1H2v-1H1V9H0V3h1V2h1V1h1z"
+                fill="#24283c"
+              />
+              <path
+                d="M3 1h6v1h1v1h1v6h-1v1H9v1H3v-1H2V9H1V3h1V2h1z"
+                fill="#ffe2ad"
+              />
+              <path d="M5 3h1v3h3v1H5z" fill="#24283c" />
+            </svg>
+            <b id="time">300</b>
+          </div>
+          <div class="hud-chip hud-secret" title="الفانوس الدهبي">
+            <svg
+              id="secret-icon"
+              class="hud-icon"
+              viewBox="0 0 12 12"
+              shape-rendering="crispEdges"
+              aria-label="الفانوس الدهبي"
+            >
+              <path
+                d="M5 0h2v1h2v2h1v4H9v2H8v1H4V9H3V7H2V3h1V1h2z"
+                fill="currentColor"
+              />
+              <path d="M5 3h1v5H5z" fill="#fff6c8" opacity=".7" />
+              <path d="M5 10h2v2H5z" fill="currentColor" />
+            </svg>
+          </div>
           <button
             class="pause-button"
             id="pause-btn"
@@ -76,6 +147,11 @@
           >
             Ⅱ
           </button>
+        </div>
+        <div id="boss-bar" class="boss-bar" hidden data-phase="1">
+          <span class="boss-name">المعلّم برعي</span>
+          <span class="boss-track"><span class="boss-fill"></span></span>
+          <span class="boss-phase"></span>
         </div>
         <div id="shade" class="shade"></div>
         <div class="title-screen screen" data-screen="title">
@@ -89,38 +165,88 @@
             <button class="primary" data-action="start">
               يلا بينا <span>◀</span>
             </button>
-            <p class="title-note">مرحلتين · أسرار مخبّية · موسيقى على المزاج</p>
+            <p class="title-note">
+              ٤ مراحل · زعيم في الآخر · فانوس دهبي مستخبّي في كل مرحلة
+            </p>
           </div>
           <div class="title-stamp">
             <span>صُنِع بحب</span><strong>في مصر</strong
             ><small>حارة حارة… نطّة نطّة</small>
           </div>
         </div>
+        <div class="screen map-screen" data-screen="map" hidden>
+          <div class="map-head">
+            <p class="overline">خريطة المشوار · من الحارة لتحت المترو</p>
+            <h2>اختار مرحلتك</h2>
+            <p class="map-secrets-line">
+              الفوانيس الدهبي: <b id="map-secrets">0 / 4</b>
+            </p>
+          </div>
+          <div class="map-board">
+            <canvas id="map-canvas" class="map-art" aria-hidden="true"></canvas>
+            <div id="map-nodes" class="map-nodes"></div>
+          </div>
+          <button class="ghost-btn" data-action="sound">الصوت: شغّال</button>
+        </div>
         <div class="screen modal" data-screen="pause" hidden>
           <p class="overline">خد نفسك</p>
           <h2>استراحة على القهوة</h2>
-          <p>الحارة مكانها… مستنيينك ترجع.</p>
-          <button class="primary" data-action="pause">كمّل المشوار ◀</button>
+          <div class="options">
+            <label
+              ><span>الموسيقى</span
+              ><input
+                id="music-volume"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value="90"
+            /></label>
+            <label
+              ><span>المؤثرات</span
+              ><input
+                id="sfx-volume"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value="100"
+            /></label>
+          </div>
+          <div class="modal-actions">
+            <button class="primary" data-action="pause">كمّل المشوار ◀</button>
+            <button class="ghost-btn" data-action="map">الخريطة</button>
+            <button class="ghost-btn" data-action="sound">الصوت: شغّال</button>
+          </div>
         </div>
         <div class="screen modal" data-screen="clear" hidden>
-          <p class="overline">العالم ١ – ١ · حارة الفوانيس</p>
+          <p class="overline" id="clear-title">١ · حارة الفوانيس</p>
           <h2>عاش يا بلبل!</h2>
-          <p>الفانوس نوّر… ولسه السوق مستنّيك.</p>
           <div id="clear-details" class="tally"></div>
-          <button class="primary" data-action="next">على السوق ◀</button>
+          <div class="modal-actions">
+            <button class="primary" data-action="next" id="next-name">
+              على السوق ◀
+            </button>
+            <button class="ghost-btn" data-action="map">الخريطة</button>
+          </div>
         </div>
         <div class="screen modal" data-screen="over" hidden>
           <p class="overline">الحارة دايمًا مفتوحة</p>
           <h2>ولا يهمّك يا بطل</h2>
-          <p>المحاولات خلصت. نبدأ المشوار من جديد؟</p>
-          <button class="primary" data-action="start">يلا تاني ↶</button>
+          <p>المحاولات خلصت. نعيد المرحلة؟</p>
+          <div class="modal-actions">
+            <button class="primary" data-action="retry">يلا تاني ↶</button>
+            <button class="ghost-btn" data-action="map">الخريطة</button>
+          </div>
         </div>
         <div class="screen modal" data-screen="win" hidden>
-          <p class="overline">عدّيت الحارة… وكسبت أهلها</p>
+          <p class="overline">المعلّم برعي اتهزم… والحواري رجعت لأهلها</p>
           <h2>بلبل كبير الحارة!</h2>
-          <p>خلّصت المرحلتين. مشوار جديد، ومجموع أعلى؟</p>
+          <p>خلّصت المشوار كله. فاضل فوانيس دهبي مستخبّية؟</p>
           <div id="win-details" class="tally"></div>
-          <button class="primary" data-action="start">العب من جديد ↶</button>
+          <div class="modal-actions">
+            <button class="primary" data-action="map">الخريطة ◀</button>
+          </div>
         </div>
         <div id="toast" class="toast" role="status"></div>
         <div class="rotate-hint" aria-live="polite">
@@ -174,7 +300,7 @@
       <section class="underbar">
         <div>
           <span class="tiny-label">المشوار</span
-          ><strong>من حارة الفوانيس لسوق تحت البلد</strong>
+          ><strong>الفوانيس ← السوق ← الأسطح ← تحت المترو</strong>
         </div>
         <div class="power-status">
           <span class="tiny-label">حالة بلبل</span
@@ -203,7 +329,7 @@
             <kbd>SHIFT</kbd> أو <kbd>X</kbd><span>جري سريع / رمية شطة</span>
           </p>
           <p>
-            <kbd>↓</kbd><span>ادخل الخزان السرّي</span><kbd>ESC</kbd
+            <kbd>↓</kbd><span>انزل من البلكونة / افتح الخزان</span><kbd>ESC</kbd
             ><span>استراحة</span>
           </p>
         </div>
