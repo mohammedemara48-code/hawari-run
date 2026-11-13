@@ -1,5 +1,5 @@
 // Original pixel creatures for the reworked levels: bat, rooster, pigeon,
-// sewer rat and the boss «المعلّم برعي». Drawn with the same integer
+// sewer rat and the boss «الفتوة برعي». Drawn with the same integer
 // rasterizer as the hero (outlined, palette-only, no smoothing).
 import Phaser from 'phaser';
 import { P, make, type Pixels } from './characters';

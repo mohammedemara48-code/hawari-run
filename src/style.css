@@ -1523,3 +1523,16 @@ footer {
     aspect-ratio: auto;
   }
 }
+
+/* Painted title / map backdrop (original art, baked to webp in public/bg). */
+.title-screen {
+  background:
+    linear-gradient(270deg, #120d24e8 4%, #1a1230b3 40%, #1a123000 72%),
+    url('/bg/title.webp') center / cover no-repeat;
+  image-rendering: pixelated;
+}
+.map-screen {
+  background:
+    linear-gradient(#0c0a1ccc, #0c0a1c99 40%, #0c0a1ce6),
+    url('/bg/title.webp') center / cover no-repeat;
+}

@@ -352,7 +352,7 @@ export const LEVELS: LevelMeta[] = [
     subtitle: 'الليل طويل… نوّر الفوانيس تبان السكة',
     theme: 'night',
     time: 300,
-    dark: 0.9,
+    dark: 0.8,
     lanternRadius: 9,
     mechanic: 'فوانيس بتنوّر سلالم مخفية',
     enemy: 'الوطواط',
@@ -383,7 +383,7 @@ export const LEVELS: LevelMeta[] = [
   {
     id: 'metro',
     name: 'تحت المترو',
-    subtitle: 'المية طالعة… والمعلّم برعي مستنيك',
+    subtitle: 'المية طالعة… والفتوة برعي مستنيك',
     theme: 'sewer',
     time: 360,
     dark: 0.8,
@@ -397,7 +397,7 @@ export const LEVELS: LevelMeta[] = [
     },
     boss: true,
     mechanic: 'مية طالعة ومنصّات ماشية',
-    enemy: 'فار المجاري + المعلّم برعي',
+    enemy: 'فار المجاري + الفتوة برعي',
     rows: underground(),
   },
 ];

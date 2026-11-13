@@ -194,6 +194,12 @@ export class Alley extends Phaser.Scene {
   constructor() {
     super('alley');
   }
+  preload() {
+    // Painted backdrops (one per level), baked to 1280×360 mirrored loops.
+    LEVELS.forEach((_, i) =>
+      this.load.image(`backdrop-${i}`, `bg/l${i + 1}.webp`),
+    );
+  }
   create() {
     makeArt(this);
     makeCreatures(this);
@@ -370,20 +376,36 @@ export class Alley extends Phaser.Scene {
     cam.setBounds(-edge, 0, L.width + edge * 2, L.height);
     cam.setRoundPixels(true);
     cam.setBackgroundColor(pal.sky[pal.sky.length - 1][1]);
-    // Parallax: sky, far landmarks, mid buildings, near silhouettes.
-    for (const [name, factor, depth] of [
-      ['sky', 0.03, -100],
-      ['far', 0.16, -90],
-      ['mid', 0.42, -80],
-      ['near', 1.25, 40],
-    ] as [string, number, number][])
+    // Parallax: the painted backdrop (or the procedural sky/far/mid fallback)
+    // behind the play field, plus near silhouettes in front.
+    const painted = this.textures.exists(`backdrop-${this.level}`);
+    const layerSpec: [string, number, number][] = painted
+      ? [
+          ['backdrop', 0.1, -100],
+          ['near', 1.25, 40],
+        ]
+      : [
+          ['sky', 0.03, -100],
+          ['far', 0.16, -90],
+          ['mid', 0.42, -80],
+          ['near', 1.25, 40],
+        ];
+    for (const [name, factor, depth] of layerSpec)
       this.layers.push(
         this.add
-          .tileSprite(0, 0, cam.width, 360, `${meta.theme}-${name}`)
+          .tileSprite(
+            0,
+            0,
+            cam.width,
+            360,
+            name === 'backdrop'
+              ? `backdrop-${this.level}`
+              : `${meta.theme}-${name}`,
+          )
           .setOrigin(0)
           .setScrollFactor(0)
           .setDepth(depth)
-          .setAlpha(name === 'near' ? 0.9 : 1)
+          .setAlpha(name === 'near' ? (painted ? 0.55 : 0.9) : 1)
           .setData('factor', factor)
           .setData('name', name),
       );
@@ -1728,7 +1750,7 @@ export class Alley extends Phaser.Scene {
       sound.fx('roar');
       toast(
         this.bossPhase() === 2
-          ? 'المعلّم برعي اتعصّب! بيرمي عضم سمك'
+          ? 'الفتوة برعي اتعصّب! بيرمي عضم سمك'
           : 'آخر نَفَس! نطّ فوق الرجّة',
       );
     }
@@ -1749,7 +1771,7 @@ export class Alley extends Phaser.Scene {
     sound.setTrack(this.level);
     sound.setIntensity(0);
     bossBar(false);
-    toast('المعلّم برعي اتهزم! باب الخروج اتفتح');
+    toast('الفتوة برعي اتهزم! باب الخروج اتفتح');
     this.kills++;
     this.score += 3000;
     this.cameras.main.setBounds(0, 0, this.L.width + EDGE, this.L.height);
@@ -1787,7 +1809,7 @@ export class Alley extends Phaser.Scene {
         sound.setTrack(4);
         sound.fx('roar');
         bossBar(true, 1, 1);
-        toast('المعلّم برعي: «مين اللي داخل حارتي؟!» — اتنطّ على راسه');
+        toast('الفتوة برعي: «مين اللي داخل حارتي؟!» — اتنطّ على راسه');
         this.bossSet('walk', 1600);
         this.cameras.main.shake(300, 0.006);
       }
@@ -1984,7 +2006,7 @@ export class Alley extends Phaser.Scene {
     for (const l of this.layers) {
       const f = l.getData('factor') as number,
         name = l.getData('name');
-      if (name === 'near') {
+      if (name === 'near' || name === 'backdrop') {
         l.tilePositionX = cam.scrollX * f;
         l.y = 0;
       } else if (name === 'sky') {

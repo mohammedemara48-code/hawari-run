@@ -19,6 +19,7 @@ export default defineConfig({
           '/manifest.webmanifest',
           '/fonts/changa.ttf',
           '/fonts/noto-sans-arabic.ttf',
+          ...readdirSync('dist/bg').map((f) => '/bg/' + f),
           ...readdirSync('dist/assets').map((f) => '/assets/' + f),
         ];
         // The cache version is a hash of every precached file's content, so
