@@ -36,6 +36,14 @@ JOBS = {
     'l14': ('bg-w4-alexandria', 0.96, 0.95, 0.9, 'noon'),
     'l15': ('bg-w4-alexandria', 0.8, 0.86, 0.86, 'sunset'),
     'l16': ('bg-w4-alexandria', 0.8, 0.6, 0.95, 'storm'),
+    # World 5 (Luxor): the sphinx avenue in hot afternoon light, the Nile at
+    # dawn among the balloons, inside a tomb in the Valley of the Kings (the
+    # painting seen through a carved doorway, almost black) and Karnak by
+    # moonlight for the final boss.
+    'l17': ('bg-w5-luxor', 0.86, 0.86, 0.88, 'afternoon'),
+    'l18': ('bg-w5-luxor', 0.84, 0.82, 0.86, 'nile-dawn'),
+    'l19': ('bg-w5-luxor', 0.7, 0.6, 0.9, 'tomb'),
+    'l20': ('bg-w5-luxor', 0.74, 0.7, 0.92, 'moon'),
 }
 # Per-channel multipliers and a lift towards a sky tint for each grade.
 GRADES = {
@@ -48,6 +56,10 @@ GRADES = {
     'bluehour': ((0.6, 0.75, 1.1), (30, 50, 90), 0.26),
     'sunset': ((1.12, 0.9, 0.72), (240, 130, 70), 0.18),
     'storm': ((0.66, 0.74, 0.86), (52, 62, 78), 0.38),
+    'afternoon': ((1.04, 0.98, 0.86), (236, 196, 130), 0.12),
+    'nile-dawn': ((0.9, 0.92, 1.06), (214, 160, 176), 0.2),
+    'tomb': ((0.42, 0.34, 0.26), (20, 12, 6), 0.35),
+    'moon': ((0.5, 0.62, 0.95), (18, 26, 60), 0.34),
 }
 
 
@@ -85,6 +97,67 @@ def grade(im, name):
         mask = Image.new('L', (w, h))
         mask.putdata([int(110 * max(0, 1 - y / (h * 0.45))) for y in range(h) for _ in range(w)])
         im = Image.composite(Image.new('RGB', (w, h), (232, 120, 84)), im, mask)
+    if name == 'nile-dawn':
+        # A pale pink-lilac dawn sky above the hills.
+        w, h = im.size
+        mask = Image.new('L', (w, h))
+        mask.putdata([int(150 * max(0, 1 - y / (h * 0.5))) for y in range(h) for _ in range(w)])
+        im = Image.composite(Image.new('RGB', (w, h), (226, 178, 196)), im, mask)
+    if name == 'moon':
+        # Stars and a low moon over the temple.
+        from PIL import ImageDraw
+        import random
+        w, h = im.size
+        mask = Image.new('L', (w, h))
+        mask.putdata([int(190 * max(0, 1 - y / (h * 0.55))) for y in range(h) for _ in range(w)])
+        im = Image.composite(Image.new('RGB', (w, h), (16, 22, 52)), im, mask)
+        d = ImageDraw.Draw(im, 'RGBA')
+        rnd = random.Random(7)
+        for _ in range(140):
+            x, y = rnd.randrange(w), rnd.randrange(int(h * 0.45))
+            a = rnd.randrange(90, 230)
+            d.point((x, y), fill=(240, 240, 255, a))
+        # Hide the painted sun: it's night.
+        from PIL import ImageFilter
+        blot = Image.new('L', (w, h), 0)
+        ImageDraw.Draw(blot).ellipse([170, 125, 245, 195], fill=255)
+        blot = blot.filter(ImageFilter.GaussianBlur(14))
+        ring = [im.getpixel((x, y)) for x in (150, 160, 255, 265) for y in (120, 150, 200)]
+        avg = tuple(sum(p[i] for p in ring) // len(ring) for i in range(3))
+        im = Image.composite(Image.new('RGB', (w, h), avg), im, blot)
+        d = ImageDraw.Draw(im, 'RGBA')
+        d.ellipse([500, 30, 536, 66], fill=(236, 232, 214, 255))
+        d.ellipse([494, 24, 542, 72], outline=(236, 232, 214, 50), width=4)
+    if name == 'tomb':
+        # The view out through a carved tomb doorway: a dark stone frame with
+        # banded ornament, a warm torch glow at the jambs, the world beyond dim.
+        from PIL import ImageDraw
+        w, h = im.size
+        d = ImageDraw.Draw(im, 'RGBA')
+        stone, joint = (34, 24, 16, 255), (18, 12, 8, 255)
+        frame = Image.new('RGB', (w, h), stone[:3])
+        fd = ImageDraw.Draw(frame)
+        for y in range(0, h, 22):
+            off = 0 if (y // 22) % 2 else 18
+            for x in range(-off, w, 36):
+                fd.rectangle([x, y, x + 35, y + 21], outline=joint[:3])
+        # Decorative bands on the lintel: zigzags and dots, not writing.
+        fd.rectangle([120, 8, w - 120, 64], fill=stone[:3])
+        for x in range(124, w - 124, 12):
+            fd.line([(x, 20), (x + 6, 30), (x + 12, 20)], fill=(92, 70, 40), width=2)
+            fd.ellipse([x + 4, 42, x + 8, 46], fill=(120, 96, 56))
+        fd.rectangle([120, 56, w - 120, 64], fill=(60, 44, 28))
+        hole = Image.new('L', (w, h), 255)
+        ImageDraw.Draw(hole).rectangle([120, 64, w - 120, h], fill=0)
+        im = Image.composite(frame, im, hole)
+        # Soft torch glow on both jambs.
+        from PIL import ImageFilter
+        glow = Image.new('L', (w, h), 0)
+        gd = ImageDraw.Draw(glow)
+        for cx in (100, w - 100):
+            gd.ellipse([cx - 60, 90, cx + 60, 210], fill=120)
+        glow = glow.filter(ImageFilter.GaussianBlur(28))
+        im = Image.composite(Image.new('RGB', (w, h), (255, 140, 50)), im, glow)
     return im
 
 
