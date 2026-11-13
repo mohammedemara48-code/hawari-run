@@ -16,7 +16,69 @@
 //   enemies: g cat  b bug  k basket  t bat  r rooster  p pigeon  m rat  Z boss
 export const TILE = 24;
 export type Theme = 'night' | 'market' | 'roof' | 'sewer';
+/** One region of the journey across Egypt. */
+export interface WorldMeta {
+  id: string;
+  name: string;
+  subtitle: string;
+  /** Which side of the pin its name sits on. */
+  side: 'left' | 'right';
+  /** Marker position on the Egypt map, 0..1 of the map box. */
+  x: number;
+  y: number;
+  /** Has levels yet; the others show as "coming soon". */
+  playable: boolean;
+}
+export const WORLDS: WorldMeta[] = [
+  {
+    id: 'cairo',
+    name: 'القاهرة',
+    subtitle: 'حواري وأسواق وأسطح ومترو',
+    x: 0.5,
+    y: 0.34,
+    side: 'right',
+    playable: true,
+  },
+  {
+    id: 'rif',
+    name: 'الأرياف',
+    subtitle: 'غيطان وسواقي وترع',
+    x: 0.41,
+    y: 0.22,
+    side: 'left',
+    playable: false,
+  },
+  {
+    id: 'damietta',
+    name: 'دمياط',
+    subtitle: 'ورش موبيليا وميناء صيد',
+    x: 0.58,
+    y: 0.11,
+    side: 'right',
+    playable: false,
+  },
+  {
+    id: 'alex',
+    name: 'اسكندرية',
+    subtitle: 'كورنيش وترام وقلعة قايتباي',
+    x: 0.3,
+    y: 0.12,
+    side: 'left',
+    playable: false,
+  },
+  {
+    id: 'luxor',
+    name: 'الأقصر',
+    subtitle: 'معابد وبالونات ومقابر',
+    x: 0.64,
+    y: 0.74,
+    side: 'left',
+    playable: false,
+  },
+];
 export interface LevelMeta {
+  /** Index into WORLDS. */
+  world: number;
   id: string;
   name: string;
   subtitle: string;
@@ -347,6 +409,7 @@ function underground() {
 
 export const LEVELS: LevelMeta[] = [
   {
+    world: 0,
     id: 'lanterns',
     name: 'حارة الفوانيس',
     subtitle: 'الليل طويل… نوّر الفوانيس تبان السكة',
@@ -359,6 +422,7 @@ export const LEVELS: LevelMeta[] = [
     rows: lanternAlley(),
   },
   {
+    world: 0,
     id: 'market',
     name: 'سوق تحت البلد',
     subtitle: 'تندات بتنطّط، عربيات ماشية، وصناديق مش مضمونة',
@@ -370,6 +434,7 @@ export const LEVELS: LevelMeta[] = [
     rows: market(),
   },
   {
+    world: 0,
     id: 'roofs',
     name: 'فوق الأسطح',
     subtitle: 'اطلع لبرج الحمام… والهوا مش في صفّك',
@@ -381,6 +446,7 @@ export const LEVELS: LevelMeta[] = [
     rows: rooftops(),
   },
   {
+    world: 0,
     id: 'metro',
     name: 'تحت المترو',
     subtitle: 'المية طالعة… والفتوة برعي مستنيك',

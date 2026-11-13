@@ -176,15 +176,26 @@
         </div>
         <div class="screen map-screen" data-screen="map" hidden>
           <div class="map-head">
-            <p class="overline">خريطة المشوار · من الحارة لتحت المترو</p>
+            <p class="overline">خريطة المشوار · من القاهرة لحد الأقصر</p>
             <h2>اختار مرحلتك</h2>
             <p class="map-secrets-line">
               الفوانيس الدهبي: <b id="map-secrets">0 / 4</b>
             </p>
           </div>
           <div class="map-board">
-            <canvas id="map-canvas" class="map-art" aria-hidden="true"></canvas>
-            <div id="map-nodes" class="map-nodes"></div>
+            <div class="egypt">
+              <canvas
+                id="map-canvas"
+                class="map-art"
+                aria-hidden="true"
+              ></canvas>
+              <div id="map-worlds" class="map-worlds"></div>
+            </div>
+            <div class="world-panel">
+              <h3 id="world-name">١ · القاهرة</h3>
+              <p id="world-sub"></p>
+              <div id="map-nodes" class="map-nodes"></div>
+            </div>
           </div>
           <button class="ghost-btn" data-action="sound">الصوت: شغّال</button>
         </div>

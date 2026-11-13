@@ -1,6 +1,6 @@
-import { MAP_SPOTS, paintMap } from './map-art';
+import { paintEgypt, type WorldState } from './map-art';
 import { sound } from './audio';
-import type { LevelMeta } from './level-data';
+import { WORLDS, type LevelMeta } from './level-data';
 import type { Progress } from './progress';
 export type Screen =
   'title' | 'map' | 'pause' | 'clear' | 'over' | 'win' | 'hidden';
@@ -261,18 +261,76 @@ const THEME_ICON: Record<string, string> = {
   sewer:
     '<path d="M2 21V9a10 10 0 0 1 20 0v12h-4V10a6 6 0 0 0-12 0v11z" fill="#4b5c5e"/><path d="M6 17h12v4H6z" fill="#1f6a6a"/><path d="M8 16h8v1H8z" fill="#6fd0c0"/>',
 };
-export function renderMap(progress: Progress, levels: LevelMeta[]) {
-  const nodes = document.getElementById('map-nodes');
-  if (!nodes) return;
+let selectedWorld: number | undefined;
+let lastMap: { progress: Progress; levels: LevelMeta[] } | undefined;
+/** World states for the Egypt map, from progress. */
+export function worldStates(
+  progress: Progress,
+  levels: LevelMeta[],
+): WorldState[] {
+  return WORLDS.map((w, wi) => {
+    const own = levels
+      .map((l, i) => ({ l, i }))
+      .filter((o) => o.l.world === wi);
+    if (!w.playable || !own.length) return 'soon';
+    if (own.every((o) => progress.cleared[o.l.id])) return 'cleared';
+    return own[0].i <= progress.unlocked ? 'open' : 'locked';
+  });
+}
+export function renderMap(
+  progress: Progress,
+  levels: LevelMeta[],
+  world?: number,
+) {
+  const nodes = document.getElementById('map-nodes'),
+    pins = document.getElementById('map-worlds');
+  if (!nodes || !pins) return;
+  lastMap = { progress, levels };
+  const states = worldStates(progress, levels);
+  const current = levels[Math.min(progress.unlocked, levels.length - 1)].world;
+  selectedWorld = world ?? selectedWorld ?? current;
+  if (states[selectedWorld] === 'soon' || states[selectedWorld] === 'locked')
+    selectedWorld = current;
   const total = levels.filter((l) => progress.secrets[l.id]).length;
   text('map-secrets', `${total} / ${levels.length}`);
+  pins.innerHTML = WORLDS.map((w, wi) => {
+    const st = states[wi];
+    const label =
+      st === 'soon'
+        ? 'قريبًا'
+        : st === 'locked'
+          ? 'مقفولة'
+          : st === 'cleared'
+            ? 'خلصت ✔'
+            : 'مفتوحة';
+    return `<button class="world-pin ${st} side-${w.side} ${wi === selectedWorld ? 'selected' : ''}" data-world="${wi}" style="--x:${w.x * 100}%;--y:${w.y * 100}%" ${st === 'soon' || st === 'locked' ? 'aria-disabled="true"' : ''} aria-label="${w.name} — ${label}">
+      <span class="pin-dot">${st === 'soon' || st === 'locked' ? '🔒' : wi + 1}</span><span class="pin-name">${w.name}<small>${label}</small></span>
+    </button>`;
+  }).join('');
+  pins.querySelectorAll<HTMLButtonElement>('.world-pin').forEach((b) =>
+    b.addEventListener('click', () => {
+      const wi = Number(b.dataset.world);
+      if (states[wi] === 'open' || states[wi] === 'cleared')
+        renderMap(progress, levels, wi);
+      else
+        toast(
+          states[wi] === 'soon'
+            ? `${WORLDS[wi].name}: قريبًا في المشوار`
+            : `خلّص ${WORLDS[wi - 1]?.name ?? ''} الأول`,
+        );
+    }),
+  );
+  const w = WORLDS[selectedWorld];
+  text('world-name', `${selectedWorld + 1} · ${w.name}`);
+  text('world-sub', w.subtitle);
   nodes.innerHTML = levels
-    .map((l, i) => {
+    .map((l, i) => ({ l, i }))
+    .filter((o) => o.l.world === selectedWorld)
+    .map(({ l, i }, k) => {
       const locked = i > progress.unlocked,
         cleared = progress.cleared[l.id],
         secret = progress.secrets[l.id];
       const best = progress.best[l.id];
-      const spot = MAP_SPOTS[i];
       const state = locked
         ? 'locked'
         : cleared
@@ -280,8 +338,8 @@ export function renderMap(progress: Progress, levels: LevelMeta[]) {
           : i === progress.unlocked
             ? 'current'
             : '';
-      return `<button class="map-node ${state}" data-node="${i}" ${locked ? 'disabled aria-disabled="true"' : `data-action="play-${i}"`} style="--x:${spot.x * 100}%;--y:${spot.y * 100}%" aria-label="${i + 1} · ${l.name}">
-        <span class="node-badge"><svg viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true">${locked ? LOCK_ICON : THEME_ICON[l.theme]}</svg><b>${i + 1}</b>${cleared ? '<em class="tick">✔</em>' : ''}</span>
+      return `<button class="map-node ${state}" data-node="${i}" ${locked ? 'disabled aria-disabled="true"' : `data-action="play-${i}"`} aria-label="${k + 1} · ${l.name}">
+        <span class="node-badge"><svg viewBox="0 0 24 24" shape-rendering="crispEdges" aria-hidden="true">${locked ? LOCK_ICON : (THEME_ICON[l.theme] ?? THEME_ICON.night)}</svg><b>${k + 1}</b>${cleared ? '<em class="tick">✔</em>' : ''}</span>
         <span class="node-text"><strong>${l.name}</strong><small>${locked ? 'مقفولة — خلّص اللي قبلها' : l.mechanic}</small>
         <span class="node-meta"><i class="fanoos ${secret ? 'found' : ''}" title="الفانوس الدهبي">${secret ? '★' : '☆'} فانوس</i>${best ? `<i>أعلى ${best}</i>` : ''}${l.boss ? '<i class="boss">زعيم</i>' : ''}</span></span>
       </button>`;
@@ -292,11 +350,7 @@ export function renderMap(progress: Progress, levels: LevelMeta[]) {
   ) as HTMLCanvasElement | null;
   if (canvas) {
     const paint = () =>
-      paintMap(
-        canvas,
-        levels.map((l) => !!progress.cleared[l.id]),
-        progress.unlocked,
-      );
+      paintEgypt(canvas, worldStates(lastMap!.progress, lastMap!.levels));
     requestAnimationFrame(paint);
     mapResize?.disconnect();
     mapResize = new ResizeObserver(paint);
