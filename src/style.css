@@ -1356,7 +1356,9 @@ footer {
   position: absolute;
   left: var(--x);
   top: var(--y);
-  transform: translate(-50%, -50%);
+  /* translate (not transform) so the global button:active press nudge
+     composes with the centring instead of throwing the pin off the cursor */
+  translate: -50% -50%;
   display: block;
   background: none;
   padding: 0;
