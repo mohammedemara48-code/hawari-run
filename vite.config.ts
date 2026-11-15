@@ -1,7 +1,27 @@
 import { defineConfig } from 'vite';
 import { createHash } from 'node:crypto';
+import { execSync } from 'node:child_process';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { APP_VERSION, CHANGELOG } from './src/changelog.ts';
+// Identifies this deploy; /version.json carries the same id so a running game
+// can tell that a newer build is live.
+const commit = (() => {
+  if (process.env.VERCEL_GIT_COMMIT_SHA)
+    return process.env.VERCEL_GIT_COMMIT_SHA;
+  try {
+    return execSync('git rev-parse HEAD', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .toString()
+      .trim();
+  } catch {
+    return 'local';
+  }
+})();
+const BUILD =
+  process.env.HAWARI_BUILD || `${APP_VERSION}-${commit.slice(0, 12)}`;
 export default defineConfig({
+  define: { __BUILD__: JSON.stringify(BUILD) },
   // Phaser's complete renderer/physics bundle is plus the game budgeted at 1.4 MB raw (~370 KB gzip).
   build: { chunkSizeWarningLimit: 1600 },
   plugins: [
@@ -33,6 +53,14 @@ export default defineConfig({
         if (!sw.includes(version))
           throw new Error('sw.js version not injected');
         writeFileSync('dist/sw.js', sw);
+        writeFileSync(
+          'dist/version.json',
+          JSON.stringify({
+            build: BUILD,
+            version: APP_VERSION,
+            changelog: CHANGELOG.slice(0, 10),
+          }),
+        );
       },
     },
   ],

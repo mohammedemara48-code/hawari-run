@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Alley } from './game';
 import { sound } from './audio';
+import { initUpdates } from './update';
 import './style.css';
 /** World height is fixed; the width follows the screen so wide phones see more street. */
 export const VIEW_HEIGHT = 360;
@@ -54,11 +55,15 @@ if ('serviceWorker' in navigator)
   window.addEventListener('load', () => {
     if (import.meta.env.PROD)
       navigator.serviceWorker
-        .register('/sw.js', { scope: '/' })
-        .catch((e) => console.warn('offline worker unavailable', e));
+        .register('/sw.js', { scope: '/', updateViaCache: 'none' })
+        .catch((e) => console.warn('offline worker unavailable', e))
+        .finally(initUpdates);
     else
       void navigator.serviceWorker
         .getRegistrations()
         .then((r) => r.forEach((x) => void x.unregister()))
         .catch(() => {});
   });
+// Development builds have no worker, but still show what's new once.
+if (!('serviceWorker' in navigator) || !import.meta.env.PROD)
+  window.addEventListener('load', initUpdates);

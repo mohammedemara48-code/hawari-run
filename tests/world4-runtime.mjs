@@ -17,6 +17,8 @@ await page.addInitScript(() => {
   if (window.sessionStorage.getItem('seeded')) return;
   window.sessionStorage.setItem('seeded', '1');
   window.localStorage.clear();
+  // Skip the one-time what's-new dialog for this saved journey.
+  window.localStorage.setItem('hawari-seen-version', '999');
   const ids = [
     'lanterns',
     'market',

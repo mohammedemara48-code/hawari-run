@@ -16,14 +16,19 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.ttf': 'font/ttf',
   '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
 };
 let serveOldWorker = false;
+/** Pretend a newer build is live: /version.json answers with this. */
+let liveVersion = null;
 const server = createServer(async (req, res) => {
   const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   try {
     let body;
     let file = path === '/' ? '/index.html' : path;
-    if (path === '/sw.js' && serveOldWorker)
+    if (path === '/version.json' && liveVersion)
+      body = JSON.stringify(liveVersion);
+    else if (path === '/sw.js' && serveOldWorker)
       body = await readFile('tests/fixtures/old-sw.js');
     else body = await readFile(join(DIST, normalize(file)));
     res.writeHead(200, {
@@ -329,6 +334,99 @@ await ctx.setOffline(false);
   console.log(
     'PASS: boots and plays without audio, fullscreen or orientation lock',
   );
+}
+// 7. Update prompt: a newer build goes live while the game is open.
+{
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push(e.message));
+  await page.goto(ORIGIN + '/');
+  await page.waitForFunction(
+    () => window.hawari?.scene.getScene('alley')?.hero,
+  );
+  const ours = JSON.parse(await readFile(join(DIST, 'version.json'), 'utf8'));
+  assert.equal(
+    ours.version,
+    JSON.parse(await readFile('package.json')).version,
+  );
+  await page.waitForTimeout(800);
+  assert.equal(await page.locator('.update-dialog').count(), 0, 'up to date');
+  const newer = (build) => ({
+    build,
+    version: '9.9.9',
+    changelog: [
+      {
+        version: '9.9.9',
+        date: '2030-01-01',
+        notes: ['مرحلة جديدة في الأقصر'],
+      },
+      ...ours.changelog,
+    ],
+  });
+  const resume = () =>
+    page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  // Never during a level: held until the player is back on a menu.
+  await page.locator('[data-screen="title"] [data-action="start"]').tap();
+  await page.locator('.map-node[data-node="0"]').tap();
+  liveVersion = newer('test-build-1');
+  await resume();
+  await page.waitForTimeout(1000);
+  assert.equal(
+    await page.locator('.update-dialog').count(),
+    0,
+    'not mid-level',
+  );
+  await page.evaluate(() =>
+    window.hawari.scene.getScene('alley').action('map'),
+  );
+  const dialog = page.locator('.update-dialog');
+  await dialog.waitFor({ timeout: 5000 });
+  assert.match(await dialog.innerText(), /فيه تحديث جديد/);
+  assert.match(await dialog.innerText(), /مرحلة جديدة في الأقصر/);
+  assert.doesNotMatch(
+    await dialog.innerText(),
+    /تحت المترو/,
+    'only newer notes',
+  );
+  // «بعدين» closes it and it stays closed for that build.
+  await page.getByRole('button', { name: 'بعدين' }).tap();
+  assert.equal(await dialog.count(), 0, 'later closes the dialog');
+  await resume();
+  await page.waitForTimeout(800);
+  assert.equal(await dialog.count(), 0, 'dismissed build stays quiet');
+  // A newer build asks again; «حدّث دلوقتي» reloads into it.
+  liveVersion = newer('test-build-2');
+  await resume();
+  await dialog.waitFor({ timeout: 5000 });
+  const reloaded = page.waitForEvent('load', { timeout: 10000 });
+  await page.getByRole('button', { name: /حدّث دلوقتي/ }).tap();
+  await reloaded;
+  liveVersion = null;
+  await page.waitForFunction(
+    () => window.hawari?.scene.getScene('alley')?.hero,
+  );
+  await page.waitForTimeout(800);
+  assert.equal(await page.locator('.update-dialog').count(), 0);
+  assert.deepEqual(errs, [], 'no errors around the update prompt');
+  console.log('PASS: update prompt, later, update now → reload');
+  // What's new appears once for a returning player after an update.
+  await page.evaluate(() =>
+    window.localStorage.setItem('hawari-seen-version', '2.0.0'),
+  );
+  await page.reload();
+  await page.locator('.update-dialog').waitFor({ timeout: 5000 });
+  assert.match(
+    await page.locator('.update-dialog').innerText(),
+    /الجديد في التحديث[\s\S]*تحت المترو/,
+  );
+  await page.getByRole('button', { name: /تمام/ }).tap();
+  await page.reload();
+  await page.waitForFunction(
+    () => window.hawari?.scene.getScene('alley')?.hero,
+  );
+  await page.waitForTimeout(800);
+  assert.equal(await page.locator('.update-dialog').count(), 0, 'only once');
+  console.log("PASS: what's new shows once after updating");
 }
 await b.close();
 server.close();

@@ -294,6 +294,7 @@ export class Alley extends Phaser.Scene {
     bindUI((a) => this.action(a));
     this.input.keyboard!.on('keydown-ESC', () => this.action('pause'));
     this.input.keyboard!.on('keydown-ENTER', () => {
+      if (document.body.classList.contains('update-open')) return;
       if (this.mode === 'title') this.action('start');
       else if (this.mode === 'map')
         this.action('play-' + loadProgress().unlocked);

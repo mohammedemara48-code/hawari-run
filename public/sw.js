@@ -19,6 +19,11 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// The update dialog («حدّث دلوقتي») asks a waiting worker to take over now.
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
 // Drop caches from older releases. Also run on page loads, because a previous
 // worker that was still controlling a tab can re-create its cache late.
 const cleanup = () =>
@@ -46,6 +51,8 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  // The live build number is always asked of the network, never the cache.
+  if (url.pathname === '/version.json') return;
 
   // Pages (including start_url "/?source=pwa"): network first with a short
   // timeout, then this version's own index.html. Fresh pages are not written
