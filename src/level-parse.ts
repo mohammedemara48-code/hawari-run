@@ -15,6 +15,7 @@ export const SOLID = new Set([
   '{',
   '}',
   '$',
+  '!',
 ]);
 export const LEDGE = new Set(['-', '~', 'A']);
 export const BOXES: Record<string, string> = {
@@ -80,6 +81,8 @@ export interface Parsed {
   tank?: Pt;
   boxes: (Pt & { content: string; hidden: boolean })[];
   bricks: Pt[];
+  /** Chili crates placed before boss arenas. */
+  armories: Pt[];
   coins: Pt[];
   lanterns: Pt[];
   ghosts: Pt[];
@@ -153,6 +156,7 @@ export function parseLevel(index: number): Parsed {
     exit: pt(cols - 2, rows - 3),
     boxes: [],
     bricks: [],
+    armories: [],
     coins: [],
     lanterns: [],
     ghosts: [],
@@ -221,6 +225,9 @@ export function parseLevel(index: number): Parsed {
             break;
           case 'B':
             out.bricks.push(p);
+            break;
+          case '!':
+            out.armories.push(p);
             break;
           case 'o':
             out.coins.push(p);

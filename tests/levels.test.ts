@@ -93,6 +93,32 @@ describe('authored levels', () => {
           expect(ok, `box ${b.col},${b.row}`).toBe(true);
         }
       });
+      if (L.boss)
+        it('a chili crate waits after the checkpoint, before the arena locks', () => {
+          expect(L.armories, 'one chili crate').toHaveLength(1);
+          const a = L.armories[0];
+          // The arena locks once the hero is 3 tiles past its left edge.
+          const lockCol = L.boss!.col - 17 + 3;
+          expect(a.col).toBeGreaterThan(L.checkpoint!.col);
+          expect(a.col).toBeLessThan(lockCol);
+          const bump = S.some(
+            (s, i) =>
+              seen.has(i) &&
+              !s.mud &&
+              s.c0 <= a.col &&
+              s.c1 >= a.col &&
+              s.row - a.row - 1 >= 3 &&
+              s.row - a.row - 1 <= 4 &&
+              [...Array(s.row - a.row - 1)].every(
+                (_, k) => !SOLID.has(L.at(a.col, a.row + 1 + k)),
+              ),
+          );
+          expect(bump, `crate ${a.col},${a.row} can be bumped`).toBe(true);
+        });
+      else
+        it('chili crates only appear before bosses', () => {
+          expect(L.armories).toHaveLength(0);
+        });
       it('every coin is reachable and none is embedded', () => {
         for (const c of L.coins) {
           expect(SOLID.has(L.at(c.col, c.row))).toBe(false);

@@ -292,6 +292,52 @@ export function makeArt(scene: Phaser.Scene) {
           rect(c, x, y, 2, 2, '#241e1b');
       }
     });
+  // Chili crate (before every boss): a red-banded wooden crate stamped with a
+  // big chili; the second frame flares so it reads at a glance.
+  for (const key of ['armory', 'armory1'])
+    texture(scene, key, 24, 24, (c) => {
+      const flare = key === 'armory1';
+      rect(c, 0, 0, 24, 24, ink);
+      rect(c, 1, 1, 22, 21, '#8a4a2c');
+      rect(c, 2, 2, 20, 2, '#c47a45');
+      rect(c, 2, 4, 2, 17, '#a9623a');
+      rect(c, 2, 20, 20, 2, '#5a2d1f');
+      rect(c, 21, 4, 1, 16, '#5a2d1f');
+      // Red iron bands top and bottom.
+      rect(c, 1, 5, 22, 2, flare ? '#ff5a3c' : '#d23a2a');
+      rect(c, 1, 17, 22, 2, flare ? '#ff5a3c' : '#d23a2a');
+      rect(c, 1, 5, 22, 1, flare ? '#ffb08a' : '#f0705a');
+      // Stamped badge with a chili.
+      rect(c, 5, 8, 14, 8, '#3a1d16');
+      rect(c, 6, 9, 12, 6, flare ? '#ffe2a0' : '#f3c27a');
+      poly(
+        c,
+        [
+          [8, 13],
+          [12, 10],
+          [16, 10],
+          [16, 12],
+          [12, 14],
+          [9, 14],
+        ],
+        '#c8231c',
+      );
+      rect(c, 12, 10, 3, 1, '#ff7a5a');
+      rect(c, 16, 9, 1, 2, '#3f8a3a');
+      rect(c, 15, 8, 2, 1, '#5fbf4f');
+      for (const [x, y] of [
+        [3, 3],
+        [19, 3],
+        [3, 19],
+        [19, 19],
+      ])
+        rect(c, x, y, 2, 2, '#e0a050');
+      if (flare) {
+        rect(c, 4, 9, 1, 1, '#ffffff');
+        rect(c, 18, 14, 1, 1, '#fff2c0');
+        rect(c, 10, 2, 3, 1, '#fff2c0');
+      }
+    });
   texture(scene, 'food', 24, 20, (c) => {
     ellipse(c, 12, 10, 11, 8, ink);
     ellipse(c, 12, 9, 10, 7, '#d7984b');

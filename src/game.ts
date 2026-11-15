@@ -686,6 +686,7 @@ export class Alley extends Phaser.Scene {
     const L = this.L,
       theme = L.meta.theme;
     for (const p of L.bricks) this.block(p.x, p.y, 'brick');
+    for (const p of L.armories) this.block(p.x, p.y, 'armory');
     for (const b of L.boxes) {
       const s = this.block(b.x, b.y, 'box', b.content);
       if (b.hidden) {
@@ -1638,7 +1639,7 @@ export class Alley extends Phaser.Scene {
   hitBlock(block: Sprite) {
     if (!block.active || this.hero.y < block.y || block.getData('busy')) return;
     const kind = block.getData('kind');
-    if (kind !== 'brick' && kind !== 'box') return;
+    if (kind !== 'brick' && kind !== 'box' && kind !== 'armory') return;
     block.setData('busy', true);
     if (block.getData('hidden')) {
       block.setAlpha(1).setData('hidden', false);
@@ -1670,6 +1671,7 @@ export class Alley extends Phaser.Scene {
         if (block.active) block.setData('busy', false);
       },
     });
+    if (kind === 'armory') this.openArmory(block);
     if (kind === 'box') {
       block.setData('kind', 'used').setTexture(this.skin('used'));
       const content = block.getData('content') || 'coin';
@@ -1692,6 +1694,36 @@ export class Alley extends Phaser.Scene {
         this.popText(block.x, block.y - 34, '+١٠٠');
       } else this.spawnItem(block, content);
     }
+  }
+  /** Chili crate before a boss: arms بلبل, or pays a bonus if he is armed. */
+  openArmory(block: Sprite) {
+    block.setData('kind', 'used').setTexture(this.skin('used'));
+    const pepper = this.add.image(block.x, block.y - 20, 'chili').setDepth(15);
+    this.tweens.add({
+      targets: pepper,
+      y: pepper.y - 40,
+      duration: 280,
+      yoyo: true,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        this.burst(pepper.x, pepper.y, 0xff6a3c, 10);
+        pepper.destroy();
+      },
+    });
+    if (this.power === 2) {
+      this.score += 1000;
+      this.popText(block.x, block.y - 34, '+١٠٠٠', '#ffb08a');
+      toast('معاك شطة أصلًا… خد ١٠٠٠ بونص وواجه!');
+      sound.fx('coin');
+      this.updateHud();
+      return;
+    }
+    this.setPower(2, false);
+    this.growUntil = this.time.now + 420;
+    this.burst(this.hero.x, this.hero.y, 0xff7a4a, 18);
+    this.popText(block.x, block.y - 34, 'شطة!', '#ffb08a');
+    toast('خد الشطة وواجه! دوس X أو زرار الشطة');
+    sound.fx('power');
   }
   debris(x: number, y: number) {
     for (let i = 0; i < 4; i++) {
@@ -2945,9 +2977,13 @@ export class Alley extends Phaser.Scene {
       cam.scrollY + (this.L.meta.theme === 'sewer' ? 20 : cam.height / 2),
     );
     const shine = this.skin(Math.floor(time / 140) % 10 < 2 ? 'box1' : 'box');
-    for (const obj of this.blocks.getChildren() as Sprite[])
-      if (obj.getData('kind') === 'box' && obj.texture.key !== shine)
-        obj.setTexture(shine);
+    const flare = Math.floor(time / 180) % 4 === 0 ? 'armory1' : 'armory';
+    for (const obj of this.blocks.getChildren() as Sprite[]) {
+      const kind = obj.getData('kind');
+      if (kind === 'box' && obj.texture.key !== shine) obj.setTexture(shine);
+      else if (kind === 'armory' && obj.texture.key !== flare)
+        obj.setTexture(flare);
+    }
     for (const obj of this.coins.getChildren() as Sprite[])
       obj.setTexture(
         this.skin('coin' + (Math.floor(time / 100 + obj.getData('phase')) % 6)),

@@ -12,6 +12,8 @@
 //   M  moving plank (2 wide, horizontal) V  service lift (2 wide, vertical)
 //   ^  broken glass (hurts)              Q  false wall (secret passage)
 //   G  golden fanoos (the level secret)  T  secret water tank (bonus room)
+//   !  chili crate before a boss arena: bump it to get the chili (or a
+//      bonus if you already have it); it is back after every respawn
 //   c  checkpoint   P  start   E  exit
 //   enemies: g cat  b bug  k basket  t bat  r rooster  p pigeon  m rat  Z boss
 // World 2 (الأرياف)
@@ -457,6 +459,8 @@ function underground() {
   g.set(115, 5, 'm');
   g.set(122, 5, 'm');
   g.text(112, 5, 'o  o  o');
+  // Chili crate set into the tunnel roof before the drop into the arena.
+  g.set(125, 2, '!');
   // Boss arena.
   g.rect(127, 7, 127, 21, '#');
   g.ground(112, 150, 22);
@@ -698,6 +702,8 @@ function threshingFloor() {
   g.set(112, 11, 'q');
   g.set(146, 3, 'v');
   g.set(60, 5, 'v');
+  // Chili crate before the buffalo's arena: walk in armed.
+  g.set(155, 8, '!');
   return g.rows();
 }
 
@@ -962,6 +968,8 @@ function rasElBar() {
   g.set(187, 9, 'E');
   g.set(57, 9, 'd');
   g.set(138, 9, 'f');
+  // Chili crate before the crab's arena: walk in armed.
+  g.set(152, 6, '!');
   return g.rows();
 }
 
@@ -1283,6 +1291,8 @@ function qaitbay() {
   g.run(201, 204, 7, '-');
   g.set(196, 6, 'Z');
   g.set(210, 10, 'E');
+  // Chili crate before the gull's arena: walk in armed.
+  g.set(167, 7, '!');
   return g.rows();
 }
 
