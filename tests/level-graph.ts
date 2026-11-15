@@ -254,3 +254,47 @@ export const onSurface = (
       s.row - row >= below[0] &&
       s.row - row <= below[1],
   );
+/**
+ * Room to stand: flood-fills the hero's body (`rows` tiles tall, one column
+ * wide) through open cells from the start, ignoring gravity. The jump graph
+ * above does not see walls between surfaces, so this catches doorways that
+ * are too low to walk through. Bricks count as open (the big form breaks
+ * them); false walls are not solid.
+ */
+export function fitsThrough(L: Parsed, rows: number) {
+  const open = (c: number, r: number) =>
+    c >= 0 &&
+    c < L.cols &&
+    r >= 0 &&
+    r < L.rows &&
+    (!SOLID.has(L.at(c, r)) || L.at(c, r) === 'B');
+  const fits = (c: number, r: number) => {
+    for (let k = 0; k < rows; k++) if (!open(c, r + k)) return false;
+    return true;
+  };
+  const key = (c: number, r: number) => c + ',' + r;
+  const start: [number, number] = [L.start.col, L.start.row - rows + 1];
+  const seen = new Set([key(...start)]);
+  const queue = [start];
+  let furthest = start[0];
+  while (queue.length) {
+    const [c, r] = queue.shift()!;
+    furthest = Math.max(furthest, c);
+    for (const [dc, dr] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]) {
+      const n: [number, number] = [c + dc, r + dr];
+      if (fits(...n) && !seen.has(key(...n))) {
+        seen.add(key(...n));
+        queue.push(n);
+      }
+    }
+  }
+  return {
+    exit: seen.has(key(L.exit.col, L.exit.row - rows + 1)),
+    furthest,
+  };
+}

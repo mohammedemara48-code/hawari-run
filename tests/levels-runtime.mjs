@@ -284,6 +284,24 @@ const lift1 = await ev(
   () => window.T.s.moverList.find((m) => m.axis === 'y').img.y,
 );
 assert.notEqual(Math.round(lift0), Math.round(lift1), 'lift moves');
+// The big form walks from the checkpoint into the shaft without crouching.
+await ev(() => {
+  const s = window.T.s;
+  s.power = 1;
+  s.fitHeroBody(false);
+});
+await ev(() => window.T.place(87 * 24, 22 * 24));
+await wait(300);
+await page.keyboard.down('ArrowRight');
+await wait(900);
+await page.keyboard.up('ArrowRight');
+const doorway = await hero();
+assert.ok(
+  doorway.x > 91 * 24,
+  `big form walks under the shaft wall (x=${Math.round(doorway.x)})`,
+);
+await ev(() => window.T.go(3));
+await wait(300);
 const livesBefore = (await hero()).lives;
 await ev(([x, y]) => window.T.place(x, y + 40), [water.x, water.y]);
 await wait(300);

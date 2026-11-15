@@ -441,8 +441,9 @@ function underground() {
   g.text(74, 15, 'oo');
   g.text(70, 15, 'ooo');
   g.set(86, 21, 'c');
-  // Set piece: the flooding shaft.
-  g.rect(90, 4, 90, 19, '#');
+  // Set piece: the flooding shaft. The doorway under its left wall is three
+  // rows tall so the big (sandwich) form can walk in without crouching.
+  g.rect(90, 4, 90, 18, '#');
   g.rect(111, 7, 111, 23, '#');
   g.ground(90, 110, 22);
   g.run(93, 96, 19, '-');

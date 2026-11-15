@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS, WORLDS } from '../src/level-data';
+import { LEVELS, TILE, WORLDS } from '../src/level-data';
 import { FLYING, SOLID, parseLevel } from '../src/level-parse';
-import { onSurface, reach, standable } from './level-graph';
+import { heroBody } from '../src/hero-state';
+import { fitsThrough, onSurface, reach, standable } from './level-graph';
 
 describe('authored levels', () => {
   it('has four playable worlds of four distinct levels each', () => {
@@ -55,6 +56,11 @@ describe('authored levels', () => {
           onSurface(S, seen, L.exit.col, L.exit.row, [1, 1]),
           JSON.stringify(L.exit),
         ).toBe(true);
+      });
+      it('the big form can walk to the exit without crouching', () => {
+        const rows = Math.ceil(heroBody(true, false).height / TILE);
+        const route = fitsThrough(L, rows);
+        expect(route.exit, `stuck after column ${route.furthest}`).toBe(true);
       });
       it('the secret, checkpoint and every lantern are reachable', () => {
         expect(onSurface(S, seen, L.secret!.col, L.secret!.row, [1, 4])).toBe(
