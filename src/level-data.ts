@@ -682,7 +682,6 @@ function threshingFloor() {
   g.set(73, 11, '@');
   g.text(74, 8, 'B?B');
   g.set(88, 11, 'q');
-  g.set(118, 5, 'v');
   // A saqia over the pit.
   g.set(101, 7, 'W');
   g.text(100, 2, 'ooo');
@@ -692,7 +691,6 @@ function threshingFloor() {
   g.text(115, 8, 'BFB');
   g.set(121, 8, 'i');
   g.set(126, 11, 'n');
-  g.set(132, 5, 'v');
   // Secret: hay tower to the golden fanoos.
   g.rect(136, 10, 137, 11, 'N');
   g.rect(139, 8, 140, 11, 'N');
@@ -711,8 +709,6 @@ function threshingFloor() {
   g.set(187, 11, 'E');
   g.set(77, 11, 'n');
   g.set(112, 11, 'q');
-  g.set(146, 3, 'v');
-  g.set(60, 5, 'v');
   // Chili crate before the buffalo's arena: walk in armed.
   g.set(155, 8, '!');
   return g.rows();

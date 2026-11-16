@@ -2381,18 +2381,18 @@ export class Alley extends Phaser.Scene {
               ? 'أبو قرون اتجنن! لما يخبط الطين بيقع من فوق'
               : 'الفتوة برعي اتعصّب! بيرمي عضم سمك'
             : buffalo
-              ? 'آخر نَفَس! بينطّ ويرجّ الأرض… والغربان جاية'
+              ? 'آخر نَفَس! بينطّ ويرجّ الأرض… خلي بالك من الطين'
               : 'آخر نَفَس! نطّ فوق الرجّة',
         );
       if (
-        (buffalo || this.bossKind === 'crab' || this.bossKind === 'gull') &&
+        (this.bossKind === 'crab' || this.bossKind === 'gull') &&
         this.bossPhase() === 3
       )
         for (const dx of [-140, 140])
           this.enemy(
             Phaser.Math.Clamp(boss.x + dx, s.arenaX + 60, this.L.width - 60),
             3 * TILE,
-            buffalo ? 'crow' : this.bossKind === 'gull' ? 'skua' : 'gull',
+            this.bossKind === 'gull' ? 'skua' : 'gull',
           );
     }
     this.bossSet('hurt', 450);
@@ -2908,7 +2908,7 @@ export class Alley extends Phaser.Scene {
           sound.fx('shock');
           this.cameras.main.shake(260, 0.014);
           this.burst(boss.x + d * 44, boss.y - 10, 0xb8a888, 14);
-          if (phase >= 2) this.dropClods(phase === 2 ? 3 : 5);
+          if (phase >= 2) this.dropClods(phase === 2 ? 2 : 3);
           this.bossSet('dazed', [1700, 1400, 1150][phase - 1]);
         }
         break;
@@ -2975,20 +2975,35 @@ export class Alley extends Phaser.Scene {
   /** Mud clods shaken loose from the barn roof when the buffalo crashes. */
   dropClods(n: number) {
     const s = this.bossState,
-      cam = this.cameras.main;
+      cam = this.cameras.main,
+      groundY = body(this.hero).bottom;
+    // Few, slow, and telegraphed: a shadow marks each spot well before the clod lands.
+    const side = Math.random() < 0.5 ? -1 : 1;
     for (let i = 0; i < n; i++) {
       const x = Phaser.Math.Clamp(
-        this.hero.x + (i - (n - 1) / 2) * 70 + (Math.random() - 0.5) * 30,
+        this.hero.x + side * (40 + i * 90) + (Math.random() - 0.5) * 20,
         s.arenaX + 30,
         this.L.width - 30,
       );
+      const mark = this.add
+        .ellipse(x, groundY - 2, 26, 7, 0x000000, 0.35)
+        .setDepth(8);
+      this.tweens.add({
+        targets: mark,
+        scaleX: 1.4,
+        alpha: 0.6,
+        yoyo: true,
+        repeat: -1,
+        duration: 250,
+      });
+      this.time.delayedCall(2200, () => mark.destroy());
       const c = this.hazards.create(
         x,
-        cam.scrollY - 10 - i * 30,
+        cam.scrollY - 160 - i * 70,
         'clod',
       ) as Sprite;
       c.setData('kind', 'clod').setDepth(9);
-      body(c).setSize(10, 10).setMaxVelocity(0, 420);
+      body(c).setSize(10, 10).setMaxVelocity(0, 200);
     }
   }
   throwBone(boss: Sprite, phase: number) {

@@ -455,7 +455,7 @@ const clods = await ev(
     window.T.s.hazards.getChildren().filter((h) => h.getData('kind') === 'clod')
       .length,
 );
-assert.ok(clods >= 3, `phase 2 crashes drop clods (${clods})`);
+assert.ok(clods >= 2, `phase 2 crashes drop clods (${clods})`);
 await shot('13-w2-boss-phase2.png');
 await stomp();
 await stomp();
@@ -466,7 +466,7 @@ const crows = await ev(
       .getChildren()
       .filter((e) => e.active && e.getData('kind') === 'crow').length,
 );
-assert.ok(crows >= 2, 'crows join in phase 3');
+assert.equal(crows, 0, 'no crows in the buffalo fight');
 assert.equal(
   (await ev(() => window.hawariAudio.state())).bossPhase,
   2,
@@ -509,7 +509,7 @@ assert.ok(
   'world 3 unlocked',
 );
 await shot('13-w2-clear-to-damietta.png');
-log('boss: hard back, 3 phases, clods, crows, world 3 unlocked');
+log('boss: hard back, 3 phases, fewer clods, no crows, world 3 unlocked');
 
 assert.deepEqual(errors, [], 'no console errors');
 await browser.close();

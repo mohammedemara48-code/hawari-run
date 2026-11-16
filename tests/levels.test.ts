@@ -327,6 +327,11 @@ describe('World 2 playability', () => {
       const crows = L.enemies
         .filter((e) => e.kind === 'crow')
         .sort((a, b) => a.col - b.col);
+      // جرن القمح is the boss level: the buffalo alone, no crows.
+      if (L.meta.id === 'jurn') {
+        expect(crows.length, L.meta.id).toBe(0);
+        continue;
+      }
       expect(crows.length, L.meta.id).toBeGreaterThan(0);
       expect(crows[0].col - L.start.col, L.meta.id).toBeGreaterThanOrEqual(20);
     }

@@ -8,6 +8,14 @@ export interface Release {
 }
 export const CHANGELOG: Release[] = [
   {
+    version: '2.0.3',
+    date: '2026-11-16',
+    notes: [
+      'جرن القمح أهدى: مفيش غربان، وأبو قرون لوحده',
+      'الطين اللي بيقع لما يدبّ بقى أقل وأبطأ، وظلّه بيبان قبلها عشان تتفاداه',
+    ],
+  },
+  {
     version: '2.0.2',
     date: '2026-11-16',
     notes: [
