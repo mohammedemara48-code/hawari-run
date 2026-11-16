@@ -436,7 +436,13 @@ await shot('13-w3-level1.png');
     plane.some(([st, vx]) => st === 'charge' && vx < -200),
     'the plane dashes at him',
   );
-  // Gull: drops a shell from above.
+  // Gull: drops a shell from above. Re-place the hero after the plane dash.
+  await ev((base) => {
+    const s = window.T.s;
+    s.hurtUntil = s.time.now + 1e8;
+    window.T.place(base.x, base.y + 13);
+    s.hero.setVelocity(0, 0);
+  }, base);
   await spawn(0, -170, 'gull');
   const shells = await sample(2600, () =>
     window.T.s.hazards.getChildren().some((h) => h.getData('kind') === 'shell'),

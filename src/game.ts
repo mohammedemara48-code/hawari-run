@@ -36,6 +36,14 @@ import {
 } from './world-art';
 import { HERO_FRAME, heroBody, heroPose } from './hero-state';
 import { approach, jumpAllowed, stomped, tally } from './rules';
+import {
+  hitIsFatal,
+  INVULN_MS,
+  isWeaponItem,
+  powerAfterHit,
+  SPAWN_CLEAR,
+  worldWeapon,
+} from './weapons';
 import { PHYSICS } from './levels';
 import { LEVELS, TILE, WORLDS } from './level-data';
 import {
@@ -245,7 +253,10 @@ export class Alley extends Phaser.Scene {
   lastGround = -1000;
   lastPress = -1000;
   lastShot = 0;
+  lastStroke = 0;
   lastBump = 0;
+  /** What last cost a life or a power tier, for tests and toasts. */
+  lastHurtBy = '';
   riseVy = 0;
   invincible = 0;
   hurtUntil = 0;
@@ -445,7 +456,7 @@ export class Alley extends Phaser.Scene {
     this.lastPress = -1000;
     this.jumpWas = false;
     this.invincible = 0;
-    this.hurtUntil = this.time.now + 1200;
+    this.hurtUntil = this.time.now + INVULN_MS;
     this.bossState = {
       active: false,
       hp: 6,
@@ -575,6 +586,7 @@ export class Alley extends Phaser.Scene {
       for (const l of this.lanterns)
         if (l.img.x < spawn.x) this.lightLantern(l, false);
     this.buildColliders();
+    this.clearSpawnCamp();
     this.buildAtmosphere();
     sound.setTrack(meta.track);
     sound.setIntensity(0);
@@ -704,6 +716,12 @@ export class Alley extends Phaser.Scene {
       t.setData('kind', 'tank').setDepth(3);
     }
     for (const c of L.coins) this.coin(c.x, c.y);
+    for (const p of L.pickups) {
+      const w = this.weapon();
+      const item = this.items.create(p.x, p.y + 2, w.item) as Sprite;
+      item.setData('kind', w.item).setData('settled', true).setDepth(6);
+      body(item).setAllowGravity(false).setSize(16, 16);
+    }
     for (const p of L.lanterns) {
       const img = this.add.image(p.x, p.y - 2, 'lantern-off').setDepth(3);
       const glow = this.add
@@ -1294,8 +1312,11 @@ export class Alley extends Phaser.Scene {
         this.invincible = this.time.now + 9000;
         toast('خرزة الحظ! ٩ ثواني محدش يقدر عليك');
         sound.fx('power');
+      } else if (isWeaponItem(type)) {
+        this.setPower(2);
+        sound.fx('power');
       } else {
-        this.setPower(type === 'chili' ? 2 : Math.max(1, this.power));
+        this.setPower(Math.max(1, this.power));
         sound.fx('power');
       }
       this.burst(item.x, item.y, 0xffd889, 15);
@@ -1320,11 +1341,20 @@ export class Alley extends Phaser.Scene {
     for (const g of [this.terrain, this.blocks, this.crates])
       this.physics.add.collider(this.shots, g, (shot) => {
         const s = shot as Sprite;
-        if (body(s).blocked.down && (s.getData('bounces') || 0) < 3) {
+        if (
+          s.getData('bounce') !== false &&
+          body(s).blocked.down &&
+          (s.getData('bounces') || 0) < 3
+        ) {
           s.setVelocityY(-160);
           s.setData('bounces', (s.getData('bounces') || 0) + 1);
         } else {
-          this.burst(s.x, s.y, 0xf5a34d, 4);
+          this.burst(
+            s.x,
+            s.y,
+            s.getData('bounce') === false ? 0x8a4a2a : 0xf5a34d,
+            4,
+          );
           s.destroy();
         }
       });
@@ -1479,7 +1509,7 @@ export class Alley extends Phaser.Scene {
     if (announce) {
       toast(
         power === 2
-          ? 'شطة نار! دوس X أو زرار الشطة وارمي'
+          ? this.weapon().toast
           : this.L.meta.theme === 'farm'
             ? 'بلح زغلول… بقيت أقوى!'
             : this.L.meta.theme === 'workshop'
@@ -1560,7 +1590,56 @@ export class Alley extends Phaser.Scene {
       `${this.level + 1} · ${LEVELS[this.level].name}`,
       this.power,
       this.secretFound,
+      this.weapon(),
     );
+  }
+  weapon() {
+    return worldWeapon(this.L?.meta.world ?? 0);
+  }
+  grantIframes() {
+    this.hurtUntil = this.time.now + INVULN_MS;
+    this.hurtPoseUntil = this.time.now + 280;
+    this.hero.setAlpha(0.45);
+    this.updateHud();
+  }
+  /** Lift the hero out of any solid he was pushed into (crow/dive clips). */
+  unstickHero() {
+    if (!this.hero?.body) return;
+    const b = body(this.hero);
+    for (let i = 0; i < 16; i++) {
+      const stuck = this.solidsNear().some(
+        (s) =>
+          b.right > s.left &&
+          b.left < s.right &&
+          b.bottom > s.top + 1 &&
+          b.top < s.bottom,
+      );
+      if (!stuck) break;
+      this.hero.y -= 2;
+      b.reset(this.hero.x, this.hero.y);
+    }
+  }
+  spawnX() {
+    const cp = this.spec.checkpoint;
+    return this.checkpoint && cp.x >= 0 ? cp.x : this.spec.start.x;
+  }
+  nearSpawn(x: number) {
+    return Math.abs(x - this.spawnX()) < SPAWN_CLEAR;
+  }
+  /** After a respawn, send campers home and delay their next dive. */
+  clearSpawnCamp() {
+    const until = this.time.now + INVULN_MS + 700;
+    for (const e of this.enemies.getChildren() as Sprite[]) {
+      if (!FLYING.has(e.getData('kind'))) continue;
+      const home = e.getData('home') as { x: number; y: number };
+      if (this.nearSpawn(e.x) || this.nearSpawn(home.x)) {
+        e.setPosition(home.x, home.y);
+        body(e).reset(home.x, home.y);
+        e.setData('state', e.getData('kind') === 'bat' ? 'perch' : 'walk');
+        e.setData('until', until);
+        e.setVelocity(0, 0);
+      }
+    }
   }
   collect() {
     this.coinCount++;
@@ -1695,25 +1774,27 @@ export class Alley extends Phaser.Scene {
       } else this.spawnItem(block, content);
     }
   }
-  /** Chili crate before a boss: arms بلبل, or pays a bonus if he is armed. */
+  /** Weapon crate before a boss: arms بلبل with this world's weapon,
+   * or pays a bonus if he is already armed. */
   openArmory(block: Sprite) {
+    const w = this.weapon();
     block.setData('kind', 'used').setTexture(this.skin('used'));
-    const pepper = this.add.image(block.x, block.y - 20, 'chili').setDepth(15);
+    const item = this.add.image(block.x, block.y - 20, w.item).setDepth(15);
     this.tweens.add({
-      targets: pepper,
-      y: pepper.y - 40,
+      targets: item,
+      y: item.y - 40,
       duration: 280,
       yoyo: true,
       ease: 'Quad.easeOut',
       onComplete: () => {
-        this.burst(pepper.x, pepper.y, 0xff6a3c, 10);
-        pepper.destroy();
+        this.burst(item.x, item.y, 0xff6a3c, 10);
+        item.destroy();
       },
     });
     if (this.power === 2) {
       this.score += 1000;
       this.popText(block.x, block.y - 34, '+١٠٠٠', '#ffb08a');
-      toast('معاك شطة أصلًا… خد ١٠٠٠ بونص وواجه!');
+      toast(`معاك ${w.short} أصلًا… خد ١٠٠٠ بونص وواجه!`);
       sound.fx('coin');
       this.updateHud();
       return;
@@ -1721,8 +1802,8 @@ export class Alley extends Phaser.Scene {
     this.setPower(2, false);
     this.growUntil = this.time.now + 420;
     this.burst(this.hero.x, this.hero.y, 0xff7a4a, 18);
-    this.popText(block.x, block.y - 34, 'شطة!', '#ffb08a');
-    toast('خد الشطة وواجه! دوس X أو زرار الشطة');
+    this.popText(block.x, block.y - 34, w.short + '!', '#ffb08a');
+    toast(w.toast);
     sound.fx('power');
   }
   debris(x: number, y: number) {
@@ -1766,9 +1847,10 @@ export class Alley extends Phaser.Scene {
     }
   }
   spawnItem(block: Sprite, content: string) {
+    const kind = content === 'chili' ? this.weapon().item : content;
     const top = block.y - 12;
-    const item = this.items.create(block.x, top, this.skin(content)) as Sprite;
-    item.setData('kind', content).setDepth(5).setScale(0.3);
+    const item = this.items.create(block.x, top, this.skin(kind)) as Sprite;
+    item.setData('kind', kind).setDepth(5).setScale(0.3);
     const ib = body(item);
     ib.setAllowGravity(false).enable = false;
     this.tweens.add({
@@ -2057,32 +2139,39 @@ export class Alley extends Phaser.Scene {
       e.setData('sleep', false).setData('rolling', true);
       e.setVelocityX(this.hero.x < e.x ? 290 : -290);
       this.hurtUntil = this.time.now + 250;
-    } else this.hurt();
+    } else this.hurt(kind);
   }
-  hurt() {
+  hurt(source = 'hit') {
     if (
       this.time.now < this.hurtUntil ||
       this.time.now < this.invincible ||
       this.mode !== 'play'
     )
       return;
-    sound.fx('hurt');
+    this.lastHurtBy = source;
     dropUmbrella(this);
-    this.cameras.main.shake(140, 0.006);
+    this.cameras.main.shake(160, 0.007);
+    this.unstickHero();
+    this.hero.setVelocity(-this.facing * 90, -220);
     this.hero.setTintFill(0xffffff);
-    this.time.delayedCall(70, () => this.hero?.active && this.hero.clearTint());
-    if (this.power > 0) {
-      this.setPower(0, false);
-      this.hurtUntil = this.time.now + 1800;
-      this.hurtPoseUntil = this.time.now + 240;
-      this.burst(this.hero.x, this.hero.y, 0xe6b17a, 14);
-    } else this.die();
+    this.time.delayedCall(90, () => this.hero?.active && this.hero.clearTint());
+    if (hitIsFatal(this.power)) {
+      sound.fx('hurt');
+      this.die();
+      return;
+    }
+    this.setPower(powerAfterHit(this.power), false);
+    this.grantIframes();
+    sound.fx('powerdown');
+    this.burst(this.hero.x, this.hero.y, 0xe6b17a, 16);
+    this.burst(this.hero.x, this.hero.y, 0xffffff, 8);
   }
   die() {
     if (this.mode !== 'play') return;
     this.mode = 'dead';
     this.lives--;
     this.zip = null;
+    this.unstickHero();
     body(this.hero).setAllowGravity(true);
     this.hero
       .setTexture(`hero-${this.power > 0 ? 'big' : 'small'}-dead`)
@@ -2090,17 +2179,26 @@ export class Alley extends Phaser.Scene {
       .clearTint()
       .setAlpha(1);
     this.heroShadow.setVisible(false);
-    this.hero.setVelocity(0, -250);
-    this.hero.setDepth(30);
     body(this.hero).checkCollision.none = true;
+    this.hero.setVelocity(-this.facing * 40, -280);
+    this.hero.setDepth(30);
     sound.fx('hurt');
     sound.setIntensity(0);
     this.updateHud();
+    const overScore = this.score,
+      overCoins = this.coinCount;
     this.time.delayedCall(1100, () => {
       if (this.lives <= 0) {
         this.mode = 'over';
         this.physics.pause();
-        screen('over');
+        this.updateHud();
+        const row = (a: string, b: string) =>
+          `<div class="tally-row"><span>${a}</span><strong>${b}</strong></div>`;
+        screen(
+          'over',
+          row('المجموع', String(overScore).padStart(6, '0')) +
+            row('الفكة', String(overCoins).padStart(2, '0')),
+        );
       } else {
         this.power = 0;
         this.loadLevel();
@@ -3088,6 +3186,7 @@ export class Alley extends Phaser.Scene {
     this.elapsed += dt;
     this.remaining -= dt;
     if (this.remaining <= 0) {
+      this.lastHurtBy = 'time';
       this.die();
       return;
     }
@@ -3173,8 +3272,13 @@ export class Alley extends Phaser.Scene {
       b.velocity.y *= Math.pow(0.9, dt * 60);
       b.velocity.y = Phaser.Math.Clamp(b.velocity.y, -CANAL.swimJump, 150);
       windPush += canal.dir * CANAL.current;
-      if (jump && !this.jumpWas && depth < 16) {
+      const stroke =
+        depth < 16 &&
+        ((jump && !this.jumpWas) ||
+          (touch.stickJump && time - this.lastStroke >= CANAL.stroke));
+      if (stroke) {
         this.hero.setVelocityY(-CANAL.swimJump);
+        this.lastStroke = time;
         this.lastPress = -1000;
         sound.fx('swim');
         this.burst(this.hero.x, canal.top, 0x8ad0b8, 6);
@@ -3223,7 +3327,7 @@ export class Alley extends Phaser.Scene {
       const speed =
         (action ? 245 : 157) *
         (this.onMud ? MUD.speed : 1) *
-        (this.swimming ? 0.6 : 1);
+        (this.swimming ? CANAL.swim : 1);
       b.velocity.x = approach(
         b.velocity.x,
         dir * speed + windPush,
@@ -3267,19 +3371,21 @@ export class Alley extends Phaser.Scene {
       this.power === 2 &&
       time - this.lastShot > 280
     ) {
+      const w = this.weapon();
       this.lastShot = time;
       this.throwUntil = time + 220;
       const shot = this.shots.create(
         this.hero.x + this.facing * 18,
         this.hero.y - 3,
-        'fire',
+        w.projectile,
       ) as Sprite;
       shot
-        .setVelocity(this.facing * 350, 110)
+        .setVelocity(this.facing * w.vx, w.vy)
         .setData('born', time)
+        .setData('bounce', w.bounce)
         .setDepth(9);
-      body(shot).setAllowGravity(true).setGravityY(-600);
-      sound.fx('fire');
+      body(shot).setAllowGravity(true).setGravityY(w.gravityY);
+      sound.fx(w.sfx);
     }
     for (const s of this.shots.getChildren() as Sprite[])
       if (time - s.getData('born') > 1800) s.destroy();
@@ -3332,6 +3438,7 @@ export class Alley extends Phaser.Scene {
       if (w.active && inShaft && w.y > w.stop) intensity = 2;
       if (inShaft && b.bottom > w.y + 10) {
         sound.fx('splash');
+        this.lastHurtBy = 'water';
         this.die();
         return;
       }
@@ -3360,7 +3467,10 @@ export class Alley extends Phaser.Scene {
       this.complete();
     if (this.hero.x < 12) this.hero.x = 12;
     if (this.hero.x > this.L.width - 12) this.hero.x = this.L.width - 12;
-    if (this.hero.y > this.L.height + 60) this.die();
+    if (this.hero.y > this.L.height + 60) {
+      this.lastHurtBy = 'fall';
+      this.die();
+    }
     this.riseVy = body(this.hero).velocity.y;
     this.jumpWas = jump;
     this.actionWas = throwing;
@@ -3514,7 +3624,9 @@ export class Alley extends Phaser.Scene {
           Math.abs(dx) < 180 &&
           dy > 10 &&
           dy < 260 &&
-          time > e.getData('until')
+          time > e.getData('until') &&
+          !this.nearSpawn(this.hero.x) &&
+          !this.nearSpawn(e.x)
         ) {
           e.setData('state', 'dive').setData('until', time + 1000);
           const lead = body(this.hero).velocity.x * 0.35;

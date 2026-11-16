@@ -131,6 +131,8 @@ export interface Parsed {
   /** Hazard rects (px) of overhead wires ('|') and low bridges (':'). */
   wires: { x0: number; x1: number; y0: number; y1: number; bridge: boolean }[];
   stands: Pt[];
+  /** Ground pickups (the current world's weapon, placed with '@'). */
+  pickups: Pt[];
 }
 const pt = (col: number, row: number): Pt => ({
   col,
@@ -184,6 +186,7 @@ export function parseLevel(index: number): Parsed {
     trams: [],
     wires: [],
     stands: [],
+    pickups: [],
   };
   const carts: Pt[] = [],
     cartEnds: Pt[] = [];
@@ -297,6 +300,9 @@ export function parseLevel(index: number): Parsed {
             break;
           case '(':
             out.stands.push(p);
+            break;
+          case '@':
+            out.pickups.push(p);
             break;
           case 'H':
           case 'J':
@@ -457,7 +463,7 @@ export const MOVERS = {
 export const SAQIA = { radius: 3, buckets: 4, width: 2, speed: 0.55 };
 export const DONKEY = { width: 4, speed: 115, back: 70 };
 export const MUD = { speed: 0.5, jump: 0.78 };
-export const CANAL = { current: 85, swimJump: 460 };
+export const CANAL = { current: 55, swimJump: 460, swim: 0.85, stroke: 350 };
 /** World 3 mechanics. */
 export const BELT_SPEED = 80;
 /** Pendulum lamp: chain length (tiles), platform width, swing (rad, rad/s). */

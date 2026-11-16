@@ -2,6 +2,7 @@ import { paintEgypt, type WorldState } from './map-art';
 import { sound } from './audio';
 import { WORLDS, type LevelMeta } from './level-data';
 import type { Progress } from './progress';
+import { powerLabel, worldWeapon, type WorldWeapon } from './weapons';
 export type Screen =
   'title' | 'map' | 'pause' | 'clear' | 'over' | 'win' | 'hidden';
 export const touch = {
@@ -127,16 +128,22 @@ function bindStick(zone: HTMLElement) {
       resetStick?.();
     });
 }
-export function setThrowReady(ready: boolean) {
+export function setThrowReady(
+  ready: boolean,
+  weapon: WorldWeapon = worldWeapon(0),
+) {
   const b = document.querySelector<HTMLButtonElement>('[data-touch="throw"]');
-  if (b && b.classList.contains('off') === ready) {
-    b.classList.toggle('off', !ready);
-    b.setAttribute('aria-disabled', String(!ready));
-    b.setAttribute(
-      'aria-label',
-      ready ? 'ارمي الشطة' : 'الشطة مقفولة: كُل شطة من الصندوق',
-    );
-  }
+  if (!b) return;
+  b.classList.toggle('off', !ready);
+  b.classList.toggle('sling-touch', weapon.id === 'sling');
+  b.dataset.weapon = weapon.id;
+  b.setAttribute('aria-disabled', String(!ready));
+  b.setAttribute('aria-label', ready ? weapon.readyLabel : weapon.lockedLabel);
+  const cap = b.querySelector<HTMLElement>('[data-throw-label]');
+  if (cap) cap.textContent = weapon.short;
+  b.querySelectorAll<HTMLElement>('[data-weapon-icon]').forEach((el) => {
+    el.hidden = el.dataset.weaponIcon !== weapon.id;
+  });
 }
 let handler: (action: string) => void = () => {};
 export function bindUI(fn: (action: string) => void) {
@@ -204,8 +211,10 @@ export function screen(which: Screen, details = '') {
   document
     .getElementById('game-wrap')!
     .classList.toggle('playing', which === 'hidden');
-  if (which === 'clear' || which === 'win')
-    document.getElementById(which + '-details')!.innerHTML = details;
+  if (which === 'clear' || which === 'win' || which === 'over') {
+    const el = document.getElementById(which + '-details');
+    if (el && details) el.innerHTML = details;
+  }
   document
     .getElementById('pause-btn')!
     .setAttribute('aria-label', which === 'pause' ? 'كمّل اللعب' : 'وقف مؤقت');
@@ -232,16 +241,17 @@ export function hud(
   level: string,
   power: number,
   secret = false,
+  weapon: WorldWeapon = worldWeapon(0),
 ) {
   text('score', String(score).padStart(6, '0'));
   text('coins', String(coins).padStart(2, '0'));
   text('lives', String(lives));
   text('time', String(timer));
   text('world', level);
-  text('power', ['على قدّه', 'شطارة الفول', 'شطة نار'][power]);
+  text('power', powerLabel(power, weapon));
   document.getElementById('time')!.classList.toggle('hurry', timer < 100);
   document.getElementById('secret-icon')?.classList.toggle('found', secret);
-  setThrowReady(power === 2);
+  setThrowReady(power === 2, weapon);
 }
 /** The boss health bar under the HUD. */
 export function bossBar(

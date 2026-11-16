@@ -22,7 +22,10 @@ describe('changelog and update prompt data', () => {
       expect(r.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       for (const n of r.notes) expect(n).toMatch(/[\u0600-\u06ff]/);
     }
-    expect(CHANGELOG[0].notes.join(' ')).toContain('تحت المترو');
+    expect(CHANGELOG[0].notes.join(' ')).toContain('نبلة');
+    expect(
+      CHANGELOG.some((r) => r.notes.join(' ').includes('تحت المترو')),
+    ).toBe(true);
   });
   it('compares dotted versions numerically', () => {
     expect(compareVersions('2.0.10', '2.0.9')).toBe(1);

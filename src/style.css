@@ -752,6 +752,11 @@ footer {
   opacity: 0.38;
   filter: grayscale(1);
 }
+.touch-controls .chili-touch.sling-touch {
+  background: radial-gradient(circle at 40% 30%, #6b4a2bdd, #3a2718dd);
+  border-color: #e2c08a99;
+  color: #f3e2c4;
+}
 .touch-controls button.held {
   transform: translateY(2px) scale(0.94);
   border-bottom-width: 2px;

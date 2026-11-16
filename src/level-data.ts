@@ -3,7 +3,8 @@
 //
 // Legend
 //   #  solid wall / ground      =  solid platform       -  one-way ledge
-//   B  brick   ?  coin box   F  food box   C  chili box   S  bead box
+//   B  brick   ?  coin box   F  food box   C  weapon box   S  bead box
+//   @  world-weapon pickup on the ground (نبلة in the countryside)
 //   i  hidden coin box (invisible until bumped)          o  coin
 //   L  lantern (lights nearby ghost platforms)           ~  ghost ledge
 //   A  market awning (bouncy one-way)    K  vendor cart (moves, 3 wide)
@@ -12,8 +13,8 @@
 //   M  moving plank (2 wide, horizontal) V  service lift (2 wide, vertical)
 //   ^  broken glass (hurts)              Q  false wall (secret passage)
 //   G  golden fanoos (the level secret)  T  secret water tank (bonus room)
-//   !  chili crate before a boss arena: bump it to get the chili (or a
-//      bonus if you already have it); it is back after every respawn
+//   !  weapon crate before a boss arena: bump it for this world's weapon
+//      (chili, نبلة, …) or a bonus if already armed; back after a respawn
 //   c  checkpoint   P  start   E  exit
 //   enemies: g cat  b bug  k basket  t bat  r rooster  p pigeon  m rat  Z boss
 // World 2 (الأرياف)
@@ -480,13 +481,14 @@ function fields() {
   const g = new Grid(200, 15);
   g.ground(0, 30, G2);
   g.set(3, 11, 'P');
-  g.text(6, 11, 'o o o');
-  g.text(10, 8, 'BFB');
-  g.set(18, 11, 'n');
+  g.set(8, 11, '@');
+  g.text(11, 11, 'o o');
+  g.text(14, 8, 'BFB');
+  g.set(24, 11, 'n');
   // Lesson: mud slows you and weighs your jump down.
   g.run(21, 29, G2, 'u');
   g.text(22, 10, 'o o o o');
-  g.ground(31, 62, G2);
+  g.ground(31, 64, G2);
   // Hay stairs (you can't jump them from the mud).
   g.rect(32, 10, 33, 11, 'N');
   g.rect(36, 8, 37, 11, 'N');
@@ -508,6 +510,7 @@ function fields() {
   g.text(89, 6, 'ooooooo');
   g.text(97, 8, 'BCB');
   g.set(93, 11, 'c');
+  g.set(95, 11, '@');
   // First canal: the current carries you downstream.
   g.canal(101, 110, 1);
   g.text(103, 10, 'o o o o');
@@ -542,9 +545,9 @@ function canals() {
   const g = new Grid(210, 15);
   g.ground(0, 24, G2);
   g.set(3, 11, 'P');
-  g.text(6, 11, 'o o o');
-  g.text(11, 8, 'B?B');
-  g.set(17, 6, 'v');
+  g.set(8, 11, '@');
+  g.text(11, 11, 'o o');
+  g.text(14, 8, 'B?B');
   // Against the current: ride a palm log across.
   g.canal(25, 36, -1);
   g.set(27, 11, 'M');
@@ -554,8 +557,8 @@ function canals() {
   g.text(40, 7, 'ooooo');
   g.text(48, 8, 'BCB');
   g.set(55, 8, '?');
-  g.set(45, 6, 'v');
-  g.set(58, 5, 'v');
+  // First crow sits well after the intro and the first canal.
+  g.set(52, 6, 'v');
   g.set(63, 11, 'n');
   // The long canal: two logs and a hay-bale island.
   g.canal(71, 92, -1);
@@ -564,17 +567,17 @@ function canals() {
   g.set(84, 11, 'M');
   g.text(75, 9, 'o o o');
   g.text(86, 9, 'o o o');
-  g.set(81, 5, 'v');
+  g.set(86, 5, 'v');
   g.ground(93, 120, G2);
   g.set(96, 11, 'c');
+  g.set(98, 11, '@');
   g.text(100, 8, 'B?B');
   g.set(106, 8, 'i');
   g.set(112, 11, 'n');
-  // Set piece: the sluice race — swim with a strong current under crows.
+  // Set piece: the sluice race — swim with a strong current under a crow.
   g.canal(121, 140, 1);
   g.text(123, 10, 'o o o o o o o o');
-  g.set(128, 6, 'v');
-  g.set(136, 6, 'v');
+  g.set(132, 6, 'v');
   g.ground(141, 175, G2);
   // Secret: palm-trunk steps to the golden fanoos.
   g.run(146, 148, 9, '=');
@@ -583,16 +586,17 @@ function canals() {
   g.text(156, 3, 'oooo  G');
   g.set(165, 11, 'n');
   g.set(170, 11, 'q');
+  g.set(148, 5, 'v');
+  g.set(160, 5, 'v');
   g.canal(176, 186, -1);
   g.set(178, 11, 'M');
   g.text(179, 9, 'o o');
   g.ground(187, 209, G2);
   g.text(195, 8, 'BFB');
   g.set(205, 11, 'E');
-  g.set(101, 5, 'v');
   g.set(150, 11, 'n');
   g.set(199, 11, 'n');
-  g.set(33, 5, 'v');
+  g.set(196, 5, 'v');
   return g.rows();
 }
 
@@ -601,15 +605,19 @@ function waterwheels() {
   const g = new Grid(220, 15);
   g.ground(0, 26, G2);
   g.set(3, 11, 'P');
-  g.text(6, 11, 'o o o');
-  g.text(10, 8, 'B?B');
-  g.set(18, 11, 'n');
+  g.set(8, 11, '@');
+  g.text(11, 11, 'o o');
+  g.text(14, 8, 'B?B');
+  g.set(22, 11, 'n');
   // Lesson: a saqia over a pit — ride a bucket up to the far ledge.
   g.set(32, 7, 'W');
   g.text(31, 2, 'ooo');
+  // A low island so a missed first bucket is a scare, not a void death.
+  g.rect(27, 13, 35, 14, '#');
+  g.rect(34, 12, 35, 12, 'N');
   g.run(37, 44, 5, '-');
   g.text(38, 4, 'oooooo');
-  g.ground(39, 72, G2);
+  g.ground(36, 72, G2);
   g.text(48, 8, 'BCB');
   g.set(56, 11, 'q');
   g.set(62, 6, 'v');
@@ -618,10 +626,10 @@ function waterwheels() {
   g.set(105, 11, 'y');
   g.text(76, 8, 'o o o o o o o o o o o o');
   g.set(80, 5, 'v');
-  g.set(89, 4, 'v');
-  g.set(97, 5, 'v');
+  g.set(100, 5, 'v');
   g.ground(103, 111, G2);
   g.set(107, 11, 'c');
+  g.set(109, 11, '@');
   // Two wheels in a row over a pit: jump bucket to bucket.
   g.set(116, 7, 'W');
   g.set(127, 7, 'W');
@@ -653,9 +661,9 @@ function threshingFloor() {
   const g = new Grid(191, 15);
   g.ground(0, 22, G2);
   g.set(3, 11, 'P');
-  g.text(6, 11, 'o o o');
-  g.text(10, 8, 'B?B');
-  g.set(16, 11, 'n');
+  g.set(8, 11, '@');
+  g.text(11, 11, 'o o');
+  g.text(14, 8, 'B?B');
   g.set(20, 11, 'n');
   g.ground(23, 50, G2);
   g.run(25, 36, G2, 'u');
@@ -671,13 +679,16 @@ function threshingFloor() {
   g.text(55, 9, 'o o o');
   g.ground(67, 95, G2);
   g.set(70, 11, 'c');
+  g.set(73, 11, '@');
   g.text(74, 8, 'B?B');
-  g.set(80, 5, 'v');
   g.set(88, 11, 'q');
+  g.set(118, 5, 'v');
   // A saqia over the pit.
   g.set(101, 7, 'W');
   g.text(100, 2, 'ooo');
-  g.ground(108, 160, G2);
+  g.rect(96, 13, 104, 14, '#');
+  g.rect(102, 12, 104, 12, 'N');
+  g.ground(105, 160, G2);
   g.text(115, 8, 'BFB');
   g.set(121, 8, 'i');
   g.set(126, 11, 'n');

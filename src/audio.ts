@@ -1225,6 +1225,18 @@ export class Sound {
         this.noiseFx(4000, 0.18, 0.3);
         this.tone(700, 0.14, 'sawtooth', 0.12, 0, 160);
         break;
+      case 'sling':
+        // A taut band snapping, then the pebble whistling off.
+        this.tone(520, 0.08, 'triangle', 0.16, 0, 280);
+        this.tone(780, 0.12, 'square', 0.08, 0.04, 220);
+        this.noiseFx(1800, 0.08, 0.18);
+        break;
+      case 'powerdown':
+        // A clear step down the health tiers, distinct from a full knockout.
+        this.tone(390, 0.16, 'square', 0.2, 0, 180);
+        this.tone(220, 0.22, 'sawtooth', 0.18, 0.08, 90);
+        this.noiseFx(700, 0.12, 0.22);
+        break;
       case 'bounce':
         this.tone(150, 0.2, 'triangle', 0.4, 0, 520);
         this.tone(300, 0.14, 'square', 0.1, 0.02, 900);

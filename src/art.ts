@@ -432,6 +432,53 @@ export function makeArt(scene: Phaser.Scene) {
     rect(c, 3, 3, 6, 6, '#ffd278');
     rect(c, 5, 3, 3, 4, '#fff1bd');
   });
+  // Countryside نبلة: a wooden Y-fork with a clay pellet in the pouch.
+  texture(scene, 'sling', 24, 24, (c) => {
+    poly(
+      c,
+      [
+        [10, 22],
+        [14, 22],
+        [13, 11],
+        [18, 5],
+        [16, 3],
+        [12, 9],
+        [8, 3],
+        [6, 5],
+        [11, 11],
+      ],
+      ink,
+    );
+    poly(
+      c,
+      [
+        [11, 21],
+        [13, 21],
+        [12, 11],
+        [16, 6],
+        [15, 5],
+        [12, 10],
+        [9, 5],
+        [8, 6],
+        [11, 11],
+      ],
+      '#8a5a32',
+    );
+    rect(c, 11, 12, 2, 8, '#c4894a');
+    rect(c, 8, 4, 8, 2, '#d2a06a');
+    // Rubber band.
+    rect(c, 7, 5, 10, 1, '#3a2a24');
+    // Clay pellet in the pouch.
+    rect(c, 10, 6, 4, 4, '#6b3b24');
+    rect(c, 11, 7, 2, 2, '#c47a4a');
+  });
+  texture(scene, 'pebble', 10, 10, (c) => {
+    rect(c, 2, 1, 6, 8, '#5a2e1c');
+    rect(c, 1, 2, 8, 6, '#5a2e1c');
+    rect(c, 3, 2, 5, 6, '#8a4a2a');
+    rect(c, 4, 3, 3, 3, '#c47a4a');
+    rect(c, 3, 3, 1, 1, '#e8b07a');
+  });
   texture(scene, 'particle', 4, 4, (c) => rect(c, 0, 0, 4, 4, '#ffffff'));
   texture(scene, 'tank', 48, 60, (c) => {
     rect(c, 5, 5, 38, 55, ink);

@@ -303,3 +303,58 @@ describe('authored levels', () => {
     );
   });
 });
+
+describe('World 2 playability', () => {
+  const w2 = [4, 5, 6, 7].map((i) => parseLevel(i));
+  it('gives بلبل a countryside weapon at the start of every rural level', () => {
+    for (const L of w2) {
+      expect(L.pickups.length, L.meta.id).toBeGreaterThanOrEqual(
+        L.checkpoint ? 2 : 1,
+      );
+      const first = [...L.pickups].sort((a, b) => a.col - b.col)[0];
+      expect(first.col - L.start.col, L.meta.id).toBeGreaterThanOrEqual(3);
+      expect(first.col - L.start.col, L.meta.id).toBeLessThanOrEqual(12);
+      if (L.checkpoint) {
+        const nearFlag = L.pickups.some(
+          (p) => Math.abs(p.col - L.checkpoint!.col) <= 6,
+        );
+        expect(nearFlag, L.meta.id + ' weapon at the checkpoint').toBe(true);
+      }
+    }
+  });
+  it('keeps the first crow well after a safe intro stretch', () => {
+    for (const L of w2) {
+      const crows = L.enemies
+        .filter((e) => e.kind === 'crow')
+        .sort((a, b) => a.col - b.col);
+      expect(crows.length, L.meta.id).toBeGreaterThan(0);
+      expect(crows[0].col - L.start.col, L.meta.id).toBeGreaterThanOrEqual(20);
+    }
+  });
+  it('does not park a crow just past a checkpoint', () => {
+    for (const L of w2) {
+      if (!L.checkpoint) continue;
+      for (const e of L.enemies.filter((x) => x.kind === 'crow')) {
+        if (e.col <= L.checkpoint.col) continue;
+        expect(
+          e.col - L.checkpoint.col,
+          `${L.meta.id} crow at ${e.col}`,
+        ).toBeGreaterThanOrEqual(25);
+      }
+    }
+  });
+  it('spreads crows along the level instead of clustering them at the start', () => {
+    for (const L of w2) {
+      const early = L.enemies.filter(
+        (e) => e.kind === 'crow' && e.col < L.start.col + 40,
+      );
+      expect(early.length, L.meta.id).toBeLessThanOrEqual(1);
+    }
+    // الترعة in particular used to park several crows over the opening walk.
+    const canals = w2[1];
+    const nearStart = canals.enemies.filter(
+      (e) => e.kind === 'crow' && e.col < 40,
+    );
+    expect(nearStart.length).toBe(0);
+  });
+});

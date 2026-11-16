@@ -275,13 +275,15 @@ log('map opens world 2, track', audio.track);
   );
 }
 
-/* Enemies on flat ground at level 1's start. */
+/* Enemies on a flat stretch past the intro / spawn-clear zone. */
 {
   await ev(() => window.T.go(4));
   const base = await ev(() => {
     const s = window.T.s;
-    window.T.place(s.spec.start.x + 40, s.spec.start.y + 13);
-    return { x: s.spec.start.x + 40, y: s.spec.start.y };
+    // Column 50 is firm ground, well past the weapon intro and SPAWN_CLEAR.
+    const x = 50 * 24 + 12;
+    window.T.place(x, s.spec.start.y + 13);
+    return { x, y: s.spec.start.y };
   });
   await wait(300);
   // Buffalo: telegraph, charge, dizzy; takes two hits.
@@ -319,11 +321,11 @@ log('map opens world 2, track', audio.track);
   await wait(50);
   assert.equal(await ev(() => window.T.e.active), false, 'two hits fell it');
   // Goose: honks and chases.
-  await ev(() => {
+  await ev((x) => {
     const s = window.T.s;
     s.enemies.clear(true, true);
-    window.T.place(s.spec.start.x + 40, s.spec.start.y + 13);
-  });
+    window.T.place(x, s.spec.start.y + 13);
+  }, base.x);
   await ev(
     ([x, y]) => {
       window.T.e = window.T.s.enemy(x + 120, y, 'goose');
@@ -339,9 +341,11 @@ log('map opens world 2, track', audio.track);
     'goose chases the hero',
   );
   // Crow: dives from above.
-  await ev(() => {
-    window.T.s.enemies.clear(true, true);
-  });
+  await ev((x) => {
+    const s = window.T.s;
+    s.enemies.clear(true, true);
+    window.T.place(x, s.spec.start.y + 13);
+  }, base.x);
   await ev(
     ([x, y]) => {
       window.T.e = window.T.s.enemy(x + 60, y - 150, 'crow');
