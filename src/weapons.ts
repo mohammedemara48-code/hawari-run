@@ -31,6 +31,10 @@ export interface WorldWeapon {
   gravityY: number;
   /** Clay pellets splat on the floor instead of bouncing. */
   bounce: boolean;
+  /** Spins in flight (deg/s), e.g. the Luxor throwing stick. */
+  spin?: number;
+  /** Splinter colour when the shot breaks on a wall. */
+  splat?: number;
 }
 
 export const WEAPONS: Record<number, WorldWeapon> = {
@@ -80,6 +84,26 @@ export const WEAPONS: Record<number, WorldWeapon> = {
     vy: -500,
     gravityY: -350,
     bounce: true,
+  },
+  // الأقصر: a painted pharaonic throwing stick (like the ones in the tombs),
+  // flung flat and spinning — it skims low over the sand to the scarabs,
+  // cobras and mummies, and breaks on the first wall.
+  4: {
+    id: 'stick',
+    item: 'stick',
+    projectile: 'stickshot',
+    sfx: 'stick',
+    short: 'عصاية',
+    armedLabel: 'عصاية فرعوني',
+    readyLabel: 'ارمي العصاية',
+    lockedLabel: 'العصاية مقفولة: لمّ العصاية الفرعوني من أول المرحلة',
+    toast: 'عصاية فرعوني! دوس X أو زرار العصاية وارميها وهي بتلف',
+    vx: 380,
+    vy: -140,
+    gravityY: -620,
+    bounce: false,
+    spin: 900,
+    splat: 0xd8a040,
   },
 };
 

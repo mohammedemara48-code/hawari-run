@@ -1452,7 +1452,7 @@ export class Alley extends Phaser.Scene {
           this.burst(
             s.x,
             s.y,
-            s.getData('bounce') === false ? 0x8a4a2a : 0xf5a34d,
+            s.getData('splat') ?? 0xf5a34d,
             4,
           );
           s.destroy();
@@ -3638,12 +3638,16 @@ export class Alley extends Phaser.Scene {
         .setVelocity(this.facing * w.vx, w.vy)
         .setData('born', time)
         .setData('bounce', w.bounce)
+        .setData('spin', (w.spin ?? 0) * this.facing)
+        .setData('splat', w.splat ?? (w.bounce ? 0xf5a34d : 0x8a4a2a))
         .setDepth(9);
       body(shot).setAllowGravity(true).setGravityY(w.gravityY);
       sound.fx(w.sfx);
     }
-    for (const s of this.shots.getChildren() as Sprite[])
+    for (const s of this.shots.getChildren() as Sprite[]) {
       if (time - s.getData('born') > 1800) s.destroy();
+      else if (s.getData('spin')) s.angle += s.getData('spin') * dt;
+    }
     let near = false;
     for (const e of this.enemies.getChildren() as Sprite[]) {
       if (e.y > this.L.height + 60) {

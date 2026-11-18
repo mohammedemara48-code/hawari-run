@@ -479,6 +479,68 @@ export function makeArt(scene: Phaser.Scene) {
     rect(c, 4, 3, 3, 3, '#c47a4a');
     rect(c, 3, 3, 1, 1, '#e8b07a');
   });
+  // Luxor: a pharaonic throwing stick, a bent blade painted in blue and
+  // gold bands with a dark ebony grip.
+  texture(scene, 'stick', 24, 24, (c) => {
+    poly(
+      c,
+      [
+        [2, 19],
+        [5, 22],
+        [13, 13],
+        [22, 8],
+        [21, 4],
+        [11, 10],
+      ],
+      ink,
+    );
+    poly(
+      c,
+      [
+        [4, 19],
+        [5, 20],
+        [12, 12],
+        [20, 7],
+        [20, 6],
+        [11, 11],
+      ],
+      '#c8923e',
+    );
+    rect(c, 3, 18, 3, 3, '#3a2418');
+    rect(c, 8, 14, 2, 3, '#2f6fa8');
+    rect(c, 12, 11, 2, 2, '#2f6fa8');
+    rect(c, 16, 8, 2, 2, '#2f6fa8');
+    rect(c, 10, 12, 1, 2, '#ffe08a');
+    rect(c, 14, 10, 1, 1, '#ffe08a');
+    rect(c, 18, 6, 2, 1, '#ffe08a');
+  });
+  texture(scene, 'stickshot', 16, 16, (c) => {
+    poly(
+      c,
+      [
+        [1, 11],
+        [3, 14],
+        [9, 8],
+        [15, 5],
+        [14, 2],
+        [7, 6],
+      ],
+      ink,
+    );
+    poly(
+      c,
+      [
+        [3, 11],
+        [4, 12],
+        [8, 8],
+        [13, 4],
+        [7, 7],
+      ],
+      '#d8a040',
+    );
+    rect(c, 6, 8, 2, 2, '#2f6fa8');
+    rect(c, 10, 5, 2, 2, '#2f6fa8');
+  });
   texture(scene, 'particle', 4, 4, (c) => rect(c, 0, 0, 4, 4, '#ffffff'));
   texture(scene, 'tank', 48, 60, (c) => {
     rect(c, 5, 5, 38, 55, ink);

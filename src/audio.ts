@@ -1376,6 +1376,12 @@ export class Sound {
         this.tone(780, 0.12, 'square', 0.08, 0.04, 220);
         this.noiseFx(1800, 0.08, 0.18);
         break;
+      case 'stick':
+        // A wooden whirr: the stick spinning away.
+        this.noiseFx(900, 0.16, 0.22);
+        this.tone(240, 0.16, 'triangle', 0.18, 0, 330);
+        this.tone(330, 0.1, 'triangle', 0.1, 0.06, 260);
+        break;
       case 'powerdown':
         // A clear step down the health tiers, distinct from a full knockout.
         this.tone(390, 0.16, 'square', 0.2, 0, 180);

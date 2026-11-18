@@ -136,6 +136,7 @@ export function setThrowReady(
   if (!b) return;
   b.classList.toggle('off', !ready);
   b.classList.toggle('sling-touch', weapon.id === 'sling');
+  b.classList.toggle('stick-touch', weapon.id === 'stick');
   b.dataset.weapon = weapon.id;
   b.setAttribute('aria-disabled', String(!ready));
   b.setAttribute('aria-label', ready ? weapon.readyLabel : weapon.lockedLabel);

@@ -757,6 +757,11 @@ footer {
   border-color: #e2c08a99;
   color: #f3e2c4;
 }
+.touch-controls .chili-touch.stick-touch {
+  background: radial-gradient(circle at 40% 30%, #2f5a82dd, #1c2f4add);
+  border-color: #ffd98a99;
+  color: #fff0c8;
+}
 .touch-controls button.held {
   transform: translateY(2px) scale(0.94);
   border-bottom-width: 2px;
