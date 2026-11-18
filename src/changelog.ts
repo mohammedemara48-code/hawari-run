@@ -8,6 +8,13 @@ export interface Release {
 }
 export const CHANGELOG: Release[] = [
   {
+    version: '2.1.2',
+    date: '2026-11-18',
+    notes: [
+      'وادي الملوك بقى أوضح: بلبل معاه فانوس بينوّر قدامه، والحيطان أفتح',
+    ],
+  },
+  {
     version: '2.1.1',
     date: '2026-11-18',
     notes: [

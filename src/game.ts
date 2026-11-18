@@ -214,6 +214,9 @@ export class Alley extends Phaser.Scene {
   hero!: Sprite;
   heroShadow!: Phaser.GameObjects.Image;
   heroGlow!: Phaser.GameObjects.Image;
+  /** Handheld tomb lantern and its pre-rendered facing-biased glow. */
+  heldLantern?: Phaser.GameObjects.Image;
+  heldLanternGlow?: Phaser.GameObjects.Image;
   growUntil = 0;
   throwUntil = 0;
   hurtPoseUntil = 0;
@@ -472,6 +475,8 @@ export class Alley extends Phaser.Scene {
     this.windEmitters = [];
     this.water = undefined;
     this.dark = undefined;
+    this.heldLantern = undefined;
+    this.heldLanternGlow = undefined;
     this.boss = undefined;
     this.camFocus = undefined;
     this.secret = undefined;
@@ -621,7 +626,20 @@ export class Alley extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.ADD)
       .setDepth(51)
       .setScale(0.9)
-      .setAlpha(meta.dark ? 0.3 : 0);
+      .setAlpha(meta.dark && meta.theme !== 'tomb' ? 0.3 : 0);
+    // وادي الملوك: a فانوس in بلبل's hand, with a warm cone ahead of him.
+    // The dark overlay stays off so the brighter tomb stays readable.
+    if (meta.theme === 'tomb') {
+      this.heldLantern = this.add
+        .image(this.hero.x + 11, this.hero.y + 8, 'tomb-hand-lantern')
+        .setDepth(11);
+      this.heldLanternGlow = this.add
+        .image(this.hero.x + 11, this.hero.y + 8, 'tomb-lantern-glow')
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(8)
+        .setOrigin(80 / 256, 0.5)
+        .setAlpha(0.9);
+    }
     this.setPower(this.power, false);
     this.followHero();
     if (this.checkpoint)
@@ -1129,7 +1147,10 @@ export class Alley extends Phaser.Scene {
     const L = this.L,
       meta = L.meta,
       cam = this.cameras.main;
-    if (meta.dark)
+    // Tomb levels keep the scene readable (brighter plaster + the held lantern).
+    // Wall torches still light ghost ledges; they just don't punch a hole in a
+    // full-screen dark overlay.
+    if (meta.dark && meta.theme !== 'tomb')
       this.dark = this.add
         .renderTexture(0, 0, cam.width, cam.height)
         .setOrigin(0)
@@ -3618,6 +3639,19 @@ export class Alley extends Phaser.Scene {
       this.hero.setAlpha(Math.floor(time / 90) % 2 === 0 ? 0.45 : 1);
     else this.hero.setAlpha(1);
     this.heroGlow.setPosition(this.hero.x, this.hero.y);
+    if (this.heldLantern && this.heldLanternGlow) {
+      const lx = this.hero.x + this.facing * 11,
+        ly = this.hero.y + 8;
+      const flicker =
+        0.82 +
+        Math.sin(this.clock * 7) * 0.08 +
+        Math.sin(this.clock * 13) * 0.04;
+      this.heldLantern.setPosition(lx, ly).setFlipX(this.facing < 0);
+      this.heldLanternGlow
+        .setPosition(lx, ly)
+        .setFlipX(this.facing < 0)
+        .setAlpha(flicker);
+    }
     if (
       throwing &&
       !this.actionWas &&

@@ -45,22 +45,22 @@ export const W5_PALETTES: Record<'temple' | 'nile' | 'tomb', Palette> = {
     windowLit: '#ffd8a0',
     fog: '#e8c8c0',
   },
-  // A royal tomb: painted plaster, deep shadow, torchlight.
+  // A royal tomb: painted plaster in warm torchlight, readable not pitch-black.
   tomb: {
     sky: [
-      [0, '#0a0604'],
-      [0.6, '#1a100a'],
-      [1, '#2a1a10'],
+      [0, '#1e140c'],
+      [0.6, '#3a2818'],
+      [1, '#5a3c24'],
     ],
-    stone: ['#6a4a2e', '#725032', '#62442a', '#7a5636'],
-    mortar: '#2e1e12',
-    top: ['#8a6a48', '#94744e', '#806042'],
-    wood: ['#4a3420', '#6a4a2c', '#2e2014'],
+    stone: ['#b07a4a', '#bc8454', '#a67244', '#c48e5c'],
+    mortar: '#5a3c28',
+    top: ['#dcb47c', '#e6be86', '#d0aa72'],
+    wood: ['#7a5638', '#9a6e48', '#5a3c28'],
     accent: '#2a7a8a',
     glow: '#ffb860',
-    window: '#140c08',
+    window: '#2a1c12',
     windowLit: '#ffb860',
-    fog: '#3a2a1a',
+    fog: '#7a5a3a',
   },
 };
 export const isW5 = (theme: Theme) =>
@@ -146,31 +146,31 @@ export function w5Stone(
   if (theme === 'tomb') {
     // Plastered tomb wall: cream plaster gone amber with age, painted
     // bands, columns of carved marks in lapis and ochre, cracks.
-    rect(c, x, y, T, T, ['#8a6a44', '#94724a', '#7e6040'][Math.floor(h * 3)]);
-    rect(c, x, y, T, 1, '#00000030');
+    rect(c, x, y, T, T, ['#c9a06a', '#d4aa72', '#bc9662'][Math.floor(h * 3)]);
+    rect(c, x, y, T, 1, '#00000022');
     if (row % 4 === 3) {
       // A painted frieze band.
       rect(c, x, y + 2, T, 3, OCHRE);
-      rect(c, x, y + 5, T, 1, '#1a100a');
+      rect(c, x, y + 5, T, 1, '#5a3c24');
       for (let i = 0; i < T; i += 6) {
         rect(c, x + i + 1, y + 7, 4, 3, i % 12 ? LAPIS : TURQ);
         rect(c, x + i + 2, y + 6, 2, 1, GOLD);
       }
-      rect(c, x, y + 11, T, 1, '#1a100a');
+      rect(c, x, y + 11, T, 1, '#5a3c24');
     } else {
-      rect(c, x + 11, y, 1, T, '#5a402a');
+      rect(c, x + 11, y, 1, T, '#8a6240');
       for (const gx of [3, 15])
         glyph(
           c,
           x + gx,
           y + 4 + Math.floor(hash(col, row, gx) * 8),
           Math.floor(hash(col, row, gx + 1) * 10),
-          hash(col, row, gx + 2) > 0.5 ? '#2a3a6a' : '#6a2a14',
+          hash(col, row, gx + 2) > 0.5 ? '#3a4a7a' : '#8a3a1c',
         );
     }
     if (h > 0.86) {
-      rect(c, x + 6, y + 3, 1, 9, '#2e1e12');
-      rect(c, x + 7, y + 11, 1, 6, '#2e1e12');
+      rect(c, x + 6, y + 3, 1, 9, '#5a3c28');
+      rect(c, x + 7, y + 11, 1, 6, '#5a3c28');
     }
     return;
   }
@@ -239,10 +239,10 @@ export function w5Cap(
   const h = hash(col, row, 7);
   if (theme === 'tomb') {
     // Worn floor flags with a skin of dust.
-    rect(c, x, y, T, 6, '#2e1e12');
+    rect(c, x, y, T, 6, '#5a3c28');
     rect(c, x, y, T, 4, pal.top[Math.floor(h * 3)]);
-    rect(c, x, y, T, 1, '#b8946a');
-    if (h > 0.5) rect(c, x + 4, y + 1, 6, 1, '#a07e58');
+    rect(c, x, y, T, 1, '#e0c090');
+    if (h > 0.5) rect(c, x + 4, y + 1, 6, 1, '#c8a478');
     return;
   }
   if (theme === 'nile') {
@@ -292,7 +292,7 @@ export function w5Window(
     rect(c, x + 3, y + 2, 18, 20, '#c89a5a');
     rect(c, x + 5, y + 4, 14, 18, OCHRE);
     rect(c, x + 7, y + 6, 10, 16, '#e8c88a');
-    rect(c, x + 10, y + 8, 4, 14, '#140c08');
+    rect(c, x + 10, y + 8, 4, 14, '#2a1c12');
     rect(c, x + 5, y + 4, 14, 1, GOLD);
     return;
   }
@@ -338,8 +338,8 @@ export function w5Slab(
   }
   // A sandstone lintel block with a carved cavetto lip.
   rect(c, x, y, T, 12, '#6a4422');
-  rect(c, x, y, T, 10, theme === 'tomb' ? '#8a6a44' : '#d2a064');
-  rect(c, x, y, T, 2, theme === 'tomb' ? '#b8946a' : '#f0cc92');
+  rect(c, x, y, T, 10, theme === 'tomb' ? '#c9a06a' : '#d2a064');
+  rect(c, x, y, T, 2, theme === 'tomb' ? '#d8b888' : '#f0cc92');
   rect(c, x, y + 8, T, 1, '#00000030');
   if (col % 2) rect(c, x + 10, y + 3, 4, 4, '#a8743e');
 }
@@ -354,10 +354,11 @@ export function w5Ledge(
   end: number,
 ) {
   // A projecting cornice stone (or a palm-beam in the tomb).
-  rect(c, x, y, T, 7, '#4a2e18');
-  rect(c, x, y, T, 5, theme === 'tomb' ? '#8a6a44' : '#e0b070');
-  rect(c, x, y, T, 1, theme === 'tomb' ? '#c8a478' : '#fff0c8');
-  for (let i = 3; i < T; i += 6) rect(c, x + i, y + 5, 2, 2, '#4a2e18');
+  rect(c, x, y, T, 7, theme === 'tomb' ? '#6a4a2c' : '#4a2e18');
+  rect(c, x, y, T, 5, theme === 'tomb' ? '#c9a06a' : '#e0b070');
+  rect(c, x, y, T, 1, theme === 'tomb' ? '#e0c090' : '#fff0c8');
+  for (let i = 3; i < T; i += 6)
+    rect(c, x + i, y + 5, 2, 2, theme === 'tomb' ? '#6a4a2c' : '#4a2e18');
   if (end)
     poly(
       c,
@@ -1026,11 +1027,11 @@ export function makeLuxorProps(scene: Phaser.Scene) {
     c.stroke();
   });
   tex(scene, 'tomb-slab-crack', 24, 24, (c) => {
-    rect(c, 0, 0, 24, 24, '#1a100a');
-    rect(c, 1, 1, 22, 22, '#7a5a3a');
-    rect(c, 1, 1, 22, 4, '#a07e58');
-    rect(c, 1, 20, 22, 3, '#4a3020');
-    c.strokeStyle = '#140c08';
+    rect(c, 0, 0, 24, 24, '#4a3420');
+    rect(c, 1, 1, 22, 22, '#c09462');
+    rect(c, 1, 1, 22, 4, '#d4b080');
+    rect(c, 1, 20, 22, 3, '#7a5638');
+    c.strokeStyle = '#3a2818';
     c.lineWidth = 1;
     c.beginPath();
     c.moveTo(3, 6);
@@ -1041,13 +1042,50 @@ export function makeLuxorProps(scene: Phaser.Scene) {
     c.lineTo(21, 17);
     c.stroke();
   });
+  // A small فانوس بلبل holds in the tomb, plus a pre-rendered warm cone
+  // (more light ahead than behind) used with ADD blend. One texture, no
+  // per-frame drawing.
+  tex(scene, 'tomb-hand-lantern', 16, 22, (c) => {
+    // Brass handle and cap.
+    rect(c, 7, 0, 2, 4, '#5a3a22');
+    rect(c, 4, 4, 8, 2, '#e8c48a');
+    rect(c, 3, 5, 10, 2, '#c8955a');
+    // Glass body with a flame.
+    rect(c, 4, 7, 8, 9, '#2e1e12');
+    rect(c, 5, 7, 6, 9, '#e8642a');
+    rect(c, 6, 8, 4, 7, '#ffb040');
+    rect(c, 7, 9, 2, 5, '#fff4c0');
+    // Base and a short foot.
+    rect(c, 3, 16, 10, 2, '#c8955a');
+    rect(c, 4, 18, 8, 2, '#8a5e32');
+    rect(c, 6, 20, 4, 2, '#5a3a22');
+  });
+  tex(scene, 'tomb-lantern-glow', 256, 192, (c) => {
+    // Origin sits at (80, 96): about 2 tiles behind, 5 tiles ahead, ~3 up/down.
+    const cx = 80,
+      cy = 96;
+    c.save();
+    c.translate(cx, cy);
+    c.scale(1.75, 0.95);
+    const g = c.createRadialGradient(0, 0, 0, 0, 0, 96);
+    g.addColorStop(0, 'rgba(255, 230, 160, 0.55)');
+    g.addColorStop(0.22, 'rgba(255, 190, 90, 0.32)');
+    g.addColorStop(0.5, 'rgba(255, 150, 60, 0.14)');
+    g.addColorStop(0.78, 'rgba(255, 130, 40, 0.05)');
+    g.addColorStop(1, 'rgba(255, 120, 30, 0)');
+    c.fillStyle = g;
+    c.beginPath();
+    c.arc(0, 0, 96, 0, Math.PI * 2);
+    c.fill();
+    c.restore();
+  });
 }
 
 /** Near-layer silhouettes (in front of the view). */
 export function w5Near(c: C, theme: Theme, W: number) {
   if (theme === 'tomb') {
     // The rough-cut rock ceiling and a few roots and webs.
-    c.fillStyle = '#0a0604';
+    c.fillStyle = '#4a3422';
     c.beginPath();
     c.moveTo(0, 0);
     for (let x = 0; x <= W; x += 16)

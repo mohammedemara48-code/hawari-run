@@ -38,11 +38,11 @@ JOBS = {
     'l16': ('bg-w4-alexandria', 0.8, 0.6, 0.95, 'storm'),
     # World 5 (Luxor): the sphinx avenue in hot afternoon light, the Nile at
     # dawn among the balloons, inside a tomb in the Valley of the Kings (the
-    # painting seen through a carved doorway, almost black) and Karnak by
+    # painting seen through a carved doorway, warm and readable) and Karnak by
     # moonlight for the final boss.
     'l17': ('bg-w5-luxor', 0.86, 0.86, 0.88, 'afternoon'),
     'l18': ('bg-w5-luxor', 0.84, 0.82, 0.86, 'nile-dawn'),
-    'l19': ('bg-w5-luxor', 0.7, 0.6, 0.9, 'tomb'),
+    'l19': ('bg-w5-luxor', 1.0, 0.72, 0.88, 'tomb'),
     'l20': ('bg-w5-luxor', 0.74, 0.7, 0.92, 'moon'),
 }
 # Per-channel multipliers and a lift towards a sky tint for each grade.
@@ -58,7 +58,7 @@ GRADES = {
     'storm': ((0.66, 0.74, 0.86), (52, 62, 78), 0.38),
     'afternoon': ((1.04, 0.98, 0.86), (236, 196, 130), 0.12),
     'nile-dawn': ((0.9, 0.92, 1.06), (214, 160, 176), 0.2),
-    'tomb': ((0.42, 0.34, 0.26), (20, 12, 6), 0.35),
+    'tomb': ((0.88, 0.76, 0.54), (90, 62, 32), 0.16),
     'moon': ((0.5, 0.62, 0.95), (18, 26, 60), 0.34),
 }
 
@@ -134,7 +134,7 @@ def grade(im, name):
         from PIL import ImageDraw
         w, h = im.size
         d = ImageDraw.Draw(im, 'RGBA')
-        stone, joint = (34, 24, 16, 255), (18, 12, 8, 255)
+        stone, joint = (92, 70, 44, 255), (58, 42, 28, 255)
         frame = Image.new('RGB', (w, h), stone[:3])
         fd = ImageDraw.Draw(frame)
         for y in range(0, h, 22):
@@ -144,9 +144,9 @@ def grade(im, name):
         # Decorative bands on the lintel: zigzags and dots, not writing.
         fd.rectangle([120, 8, w - 120, 64], fill=stone[:3])
         for x in range(124, w - 124, 12):
-            fd.line([(x, 20), (x + 6, 30), (x + 12, 20)], fill=(92, 70, 40), width=2)
-            fd.ellipse([x + 4, 42, x + 8, 46], fill=(120, 96, 56))
-        fd.rectangle([120, 56, w - 120, 64], fill=(60, 44, 28))
+            fd.line([(x, 20), (x + 6, 30), (x + 12, 20)], fill=(168, 126, 72), width=2)
+            fd.ellipse([x + 4, 42, x + 8, 46], fill=(196, 156, 88))
+        fd.rectangle([120, 56, w - 120, 64], fill=(120, 88, 52))
         hole = Image.new('L', (w, h), 255)
         ImageDraw.Draw(hole).rectangle([120, 64, w - 120, h], fill=0)
         im = Image.composite(frame, im, hole)
@@ -162,7 +162,10 @@ def grade(im, name):
 
 
 os.makedirs(OUT, exist_ok=True)
+only = os.environ.get('BAKE_ONLY')
 for key, (name, bright, sat, con, *tod) in JOBS.items():
+    if only and key != only:
+        continue
     im = Image.open(f'{SRC}/{name}.jpg').convert('RGB').resize((640, 360), Image.LANCZOS)
     if tod:
         im = grade(im, tod[0])
@@ -170,8 +173,10 @@ for key, (name, bright, sat, con, *tod) in JOBS.items():
     im = ImageEnhance.Contrast(im).enhance(con)
     im = ImageEnhance.Brightness(im).enhance(bright)
     mask = Image.new('L', (640, 360))
-    mask.putdata([int(255 * (1 - 0.45 * max(0, (y - 200) / 160))) for y in range(360) for _ in range(640)])
-    im = Image.composite(im, Image.new('RGB', (640, 360), (8, 8, 16)), mask)
+    fade = 0.22 if tod and tod[0] == 'tomb' else 0.45
+    floor = (56, 38, 22) if tod and tod[0] == 'tomb' else (8, 8, 16)
+    mask.putdata([int(255 * (1 - fade * max(0, (y - 200) / 160))) for y in range(360) for _ in range(640)])
+    im = Image.composite(im, Image.new('RGB', (640, 360), floor), mask)
     loop = Image.new('RGB', (1280, 360))
     loop.paste(im, (0, 0))
     loop.paste(ImageOps.mirror(im), (640, 0))
