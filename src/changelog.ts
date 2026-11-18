@@ -8,6 +8,13 @@ export interface Release {
 }
 export const CHANGELOG: Release[] = [
   {
+    version: '2.1.1',
+    date: '2026-11-18',
+    notes: [
+      'لو كنت خلّصت اسكندرية قبل التحديث، الأقصر بتتفتحلك على طول من غير ما تعيد ريّس النوة',
+    ],
+  },
+  {
     version: '2.1.0',
     date: '2026-11-18',
     notes: [

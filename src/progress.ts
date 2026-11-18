@@ -19,10 +19,18 @@ export function loadProgress(): Progress {
   try {
     const p = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (!p || typeof p.unlocked !== 'number') return empty;
+    // Older saves were capped at the last level that existed then, so a
+    // player who beat it never unlocked the world added later. Rebuild the
+    // frontier from the cleared list too.
+    const cleared: Record<string, boolean> = p.cleared || {};
+    let frontier = p.unlocked;
+    LEVELS.forEach((l, i) => {
+      if (cleared[l.id]) frontier = Math.max(frontier, i + 1);
+    });
     return {
       ...empty,
       ...p,
-      unlocked: Math.max(0, Math.min(LEVELS.length - 1, p.unlocked)),
+      unlocked: Math.max(0, Math.min(LEVELS.length - 1, frontier)),
     };
   } catch {
     return empty;
