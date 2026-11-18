@@ -361,8 +361,14 @@ describe('authored levels', () => {
         [q17, r18, s19, t20].some((l) => kinds(l).has(k)),
         k,
       ).toBe(true);
-    // The peak of the game: denser and less time per column than Alexandria.
+    // The peak of the game: less time per column than Alexandria. Luxor's
+    // danger is in its ground (slides, slabs, pillars, doors, the dark), so
+    // its enemies are spread out: busier than the countryside, calmer than
+    // Alexandria's storm.
     expect(density([q17, r18, s19, t20])).toBeGreaterThan(
+      density([e, f, g, h]),
+    );
+    expect(density([q17, r18, s19, t20])).toBeLessThan(
       density([m13, n14, o15, p16]),
     );
     expect(perCol([q17, r18, s19, t20])).toBeLessThan(
@@ -428,5 +434,53 @@ describe('World 2 playability', () => {
       (e) => e.kind === 'crow' && e.col < 40,
     );
     expect(nearStart.length).toBe(0);
+  });
+});
+
+describe('World 5 playability', () => {
+  const w5 = [16, 17, 18, 19].map((i) => parseLevel(i));
+  const flying = new Set(['devil']);
+  it('gives بلبل the throwing stick at the start and at every checkpoint', () => {
+    for (const L of w5) {
+      const first = [...L.pickups].sort((a, b) => a.col - b.col)[0];
+      expect(first, L.meta.id).toBeDefined();
+      expect(first.col - L.start.col, L.meta.id).toBeGreaterThanOrEqual(3);
+      expect(first.col - L.start.col, L.meta.id).toBeLessThanOrEqual(12);
+      if (L.checkpoint)
+        expect(
+          L.pickups.some((p) => Math.abs(p.col - L.checkpoint!.col) <= 6),
+          L.meta.id + ' stick at the checkpoint',
+        ).toBe(true);
+    }
+  });
+  it('keeps the spawn and the checkpoints clear of enemies', () => {
+    for (const L of w5) {
+      for (const e of L.enemies) {
+        expect(
+          e.col - L.start.col,
+          `${L.meta.id} ${e.kind} ${e.col}`,
+        ).toBeGreaterThanOrEqual(15);
+        if (L.checkpoint && e.col > L.checkpoint.col)
+          expect(
+            e.col - L.checkpoint.col,
+            `${L.meta.id} ${e.kind} ${e.col} after the flag`,
+          ).toBeGreaterThanOrEqual(flying.has(e.kind) ? 25 : 8);
+      }
+      const fly = L.enemies.filter((e) => flying.has(e.kind));
+      for (const e of fly)
+        expect(e.col - L.start.col, L.meta.id).toBeGreaterThanOrEqual(20);
+    }
+  });
+  it('spreads the enemies out, a little more each level', () => {
+    const per100 = w5.map(
+      (L) => (L.enemies.filter((e) => e.kind !== 'boss').length / L.cols) * 100,
+    );
+    for (const d of per100) expect(d).toBeLessThanOrEqual(8);
+    for (const L of w5) {
+      const cols = L.enemies.map((e) => e.col).sort((a, b) => a - b);
+      // No pack: never more than three within any 12 columns.
+      for (let i = 3; i < cols.length; i++)
+        expect(cols[i] - cols[i - 3], L.meta.id).toBeGreaterThan(12);
+    }
   });
 });

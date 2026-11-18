@@ -1384,7 +1384,6 @@ function ramAvenue() {
   g.set(3, 11, 'P');
   g.text(6, 11, 'o o o');
   g.text(10, 8, 'B?B');
-  g.set(15, 11, '5');
   sphinx(g, 19);
   g.set(21, 7, '7');
   g.text(26, 9, 'o o');
@@ -1402,18 +1401,15 @@ function ramAvenue() {
   g.rect(64, 9, 67, 11);
   slide(g, 68, 10, 2, ';');
   g.text(64, 7, 'oooo');
-  g.set(73, 11, '5');
   g.ground(81, 120, G5);
   g.set(83, 11, 'c');
   g.text(86, 8, 'B?B');
   g.set(90, 8, 'i');
   g.set(93, 11, '7');
   sphinx(g, 96);
-  g.set(99, 5, '8');
   g.set(105, 11, '5');
   g.run(108, 113, 9, '=');
   g.text(108, 7, 'oooooo');
-  g.set(116, 11, '5');
   // The high dune: stairs up, then a long slide down into the devil.
   g.ground(119, 150, G5);
   g.rect(119, 10, 120, 11);
@@ -1428,7 +1424,6 @@ function ramAvenue() {
   g.set(158, 11, '7');
   g.text(160, 8, 'BCB');
   sphinx(g, 165);
-  g.set(167, 7, '7');
   g.set(175, 11, '5');
   // Secret: up the stepped pylon of a gateway to the golden fanoos.
   g.rect(178, 10, 179, 11);
@@ -1437,21 +1432,18 @@ function ramAvenue() {
   g.text(182, 3, 'ooo');
   g.set(185, 2, 'G');
   g.set(190, 10, '8');
-  g.set(194, 11, '5');
   // Sand pouring against you along the ground.
   g.run(198, 205, G5, '_');
   g.text(199, 9, 'o o o o');
   g.set(207, 11, '7');
-  g.set(210, 9, '8');
   g.ground(220, 259, G5);
   g.text(223, 8, 'B?B');
   g.set(228, 11, '5');
-  g.set(232, 10, '8');
-  g.set(236, 11, '7');
   g.set(240, 11, '5');
   sphinx(g, 243);
-  g.set(252, 11, '5');
   g.set(255, 11, 'E');
+  g.set(7, 11, '@');
+  g.set(85, 11, '@');
   return g.rows();
 }
 
@@ -1462,7 +1454,6 @@ function nileDawn() {
   g.set(3, 11, 'P');
   g.text(6, 11, 'o o o');
   g.text(9, 8, 'B?B');
-  g.set(14, 11, '5');
   g.set(20, 11, '7');
   // The Nile: swimming fights the current; ride the felucca.
   g.sea(25, 52, G5);
@@ -1470,7 +1461,6 @@ function nileDawn() {
   g.set(45, G5, 'I');
   g.text(28, 9, 'o o o o o o');
   g.set(30, 10, '8');
-  g.set(36, 9, '8');
   g.ground(53, 80, G5);
   g.set(55, 11, '7');
   // A balloon lifts you to the palm-top ledge.
@@ -1479,7 +1469,6 @@ function nileDawn() {
   g.text(61, 4, 'ooooo');
   g.set(65, 4, '7');
   g.set(70, 11, '5');
-  g.set(76, 11, '5');
   g.sea(81, 110, G5);
   g.set(82, G5, 'U');
   g.set(100, G5, 'I');
@@ -1489,19 +1478,15 @@ function nileDawn() {
   g.text(96, 2, 'oo');
   g.set(98, 1, 'G');
   g.set(95, 6, '8');
-  g.set(104, 8, '8');
   g.ground(111, 140, G5);
   g.set(113, 11, 'c');
-  g.set(115, 11, '5');
   g.text(116, 8, 'BFB');
-  g.set(121, 11, '7');
   g.set(125, 11, '5');
   // Balloon up the cliff.
   g.set(129, 11, 'z');
   g.rect(132, 6, 140, 11);
   g.text(133, 4, 'o o o');
   g.set(135, 5, '5');
-  g.set(138, 5, '7');
   // The widest reach: two feluccas and a balloon in the middle.
   g.sea(141, 175, G5);
   g.set(142, G5, 'U');
@@ -1515,12 +1500,10 @@ function nileDawn() {
   g.ground(176, 191, G5);
   g.text(179, 8, 'B?B');
   g.set(184, 11, '7');
-  g.set(188, 11, '5');
   g.run(192, 195, G5, 'X');
   g.text(192, 10, 'oooo');
   g.ground(196, 215, G5);
   g.set(200, 11, '5');
-  g.set(204, 10, '8');
   g.set(207, 11, '5');
   g.text(210, 8, 'BCB');
   g.sea(216, 236, G5);
@@ -1530,6 +1513,8 @@ function nileDawn() {
   g.ground(237, 249, G5);
   g.set(240, 11, '5');
   g.set(245, 11, 'E');
+  g.set(7, 11, '@');
+  g.set(115, 11, '@');
   return g.rows();
 }
 
@@ -1543,7 +1528,6 @@ function kingsValley() {
   g.set(6, 11, 'L');
   g.text(8, 11, 'o o o');
   g.text(10, 8, 'B?B');
-  g.set(16, 11, '6');
   g.set(22, 2, '[');
   g.set(26, 11, '5');
   // Lesson: the floor gives way.
@@ -1553,7 +1537,6 @@ function kingsValley() {
   g.set(38, 11, 'L');
   g.set(42, 11, '5');
   g.set(46, 2, '9');
-  g.set(48, 11, '5');
   g.set(50, 2, '[');
   g.set(54, 11, '6');
   // Pull the lever and race the rotating door before it swings shut.
@@ -1571,11 +1554,9 @@ function kingsValley() {
   g.ground(83, 124, G5);
   g.set(85, 11, 'c');
   g.text(88, 8, 'BFB');
-  g.set(93, 11, '6');
   g.set(97, 2, '[');
   g.set(100, 11, '6');
   g.set(101, 2, '[');
-  g.set(105, 11, '5');
   g.set(109, 2, '9');
   gateway(g, 118, 6, 1);
   g.set(115, 11, '5');
@@ -1599,20 +1580,18 @@ function kingsValley() {
   g.ground(175, 239, G5);
   g.set(178, 11, '6');
   gateway(g, 188, 6, 1);
-  g.set(186, 11, '5');
   g.set(192, 2, '[');
   g.set(195, 2, '[');
   g.set(196, 11, '6');
-  g.set(199, 11, '7');
   g.text(201, 8, 'B?B');
   g.set(204, 11, '6');
-  g.set(209, 11, '5');
   g.set(213, 2, '9');
   g.set(216, 11, '7');
   g.set(220, 11, '6');
-  g.set(226, 11, '5');
   g.set(230, 11, 'L');
   g.set(235, 11, 'E');
+  g.set(7, 11, '@');
+  g.set(87, 11, '@');
   return g.rows();
 }
 
@@ -1624,8 +1603,6 @@ function karnak() {
   g.set(3, 11, 'P');
   g.text(6, 11, 'o o o');
   g.text(9, 8, 'B?B');
-  g.set(14, 11, '5');
-  g.set(19, 10, '8');
   // Broken lotus columns over a sand pit.
   g.rect(27, 9, 28, 14, '/');
   g.rect(31, 8, 32, 14, '/');
@@ -1634,7 +1611,6 @@ function karnak() {
   g.rect(43, 9, 44, 14, '/');
   g.text(27, 7, 'oo  oo  oo  oo  oo');
   g.set(31, 7, '7');
-  g.set(39, 7, '7');
   g.set(46, 9, '8');
   g.ground(45, 90, G5);
   g.set(49, 11, '5');
@@ -1644,13 +1620,11 @@ function karnak() {
   g.text(63, 11, 'o o');
   // The hypostyle hall: a roof and crushing pillars on a beat.
   g.rect(66, 0, 88, 2);
-  g.set(68, 11, '5');
   g.set(70, 3, '[');
   g.set(72, 11, '6');
   g.set(74, 3, '[');
   g.set(76, 3, '9');
   g.set(78, 3, '[');
-  g.set(80, 11, '5');
   g.set(82, 3, '[');
   g.set(86, 3, '9');
   g.set(92, 11, 'c');
@@ -1658,8 +1632,6 @@ function karnak() {
   g.text(95, 8, 'BFB');
   g.rect(100, 9, 103, 11);
   slide(g, 104, 10, 2, ';');
-  g.set(99, 11, '7');
-  g.set(108, 10, '8');
   g.ground(114, 165, G5);
   g.set(117, 11, '7');
   // Secret: lotus columns up to the fanoos on the tallest capital.
@@ -1670,20 +1642,16 @@ function karnak() {
   g.set(127, 2, 'G');
   g.set(125, 3, '8');
   g.set(131, 11, '5');
-  g.set(135, 11, '6');
   gateway(g, 146, 8);
   g.set(142, 11, '7');
   g.set(144, 5, '9');
   g.set(148, 5, '9');
   g.set(152, 11, '6');
-  g.set(156, 11, '5');
   g.set(160, 10, '8');
-  g.set(162, 11, '5');
   // The boss court: torches for when the moon goes dark, crushing
   // pillars from the architrave, ledges to escape the shockwaves.
   g.ground(166, 219, G5);
   g.set(170, 11, '6');
-  g.set(175, 11, '7');
   g.rect(184, 0, 218, 1);
   g.set(188, 11, 'L');
   g.set(212, 11, 'L');
@@ -1694,6 +1662,9 @@ function karnak() {
   g.rect(219, 0, 219, 11);
   g.set(200, 11, 'Z');
   g.set(215, 11, 'E');
+  g.set(7, 11, '@');
+  g.set(94, 11, '@');
+  g.set(178, 8, '!');
   return g.rows();
 }
 
