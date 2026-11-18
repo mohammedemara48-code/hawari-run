@@ -279,7 +279,7 @@ await shot('14-w4-l1-corniche.png');
   assert.equal((await hero()).power, 0, 'stomping a jellyfish stings');
   assert.ok(await ev(() => window.T.e.active), 'and it is still there');
   await safe();
-  await ev(() => window.T.s.enemies.clear(true, true));
+  await ev(() => void window.T.s.enemies.clear(true, true));
   // Beach ball: bounces along; stomp it and it pops, launching you.
   const g = { x: 5 * 24 + 12, feet: 11 * 24 };
   await ev((g) => window.T.place(g.x - 110, g.feet), g);
@@ -316,7 +316,7 @@ await shot('14-w4-l1-corniche.png');
   const states = await sample(2500, () => window.T.e.getData('state'));
   assert.ok(states.includes('dive'), 'the storm gull dives');
   await shot('14-w4-storm-gull.png');
-  await ev(() => window.T.s.enemies.clear(true, true));
+  await ev(() => void window.T.s.enemies.clear(true, true));
   log('jellyfish / beach ball / umbrella / storm gull');
 }
 

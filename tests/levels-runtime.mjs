@@ -251,7 +251,8 @@ const wind = await ev(() => {
   return { x: (w.x0 + w.x1) / 2, y: w.y1, dir: w.dir };
 });
 await ev(
-  () => ((window.T.s.zip = null), window.T.s.hero.body.setAllowGravity(true)),
+  () =>
+    void ((window.T.s.zip = null), window.T.s.hero.body.setAllowGravity(true)),
 );
 // Stand in the gust corridor: find the floor under its centre.
 await ev(([x, y]) => window.T.place(x, y - 60), [wind.x, wind.y]);
