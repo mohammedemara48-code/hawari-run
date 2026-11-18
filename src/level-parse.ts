@@ -492,16 +492,21 @@ export const WIRE = { gap: 16 };
 export const GLIDE = { fall: 70, wind: 1.9, lift: 520 };
 /** Wet tiles: how fast you can change speed on them (vs 1000 / 1400). */
 export const WET = { accel: 240, decel: 110 };
+/** How long a diving bird warns before it dives, and its rest after. */
+export const BIRD_TELL_MS = 950,
+  BIRD_REST_MS = 2400;
 /** Default gusts (Cairo rooftops): push px/s, ms on, ms off. */
 export const GUST = { push: 150, on: 2600, off: 1600 };
 /** Is a wave at spot `col` breaking (or foaming) at time t (s)? */
 export function waveState(
-  w: { period: number; warn: number; crash: number },
+  w: { period: number; warn: number; crash: number; roll?: number },
   col: number,
   t: number,
 ): 'calm' | 'warn' | 'crash' {
-  // Neighbouring spots break in a rolling sequence along the wall.
-  const k = (((t + col * 0.29) % w.period) + w.period) % w.period;
+  // Neighbouring spots break in a rolling sequence along the wall (or all
+  // together when roll is 0).
+  const roll = w.roll ?? 0.29;
+  const k = (((t + col * roll) % w.period) + w.period) % w.period;
   if (k < w.warn) return 'warn';
   if (k < w.warn + w.crash) return 'crash';
   return 'calm';

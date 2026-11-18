@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { TILE } from '../src/level-data';
-import { parseLevel, waveState } from '../src/level-parse';
+import {
+  BIRD_REST_MS,
+  BIRD_TELL_MS,
+  parseLevel,
+  waveState,
+} from '../src/level-parse';
 import { standable } from './level-graph';
 
 // قلعة قايتباي, played with the enemies on (v2.0.4 playtest).
@@ -76,5 +81,33 @@ describe('قلعة قايتباي with enemies', () => {
       (e) => e.kind === 'ball' && e.col >= 90 && e.col <= 125,
     );
     expect(top.length).toBe(1);
+  });
+  // v2.0.5: «الغراب بينزل أول ما يكون تحته… الموجات اتنين ورا بعض».
+  it('gives the birds a real warning and a rest between dives', () => {
+    expect(BIRD_TELL_MS).toBeGreaterThanOrEqual(800);
+    expect(BIRD_REST_MS).toBeGreaterThanOrEqual(1500);
+  });
+  it('breaks the waves of a run together, with a long calm between', () => {
+    const w = L.meta.waves!;
+    expect(w.roll).toBe(0);
+    expect(w.period - w.warn - w.crash).toBeGreaterThanOrEqual(2);
+    expect(w.warn).toBeGreaterThanOrEqual(0.8);
+  });
+  it('hands out a ful box, a chili box and an umbrella at the start and the checkpoint', () => {
+    const cp = L.checkpoint!.col;
+    const firstEnemy = Math.min(...L.enemies.map((e) => e.col));
+    for (const [from, to] of [
+      [0, firstEnemy],
+      [cp - 4, cp + 6],
+    ]) {
+      const kit = L.boxes.filter((b) => b.col >= from && b.col <= to);
+      expect(kit.map((b) => b.content)).toEqual(
+        expect.arrayContaining(['food', 'chili']),
+      );
+      expect(
+        L.stands.some((p) => p.col >= from && p.col <= to),
+        `umbrella ${from}-${to}`,
+      ).toBe(true);
+    }
   });
 });

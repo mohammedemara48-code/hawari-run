@@ -64,6 +64,23 @@ export const WEAPONS: Record<number, WorldWeapon> = {
     gravityY: -200,
     bounce: false,
   },
+  // اسكندرية: the same chili, lobbed up in an arc so it can reach the
+  // storm gulls overhead (and still comes down on the beach balls).
+  3: {
+    id: 'chili',
+    item: 'chili',
+    projectile: 'fire',
+    sfx: 'fire',
+    short: 'شطة',
+    armedLabel: 'شطة نار',
+    readyLabel: 'ارمي الشطة',
+    lockedLabel: 'الشطة مقفولة: كُل شطة من الصندوق',
+    toast: 'شطة نار! ارميها لفوق على النوارس',
+    vx: 300,
+    vy: -500,
+    gravityY: -350,
+    bounce: true,
+  },
 };
 
 export function worldWeapon(world: number): WorldWeapon {

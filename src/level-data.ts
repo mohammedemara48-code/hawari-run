@@ -140,7 +140,7 @@ export interface LevelMeta {
    * the Alexandrian storm gull. */
   bossKind?: 'fatwa' | 'buffalo' | 'crab' | 'gull';
   /** Crashing waves: every `period` s, after `warn` s of foam (World 4). */
-  waves?: { period: number; warn: number; crash: number };
+  waves?: { period: number; warn: number; crash: number; roll?: number };
   /** Gust strength (px/s push) and rhythm (ms on / off). */
   gust?: { push: number; on: number; off: number };
   /** Winter storm (نوة): rain, lightning and wet everything. */
@@ -1230,7 +1230,11 @@ function qaitbay() {
   g.ground(0, 22, G4);
   g.set(3, 10, 'P');
   g.text(6, 10, 'o o o');
-  g.text(9, 7, 'B?B');
+  // Safe start before any enemy: a ful box to grow, a chili box (thrown up
+  // in an arc in Alexandria, so it reaches the gulls) and an umbrella to
+  // glide over the tide pools.
+  g.text(5, 7, 'BFBCB');
+  g.set(11, 10, '(');
   g.run(12, 22, G4, '$');
   g.set(15, 10, '*');
   g.set(20, 10, '*');
@@ -1241,24 +1245,33 @@ function qaitbay() {
   g.rect(26, 10, 27, 11);
   g.text(25, 8, 'o o');
   g.ground(31, 60, G4);
-  g.run(31, 44, G4, '$');
-  // Two waves, not three: breaking toward you on wet tiles, three in a row
-  // left almost no gap to run through.
-  g.set(34, 10, '*');
-  g.set(42, 10, '*');
+  // Dry stones to land on out of the tide pool and wait for the waves, then
+  // two waves that break together: run past both in the calm between.
+  // A dry stone between the two waves, out of reach of both: small بلبل
+  // can stop there and wait out the next one.
+  g.run(36, 38, G4, '$');
+  g.run(42, 44, G4, '$');
+  g.set(37, 10, '*');
+  g.set(43, 10, '*');
   g.set(36, 4, '1');
-  g.set(46, 7, '3');
+  g.set(47, 7, '3');
   g.text(49, 7, 'BCB');
-  g.set(54, 10, '4');
   g.set(57, 10, '(');
   g.sea(61, 72, 12);
   g.set(64, 13, '2');
   g.set(69, 12, '2');
   g.rect(66, 10, 67, 11);
   g.text(62, 8, 'o o o o o');
+  // A stone at the water line by each far bank, so you climb out with a
+  // normal one-step jump instead of treading water against the wall.
+  g.rect(71, 12, 72, 12);
+  g.rect(29, 12, 30, 12);
   // The fort walls: climb the stepped bastion in the gale.
   g.ground(73, 128, G4);
   g.set(76, 10, 'c');
+  // The same kit again just past the checkpoint, for a respawn.
+  g.text(76, 7, 'BFBC');
+  g.set(79, 10, '(');
   g.rect(82, 8, 128, 10);
   g.rect(90, 5, 128, 7);
   g.run(82, 89, 8, '$');
@@ -1266,9 +1279,9 @@ function qaitbay() {
   // Gulls over the bastion fly above head height, like everywhere else,
   // and not right over the step up from the slippery ledge (there they sat
   // in the arc of the only jump up).
-  g.set(108, 1, '1');
+  // Not over the wave on the wet ledge either: one danger at a time.
+  g.set(100, 1, '1');
   g.text(96, 1, 'B?B');
-  g.set(100, 4, '3');
   g.run(104, 114, 5, '$');
   g.set(108, 4, '*');
   // One beach ball on the bastion. Balls used to roll off it straight
@@ -1282,12 +1295,10 @@ function qaitbay() {
   g.rect(129, 8, 132, 10);
   g.ground(129, 160, G4);
   g.text(136, 7, 'BFB');
-  g.run(140, 152, G4, '$');
+  // One wave in the courtyard, on a short wet patch.
+  g.run(140, 146, G4, '$');
   g.set(143, 10, '*');
-  g.set(148, 10, '*');
   g.set(146, 4, '1');
-  g.set(154, 10, '4');
-  g.set(157, 7, '3');
   // Gale: the wind changes its mind across the battlements.
   g.set(84, 2, '>');
   g.set(126, 4, '>');
@@ -1549,7 +1560,9 @@ export const LEVELS: LevelMeta[] = [
     time: 250,
     dark: 0.15,
     storm: true,
-    waves: { period: 2.8, warn: 0.85, crash: 0.8 },
+    // The waves on the keep break together, with a long calm between:
+    // foam for a second, the crash, then two seconds to run through.
+    waves: { period: 4.6, warn: 1.1, crash: 0.8, roll: 0 },
     gust: { push: 200, on: 2200, off: 1500 },
     boss: true,
     mechanic: 'النوة: مطر وريح متقلّبة وموج + الزعيم',

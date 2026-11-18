@@ -47,6 +47,8 @@ import {
 import { PHYSICS } from './levels';
 import { LEVELS, TILE, WORLDS } from './level-data';
 import {
+  BIRD_REST_MS,
+  BIRD_TELL_MS,
   BOUNCE,
   CANAL,
   DONKEY,
@@ -1325,7 +1327,11 @@ export class Alley extends Phaser.Scene {
     this.physics.add.collider(hero, this.enemies, (_p, e) =>
       this.contact(e as Sprite),
     );
-    this.physics.add.overlap(hero, this.hazards, () => this.hurt());
+    this.physics.add.overlap(hero, this.hazards, (_h, hz) =>
+      (hz as Sprite).getData('kind') === 'bolt'
+        ? this.hurt('bolt', true)
+        : this.hurt(),
+    );
     this.physics.add.collider(this.hazards, this.terrain, (h) => {
       const s = h as Sprite;
       if (['bone', 'clod', 'shell', 'bubble'].includes(s.getData('kind'))) {
@@ -1622,6 +1628,50 @@ export class Alley extends Phaser.Scene {
   spawnX() {
     const cp = this.spec.checkpoint;
     return this.checkpoint && cp.x >= 0 ? cp.x : this.spec.start.x;
+  }
+  /** A diving bird warns first: it stops, shakes and flashes with a "!"
+   * over its head for BIRD_TELL_MS, then dives in a straight line at the
+   * spot where بلبل was when the warning started (no homing), so walking
+   * away during the warning is always enough. */
+  birdTell(e: Sprite, time: number, fx: string) {
+    e.setData('state', 'tell')
+      .setData('until', time + BIRD_TELL_MS)
+      .setData('target', { x: this.hero.x, y: this.hero.y });
+    body(e).setVelocity(0, 0);
+    const mark = this.add
+      .text(e.x, e.y - 26, '!', {
+        fontFamily: 'Changa, Tahoma',
+        fontSize: '22px',
+        color: '#ffe14a',
+        stroke: '#5a1010',
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setDepth(40);
+    e.setData('mark', mark);
+    e.once('destroy', () => mark.destroy());
+    sound.fx(fx);
+  }
+  /** Runs the warning; returns true while the bird is still warning, and
+   * launches the dive (at `speed` px/s) when the warning is over. */
+  birdTelling(e: Sprite, time: number, speed: number) {
+    const mark = e.getData('mark') as Phaser.GameObjects.Text | undefined;
+    if (time < e.getData('until')) {
+      body(e).setVelocity(Math.sin(time / 22) * 40, 0);
+      e.setTint(Math.floor(time / 90) % 2 ? 0xff7a6a : 0xffffff);
+      mark?.setPosition(e.x, e.y - 26 + Math.sin(time / 60) * 2);
+      return true;
+    }
+    mark?.destroy();
+    e.setData('mark', undefined).clearTint();
+    const t = e.getData('target') as { x: number; y: number };
+    const d = Phaser.Math.Distance.Between(e.x, e.y, t.x, t.y);
+    e.setData('state', 'dive').setData(
+      'until',
+      time + (d / speed) * 1000 + 120,
+    );
+    this.physics.moveTo(e, t.x, t.y, speed);
+    return false;
   }
   nearSpawn(x: number) {
     return Math.abs(x - this.spawnX()) < SPAWN_CLEAR;
@@ -2141,13 +2191,29 @@ export class Alley extends Phaser.Scene {
       this.hurtUntil = this.time.now + 250;
     } else this.hurt(kind);
   }
-  hurt(source = 'hit') {
+  /** `soft`: a wave or a lightning bolt. These knock small بلبل back
+   * instead of killing him (and still cost a big one his growth). */
+  hurt(source = 'hit', soft = false) {
     if (
       this.time.now < this.hurtUntil ||
       this.time.now < this.invincible ||
       this.mode !== 'play'
     )
       return;
+    if (soft && hitIsFatal(this.power)) {
+      this.lastHurtBy = source;
+      this.unstickHero();
+      this.cameras.main.shake(120, 0.005);
+      this.hero.setVelocity(-this.facing * 160, -260);
+      this.hero.setTintFill(0xffffff);
+      this.time.delayedCall(
+        90,
+        () => this.hero?.active && this.hero.clearTint(),
+      );
+      this.grantIframes();
+      sound.fx('powerdown');
+      return;
+    }
     this.lastHurtBy = source;
     dropUmbrella(this);
     this.cameras.main.shake(160, 0.007);
@@ -2388,7 +2454,8 @@ export class Alley extends Phaser.Scene {
         (this.bossKind === 'crab' || this.bossKind === 'gull') &&
         this.bossPhase() === 3
       )
-        for (const dx of [-140, 140]) {
+        // The storm gull calls in no gulls: his lightning is enough.
+        for (const dx of this.bossKind === 'gull' ? [] : [-140, 140]) {
           const e = this.enemy(
             Phaser.Math.Clamp(boss.x + dx, s.arenaX + 60, this.L.width - 60),
             3 * TILE,
@@ -3662,22 +3729,22 @@ export class Alley extends Phaser.Scene {
           !this.nearSpawn(this.hero.x) &&
           !this.nearSpawn(e.x)
         ) {
-          e.setData('state', 'dive').setData('until', time + 1000);
-          const lead = body(this.hero).velocity.x * 0.35;
-          this.physics.moveTo(e, this.hero.x + lead, this.hero.y, 290);
-          sound.fx('caw');
+          this.birdTell(e, time, 'caw');
         }
+      } else if (state === 'tell') {
+        frame(Math.floor(time / 50) % 3);
+        this.birdTelling(e, time, 250);
       } else if (state === 'dive') {
         frame(3);
         if (time > e.getData('until') || eb.blocked.down) {
           e.setData('state', 'climb');
-          eb.setVelocity(eb.velocity.x * 0.8, -170);
+          eb.setVelocity(eb.velocity.x * 0.2, -170);
         }
       } else {
         if (e.y < home.y + 20) this.physics.moveTo(e, home.x, home.y, 150);
         frame(Math.floor(time / 60) % 3);
         if (dist(home.x, home.y) < 10)
-          e.setData('state', 'walk').setData('until', time + 1100);
+          e.setData('state', 'walk').setData('until', time + BIRD_REST_MS);
       }
       e.setFlipX(eb.velocity.x > 0);
       return;
@@ -3696,9 +3763,11 @@ export class Alley extends Phaser.Scene {
           dy < 230 &&
           time > e.getData('until')
         ) {
-          e.setData('state', 'dive').setData('until', time + 900);
-          this.physics.moveTo(e, this.hero.x, this.hero.y, 235);
+          this.birdTell(e, time, 'caw');
         }
+      } else if (state === 'tell') {
+        frame(Math.floor(time / 60) % 3);
+        this.birdTelling(e, time, 235);
       } else if (state === 'dive') {
         frame(3);
         if (time > e.getData('until') || eb.blocked.down)
@@ -3707,7 +3776,7 @@ export class Alley extends Phaser.Scene {
         this.physics.moveTo(e, home.x, home.y, 130);
         frame(Math.floor(time / 70) % 3);
         if (dist(home.x, home.y) < 8)
-          e.setData('state', 'walk').setData('until', time + 1200);
+          e.setData('state', 'walk').setData('until', time + BIRD_REST_MS);
       }
       e.setFlipX(eb.velocity.x < 0);
       return;

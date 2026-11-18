@@ -68,7 +68,7 @@ const balls = () =>
       }),
   );
 const n0 = (await balls()).length;
-assert.ok(n0 >= 3, 'beach balls on the level');
+assert.ok(n0 >= 1, 'beach balls on the level');
 for (let i = 0; i < 12; i++) {
   await wait(1000);
   for (const b of await balls()) {
@@ -129,12 +129,17 @@ assert.ok(
 );
 assert.ok(arena.x >= arena.cam, 'hero on screen');
 
-// 4. The storm gulls he calls in for the last round wheel about first:
-// they don't dive at بلبل while he is still bouncing off the boss.
+// 4. v2.0.5: he calls in no gulls for the last round (one danger at a
+// time), and nothing dives at بلبل while he is bouncing off the boss.
 const quick = await ev(async () => {
   const s = window.S;
   s.bossState.hp = 3;
   s.hero.body.reset(s.boss.x, s.boss.y - 60);
+  const skuas = () =>
+    s.enemies
+      .getChildren()
+      .filter((e) => e.active && e.getData('kind') === 'skua').length;
+  const base = skuas();
   s.bossDamage(1);
   const t0 = window.performance.now();
   let dive = false,
@@ -144,7 +149,7 @@ const quick = await ev(async () => {
       const g = s.enemies
         .getChildren()
         .filter((e) => e.active && e.getData('kind') === 'skua');
-      called = Math.max(called, g.length);
+      called = Math.max(called, g.length - base);
       if (g.some((e) => e.getData('state') === 'dive')) dive = true;
       if (window.performance.now() - t0 > 1200) r();
       else window.requestAnimationFrame(tick);
@@ -154,7 +159,7 @@ const quick = await ev(async () => {
   return { dive, called, phase: s.bossPhase() };
 });
 assert.equal(quick.phase, 3);
-assert.ok(quick.called >= 2, 'gulls called in for the last round');
+assert.equal(quick.called, 0, 'no gulls called in for the last round');
 assert.equal(quick.dive, false, 'called-in gull dived straight away');
 
 assert.deepEqual(errors, []);

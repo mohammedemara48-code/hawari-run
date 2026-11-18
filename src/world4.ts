@@ -6,7 +6,7 @@
 import Phaser from 'phaser';
 import type { Alley } from './game';
 import { TILE } from './level-data';
-import { GLIDE, TRAM, waveState, type Pt } from './level-parse';
+import { BIRD_REST_MS, GLIDE, TRAM, waveState, type Pt } from './level-parse';
 import { sound } from './audio';
 import { toast } from './ui';
 
@@ -192,7 +192,8 @@ export function updateAlexWorld(s: Alley, time: number, dt: number) {
     for (const w of w4.waves) {
       const st = waveState(meta.waves, w.col, s.clock);
       const k =
-        (((((s.clock + w.col * 0.29) % meta.waves.period) + meta.waves.period) %
+        (((((s.clock + w.col * (meta.waves.roll ?? 0.29)) % meta.waves.period) +
+          meta.waves.period) %
           meta.waves.period) -
           meta.waves.warn) /
         meta.waves.crash;
@@ -217,7 +218,7 @@ export function updateAlexWorld(s: Alley, time: number, dt: number) {
         if (hit) {
           s.hint('wave', 'الموجة بتضرب! استنى الرغوة تهدى وبعدين اجري');
           const before = s.hurtUntil;
-          s.hurt();
+          s.hurt('wave', true);
           if (s.mode === 'play' && s.hurtUntil !== before)
             s.hero.setVelocity(s.hero.x < w.x ? -220 : 220, -300);
         }
@@ -436,22 +437,22 @@ export function updateAlexEnemy(s: Alley, e: Sprite, time: number) {
         !s.nearSpawn(s.hero.x) &&
         !s.nearSpawn(e.x)
       ) {
-        e.setData('state', 'dive').setData('until', time + 900);
-        const lead = body(s.hero).velocity.x * 0.45;
-        s.physics.moveTo(e, s.hero.x + lead, s.hero.y, 320);
-        sound.fx('gull');
+        s.birdTell(e, time, 'gull');
       }
+    } else if (state === 'tell') {
+      frame(Math.floor(time / 45) % 3);
+      s.birdTelling(e, time, 240);
     } else if (state === 'dive') {
       frame(3);
       if (time > e.getData('until') || eb.blocked.down) {
         e.setData('state', 'climb');
-        eb.setVelocity(eb.velocity.x * 0.8, -190);
+        eb.setVelocity(eb.velocity.x * 0.2, -190);
       }
     } else {
       if (e.y < home.y + 20) s.physics.moveTo(e, home.x, home.y, 170);
       frame(Math.floor(time / 55) % 3);
       if (Phaser.Math.Distance.Between(e.x, e.y, home.x, home.y) < 10)
-        e.setData('state', 'walk').setData('until', time + 1000);
+        e.setData('state', 'walk').setData('until', time + BIRD_REST_MS);
     }
     e.setFlipX(eb.velocity.x > 0);
     return true;
@@ -576,18 +577,43 @@ export function updateStormBoss(s: Alley, time: number) {
         bb.setVelocity(0, 0);
         sound.fx('screech');
         st.state = 'tell';
-        st.until = time + [700, 560, 440][phase - 1];
+        // A long, clear warning, and he dives at where بلبل stood when it
+        // started, so stepping away is enough.
+        st.until = time + [1000, 900, 850][phase - 1];
+        boss.setData('aimX', s.hero.x);
+        const mark = s.add
+          .text(boss.x, boss.y - 46, '!', {
+            fontFamily: 'Changa, Tahoma',
+            fontSize: '30px',
+            color: '#ffe14a',
+            stroke: '#5a1010',
+            strokeThickness: 6,
+          })
+          .setOrigin(0.5)
+          .setDepth(40);
+        (
+          boss.getData('mark') as Phaser.GameObjects.Text | undefined
+        )?.destroy();
+        boss.setData('mark', mark);
+        boss.once('destroy', () => mark.destroy());
       }
       break;
     }
     case 'tell':
       tex('tell');
+      (
+        boss.getData('mark') as Phaser.GameObjects.Text | undefined
+      )?.setPosition(boss.x, boss.y - 46);
       bb.setVelocity(Math.sin(time / 25) * 30, -20);
       boss.setTint(Math.floor(time / 80) % 2 ? 0xffb0a0 : 0xffffff);
       if (over) {
         boss.clearTint();
-        // Aim at where the hero is standing, carry on into the roof.
-        const ang = Phaser.Math.Angle.Between(boss.x, boss.y, s.hero.x, floor);
+        (
+          boss.getData('mark') as Phaser.GameObjects.Text | undefined
+        )?.destroy();
+        // Aim at where the hero stood when the warning began.
+        const aimX = (boss.getData('aimX') as number) ?? s.hero.x;
+        const ang = Phaser.Math.Angle.Between(boss.x, boss.y, aimX, floor);
         const v = [330, 380, 430][phase - 1];
         bb.setVelocity(Math.cos(ang) * v, Math.max(160, Math.sin(ang) * v));
         st.volley = Math.sign(bb.velocity.x) || 1;
@@ -609,7 +635,8 @@ export function updateStormBoss(s: Alley, time: number) {
         sound.fx('shock');
         s.burst(boss.x - st.volley * 40, bb.bottom, 0xa89e8a, 12);
         st.state = 'stuck';
-        st.until = time + [1600, 1350, 1100][phase - 1];
+        // Long enough to walk over and jump on his back on a phone.
+        st.until = time + [2300, 2000, 1700][phase - 1];
       }
       break;
     }
@@ -636,14 +663,18 @@ export function updateStormBoss(s: Alley, time: number) {
           );
         } else if (phase === 3) {
           st.state = 'strike';
-          st.until = time + 1100;
+          // The marks blink for over a second before the bolts fall.
+          st.until = time + 1400;
           sound.fx('screech');
-          for (const off of [-90, 0, 90]) {
-            const x = Phaser.Math.Clamp(
-              s.hero.x + off,
-              st.arenaX + 40,
-              s.L.width - 40,
-            );
+          // One bolt, never on بلبل: it falls ahead of him or behind him,
+          // whichever side has room.
+          {
+            const lo = st.arenaX + 40,
+              hi = s.L.width - 40;
+            let side = Math.random() < 0.5 ? -1 : 1;
+            if (s.hero.x + side * 120 < lo || s.hero.x + side * 120 > hi)
+              side = -side;
+            const x = Phaser.Math.Clamp(s.hero.x + side * 120, lo, hi);
             const img = s.add
               .image(x, floor + 4, 'strike-mark')
               .setDepth(8)
@@ -655,7 +686,9 @@ export function updateStormBoss(s: Alley, time: number) {
               repeat: 4,
               duration: 90,
             });
-            w4.bolts.push({ img, at: time + 800, x });
+            if (Math.abs(x - s.hero.x) >= 60)
+              w4.bolts.push({ img, at: time + 1100, x });
+            else img.destroy();
           }
         } else rise(s, time);
       }
@@ -703,7 +736,10 @@ export function stormContact(s: Alley, fromAbove: boolean) {
     if (s.time.now >= st.invuln) s.bossDamage(1);
     return;
   }
-  if (st.state === 'stuck' || st.state === 'hurt') {
+  // Pulling his beak out, flapping or calling the lightning, and flying
+  // off, he shoves you aside but doesn't hurt: you were allowed right next
+  // to him a moment ago.
+  if (['stuck', 'hurt', 'rise', 'gust', 'strike'].includes(st.state)) {
     s.hero.setVelocityX(s.hero.x < boss.x ? -140 : 140);
     return;
   }
