@@ -1457,7 +1457,6 @@ function nileDawn() {
   g.set(26, G5, 'U');
   g.set(45, G5, 'I');
   g.text(28, 9, 'o o o o o o');
-  g.set(30, 10, '8');
   g.ground(53, 80, G5);
   g.set(55, 11, '7');
   // A balloon lifts you to the palm-top ledge.
@@ -1492,7 +1491,6 @@ function nileDawn() {
   g.set(170, G5, 'I');
   g.set(165, 9, 'z');
   g.text(158, 9, 'o o o');
-  g.set(150, 8, '8');
   g.set(168, 6, '8');
   g.ground(176, 191, G5);
   g.text(179, 8, 'B?B');
@@ -1938,7 +1936,7 @@ export const LEVELS: LevelMeta[] = [
     subtitle: 'الفجر على النيل… اركب الفلوكة والبالونة قبل ما التيار يشدّك',
     theme: 'nile',
     timeOfDay: 'nile-dawn',
-    time: 230,
+    time: 270,
     dark: 0,
     current: -80,
     mechanic: 'فلايك على النيل وبالونات بتطلع وتنزل وتيار شادد',

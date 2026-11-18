@@ -210,7 +210,7 @@ const play = async (index) => {
   let stuckX = 0,
     stuckAt = Date.now();
   const t0 = Date.now();
-  const limit = 150000;
+  const limit = Number(process.env.LIMIT || 240000);
   while (Date.now() - t0 < limit) {
     const st = await state();
     if (st.lives < lives) {
@@ -227,6 +227,17 @@ const play = async (index) => {
       continue;
     }
     const now = Date.now();
+    if (process.env.TRACE && now - (play.lastTrace || 0) > 5000) {
+      play.lastTrace = now;
+      console.log(
+        'trace',
+        Math.round(st.x / 24),
+        Math.round(st.remaining),
+        st.swim ? 'swim' : st.ride ? 'ride' : st.ground ? 'ground' : 'air',
+        st.moverAhead ? 'moverAhead' : '',
+        st.edge ? 'edge' : '',
+      );
+    }
     if (Math.abs(st.x - stuckX) > 30) {
       stuckX = st.x;
       stuckAt = now;
@@ -287,6 +298,7 @@ const play = async (index) => {
     await wait(30);
   }
   await release();
+  if (process.env.DEBUG_SHOTS) await shot(`_w5-end-${index}.png`);
   const end = await state();
   const report = {
     index,
