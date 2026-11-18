@@ -188,9 +188,10 @@ spare. Enemies /100 = enemies per 100 columns.
      away. Landing on top throws you up 640 px/s, which is sometimes the only
      way up.
 3. **The ground itself is a trap.**
-   - **Sand slides:** push you 150 px/s down the slope; acceleration drops
-     to 300 and braking to 120, and the graph allows only 4-column jumps off
-     them.
+   - **Sand slides:** carry you 150 px/s down the slope (standing still,
+     you're up to speed in a third of a second); acceleration drops to 300,
+     so walking back up is a crawl, and the graph allows only 4-column jumps
+     off them.
    - **Cracked slabs:** give way 0.25 s after you land (0.36 s elsewhere) and
      take 3.6 s to come back.
    - **Rotating stone doors:** a lever opens a door for 6.5 s. It ticks for the

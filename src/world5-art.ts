@@ -434,69 +434,241 @@ export function sphinxArt(
       b = Math.round((n & 255) * s * 1.06);
     return `rgb(${r},${g},${Math.min(255, b)})`;
   };
-  const X = (u: number) => (facing > 0 ? x + u : x + w - u),
-    ink = '#3a2412';
-  // Body: a long lion back, lower at the haunch.
-  const body = [
-    [X(4), y + h],
-    [X(6), y + 8],
-    [X(16), y + 3],
-    [X(w - 30), y + 1],
-    [X(w - 18), y + 5],
-    [X(w - 10), y + h],
+  // Drawn in a 96×48 box (u right, v down), mirrored when facing left;
+  // the ram head rises above the box and the paws reach past it.
+  const k = w / 96;
+  const P = (u: number, v: number): [number, number] => [
+    facing > 0 ? x + u * k : x + w - u * k,
+    y + (v * h) / 48,
   ];
-  poly(c, body, ink);
-  poly(
-    c,
-    body.map(([px, py]) => [px + (facing > 0 ? 1 : -1), py + 1]),
-    tone('#d2a064'),
-  );
-  // Haunch, tail curl and the forepaws.
-  disc(c, X(14), y + h - 12, 9, tone('#c08850'));
-  rect(c, Math.min(X(2), X(10)), y + h - 4, 8, 3, tone('#b07a44'));
-  rect(c, Math.min(X(w - 14), X(w + 6)), y + h - 6, 20, 5, tone('#d8aa6e'));
-  rect(c, Math.min(X(w - 14), X(w + 6)), y + h - 6, 20, 1, '#fff0c855');
-  // The ram head with its curled horn, beard-less, on a raised neck.
-  const hx = X(w - 16),
-    hy = y - 9;
-  poly(
-    c,
+  const ink = '#2e1c0e';
+  const base = tone('#d2a064'),
+    shade = tone('#a8743e'),
+    deep = tone('#8a5a2e'),
+    light = tone('#ecc488');
+  const shape = (pts: [number, number][], fill: string, outline = true) => {
+    const q = pts.map(([u, v]) => P(u, v));
+    if (outline)
+      for (const [dx, dy] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ])
+        poly(
+          c,
+          q.map(([px, py]) => [px + dx, py + dy]),
+          ink,
+        );
+    poly(c, q, fill);
+  };
+  const blob = (u: number, v: number, r: number, fill: string) => {
+    const [px, py] = P(u, v);
+    disc(c, px, py, r * k + 1, ink);
+    disc(c, px, py, r * k, fill);
+  };
+  // The long lion body: rump, dipping back, then the chest under the head.
+  shape(
     [
-      [hx, hy + 4],
-      [hx + facing * 12, hy + 2],
-      [hx + facing * 18, hy + 10],
-      [hx + facing * 14, hy + 18],
-      [hx - facing * 2, hy + 18],
+      [8, 16],
+      [14, 5],
+      [26, 1],
+      [44, 3],
+      [60, 4],
+      [70, 1],
+      [80, 3],
+      [86, 22],
+      [84, 44],
+      [24, 46],
+      [10, 40],
     ],
-    tone('#c8955a'),
+    base,
   );
-  // Nemes-like striped headcloth falling on the shoulders.
-  for (let i = 0; i < 4; i++)
-    rect(
-      c,
-      Math.min(hx - facing * 6, hx - facing * 2),
-      hy + 6 + i * 3,
-      4,
-      2,
-      i % 2 ? tone('#2a6a8a') : tone('#e8c88a'),
+  // Top light and belly shadow.
+  shape(
+    [
+      [14, 6],
+      [26, 2],
+      [44, 4],
+      [60, 5],
+      [60, 7],
+      [44, 6],
+      [26, 4],
+      [16, 9],
+    ],
+    light,
+    false,
+  );
+  shape(
+    [
+      [24, 40],
+      [84, 38],
+      [84, 44],
+      [24, 46],
+    ],
+    shade,
+    false,
+  );
+  // Rear haunch and the folded hind leg.
+  blob(22, 30, 13, shade);
+  blob(21, 29, 11, base);
+  blob(19, 26, 5, light);
+  shape(
+    [
+      [2, 48],
+      [4, 42],
+      [22, 41],
+      [28, 48],
+    ],
+    shade,
+  );
+  // Ribs of the lion's flank, cut in shallow relief.
+  for (const u of [40, 48, 56])
+    shape(
+      [
+        [u, 18],
+        [u + 2, 18],
+        [u + 3, 34],
+        [u + 1, 34],
+      ],
+      shade,
+      false,
     );
-  // Horn: a spiral disc on the side of the head.
-  disc(c, hx + facing * 5, hy + 8, 5, tone('#a8743e'));
-  disc(c, hx + facing * 5, hy + 8, 3, tone('#d8aa6e'));
-  disc(c, hx + facing * 5, hy + 8, 1.5, tone('#8a5a2e'));
-  rect(c, hx + facing * 12, hy + 7, 2, 2, '#1a100a');
-  // Small figure standing between the paws (an abstract statuette).
-  rect(c, Math.min(X(w - 8), X(w - 4)), y + h - 16, 4, 11, tone('#b07a44'));
-  // Weathering.
+  // Forelegs stretched forward onto the plinth, paws past the chest.
+  shape(
+    [
+      [66, 36],
+      [98, 37],
+      [104, 41],
+      [104, 48],
+      [66, 48],
+    ],
+    base,
+  );
+  shape(
+    [
+      [66, 44],
+      [104, 44],
+      [104, 48],
+      [66, 48],
+    ],
+    shade,
+    false,
+  );
+  for (const u of [98, 101])
+    shape(
+      [
+        [u, 45],
+        [u + 1, 45],
+        [u + 1, 48],
+        [u, 48],
+      ],
+      deep,
+      false,
+    );
+  // A little standing figure sheltered between the paws.
+  shape(
+    [
+      [88, 16],
+      [93, 16],
+      [94, 36],
+      [87, 36],
+    ],
+    shade,
+  );
+  blob(90.5, 13, 3, shade);
+  // Striped headcloth falling over the shoulders behind the head.
+  shape(
+    [
+      [66, -4],
+      [80, -8],
+      [86, 4],
+      [84, 20],
+      [70, 18],
+    ],
+    tone('#e0b878'),
+  );
   for (let i = 0; i < 5; i++)
-    rect(
-      c,
-      X(10 + hash(i, w) * (w - 30)),
-      y + 12 + hash(i, h) * (h - 16),
-      3,
-      1,
-      '#00000022',
+    shape(
+      [
+        [68, -1 + i * 4],
+        [84, -3 + i * 4],
+        [84, -1 + i * 4],
+        [68, 1 + i * 4],
+      ],
+      tone('#2a6a8a'),
+      false,
     );
+  // The ram head: long, gently convex muzzle pointing down the avenue.
+  shape(
+    [
+      [72, -14],
+      [80, -20],
+      [90, -17],
+      [100, -6],
+      [102, 0],
+      [98, 4],
+      [88, 4],
+      [78, 0],
+    ],
+    base,
+  );
+  shape(
+    [
+      [80, -19],
+      [90, -16],
+      [98, -7],
+      [96, -6],
+      [88, -14],
+      [80, -16],
+    ],
+    light,
+    false,
+  );
+  shape(
+    [
+      [86, 2],
+      [98, 2],
+      [98, 4],
+      [88, 4],
+    ],
+    shade,
+    false,
+  );
+  // The curled horn wrapping down round the ear, with its ridges.
+  blob(79, -6, 8.5, shade);
+  blob(79, -6, 6, base);
+  blob(80, -5, 3.5, shade);
+  blob(80.5, -4.5, 1.6, deep);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const [px, py] = P(79 + Math.cos(a) * 7.2, -6 + Math.sin(a) * 7.2);
+    rect(c, px, py, 1, 1, deep);
+  }
+  // Eye and nostril.
+  const [ex, ey] = P(90, -10);
+  rect(c, ex - 1, ey, 3, 2, '#1a100a');
+  rect(c, ex, ey, 1, 1, light);
+  const [nx, ny] = P(99, -3);
+  rect(c, nx - 1, ny, 2, 1, deep);
+  // A turquoise inlay on the brow band (painted, long faded).
+  shape(
+    [
+      [74, -12],
+      [82, -16],
+      [83, -14],
+      [75, -10],
+    ],
+    tone('#3aa8a0'),
+    false,
+  );
+  // Weathering: chips and cracks.
+  for (let i = 0; i < 7; i++) {
+    const [px, py] = P(14 + hash(i, w) * 64, 16 + hash(i, h) * 24);
+    rect(c, px, py, 3, 1, '#00000026');
+  }
+  const [cx, cy] = P(50, 22);
+  rect(c, cx, cy, 1, 6, '#00000030');
 }
 /** A lotus column: shaft cells, a papyrus-bundle base, an open lotus
  * capital on the top cell. */
@@ -645,17 +817,20 @@ export function makeLuxorProps(scene: Phaser.Scene) {
     for (const yy of [9, 15]) rect(c, 4, yy, 40, 1, '#d8b070');
     rect(c, 4, 20, 40, 1, '#5a3a1a');
   });
-  tex(scene, 'balloon-envelope', 96, 120, (c) => {
-    // Ropes to the basket.
+  // Tall enough that a hero stands in the basket under the burner, with
+  // the ropes running down to the basket's corners.
+  tex(scene, 'balloon-envelope', 96, 152, (c) => {
     c.strokeStyle = '#3a2a1a';
     c.lineWidth = 1;
     for (const [a, b] of [
-      [22, 26],
-      [74, 70],
+      [26, 25],
+      [38, 30],
+      [58, 66],
+      [70, 71],
     ]) {
       c.beginPath();
       c.moveTo(a, 92);
-      c.lineTo(b, 120);
+      c.lineTo(b, 152);
       c.stroke();
     }
     rect(c, 36, 96, 24, 6, '#3a2a1a');

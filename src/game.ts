@@ -3282,6 +3282,22 @@ export class Alley extends Phaser.Scene {
     for (const s of this.shots.getChildren() as Sprite[])
       light(s.x, s.y, 50, 0.9);
     for (const m of this.moverList) light(m.img.x + 24, m.img.y, 60, 0.6);
+    // Luxor: levers glow faintly and the stone doors catch the light, so the
+    // puzzles can be read in the tomb's dark.
+    if (this.w5)
+      for (const d of this.w5.doors) {
+        if (d.lever) light(d.lever.x, d.lever.y - 14, 46, 0.85);
+        light(d.x, (d.y0 + d.y1) / 2, d.open ? 80 : 52, 0.7);
+      }
+    // Crushing pillars: the carved head shows faintly, brighter as it shudders.
+    if (this.w5)
+      for (const p of this.w5.pillars)
+        light(
+          p.head.x,
+          p.head.y - 14,
+          p.state === 'warn' ? 60 : 38,
+          p.state === 'warn' ? 0.9 : 0.55,
+        );
   }
   updateWorld(time: number, dt: number) {
     const cam = this.cameras.main;
@@ -3574,7 +3590,7 @@ export class Alley extends Phaser.Scene {
               : 1000
           : grounded
             ? sand.sand
-              ? SAND.decel
+              ? SAND.carry
               : alex.wet
                 ? WET.decel
                 : 1400

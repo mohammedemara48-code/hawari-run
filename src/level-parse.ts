@@ -565,8 +565,9 @@ export const BOUNCE = {
   dish: 640,
   dishHold: 720,
 };
-/** World 5 mechanics. Sand slides: push (px/s) and how little grip you get. */
-export const SAND = { push: 150, accel: 300, decel: 120 };
+/** World 5 mechanics. Sand slides: push (px/s), the grip when walking
+ * (accel) and how fast it carries you when you stand still (carry). */
+export const SAND = { push: 150, accel: 300, carry: 420 };
 /** Hot-air balloon: basket width (tiles), climb (rows), cycle (s), how fast
  * it sinks under you (px/s) and how far (rows). */
 export const BALLOON = {

@@ -134,7 +134,7 @@ assert.equal(
   await page.locator('.world-pin.selected').getAttribute('data-world'),
   '3',
 );
-assert.equal(await page.locator('.world-pin.soon').count(), 1, 'only Luxor');
+assert.equal(await page.locator('.world-pin.soon').count(), 0, 'all open');
 assert.equal(await page.locator('.map-node:not([disabled])').count(), 1);
 await shot('14-map-world4-unlocked-desk.png');
 await page.locator('.map-node:not([disabled])').click();
@@ -563,9 +563,14 @@ await ev(() => {
   window.T.place(s.spec.exit.x, s.spec.exit.y - 1);
 });
 await wait(500);
-assert.equal(await ev(() => window.T.s.mode), 'win', 'world 4 done: the win');
-await shot('14-w4-win.png');
-log('boss: hover, screech, dive, stuck, gale, lightning, gulls, win');
+assert.equal(await ev(() => window.T.s.mode), 'clear', 'world 4 done');
+assert.match(
+  await page.locator('#clear-title').textContent(),
+  /الأقصر/,
+  'the road opens to Luxor',
+);
+await shot('14-w4-clear-to-luxor.png');
+log('boss: hover, screech, dive, stuck, gale, lightning, gulls, on to Luxor');
 
 assert.deepEqual(errors, [], 'no console errors');
 await browser.close();

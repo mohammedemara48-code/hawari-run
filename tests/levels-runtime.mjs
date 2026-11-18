@@ -511,8 +511,8 @@ assert.equal(
 );
 assert.equal(
   await page.locator('.world-pin.soon').count(),
-  1,
-  'only Luxor is still coming soon',
+  0,
+  'every world is open on the map',
 );
 await shot('13-map-world2.png');
 await page.locator('.world-pin[data-world="0"]').click();

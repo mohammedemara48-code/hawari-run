@@ -63,6 +63,8 @@ export interface W5 {
   sails: { img: Phaser.GameObjects.Image; boat: Img }[];
   /** Extra darkness over the level (the boss's last phase). */
   darkTarget: number;
+  /** The last sand slide stood on, so its push carries over each step. */
+  slide: { dir: number; at: number };
 }
 
 export function buildLuxor(s: Alley): W5 | undefined {
@@ -74,6 +76,7 @@ export function buildLuxor(s: Alley): W5 | undefined {
     sands: [],
     sails: [],
     darkTarget: 0,
+    slide: { dir: 0, at: -1e9 },
   };
   // Rotating doors: a stack of stone blocks on a pivot, solid until their
   // lever is pulled.
@@ -431,7 +434,25 @@ export function luxorMove(
   grounded: boolean,
   under: string,
 ): { push: number; sand: boolean } {
-  if (!grounded || !(under in SLIDE)) return { push: 0, sand: false };
+  const w5 = s.w5;
+  if (!w5) return { push: 0, sand: false };
+  const now = s.time.now;
+  if (grounded && !(under in SLIDE)) {
+    // Either foot on the sand counts, so you can't perch on a step's lip.
+    const hb = body(s.hero),
+      row = Math.floor((hb.bottom + 2) / TILE);
+    for (const x of [hb.left + 2, hb.right - 2]) {
+      const ch = s.L.at(Math.floor(x / TILE), row);
+      if (ch in SLIDE) under = ch;
+    }
+  }
+  if (!grounded || !(under in SLIDE)) {
+    // Tumbling down from one step to the next keeps the slide's momentum.
+    if (!grounded && now - w5.slide.at < 260)
+      return { push: w5.slide.dir * SAND.push, sand: true };
+    return { push: 0, sand: false };
+  }
+  w5.slide = { dir: SLIDE[under], at: now };
   s.hint('slide', 'الرمل بيزحلقك! نطّ بدري قبل ما يرميك');
   if (Math.floor(s.time.now / 90) % 2 === 0)
     s.burst(s.hero.x, body(s.hero).bottom, 0xe8c080, 1);
@@ -758,7 +779,11 @@ export function sandRain(s: Alley, n: number) {
       st.arenaX + 30,
       s.L.width - 40,
     );
-    dropSand(s, x, 2 * TILE + 4 - i * 26);
+    // Staggered so the clumps patter down one after another under the
+    // architrave (they would burst at once inside the roof stones).
+    s.time.delayedCall(i * 110, () => {
+      if (s.mode === 'play' && !st.defeated) dropSand(s, x, 2 * TILE + 6);
+    });
   }
 }
 /** Phase changes: helpers join, the pillars wake, the moon goes out. */

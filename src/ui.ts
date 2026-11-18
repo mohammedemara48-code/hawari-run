@@ -226,7 +226,8 @@ export function screen(which: Screen, details = '') {
       document.querySelector<HTMLButtonElement>(
         `[data-screen="${which}"] button`,
       );
-    first?.focus();
+    // preventScroll: a long modal (the ending) must open at its top.
+    first?.focus({ preventScroll: true });
   }
 }
 function text(id: string, value: string) {
@@ -417,6 +418,8 @@ export function ending(progress: Progress, levels: LevelMeta[], score: number) {
       : `لقيت ${ar(found)} من ${ar(levels.length)} فانوس دهبي… الباقي لسه مستخبّي في الخريطة`,
   );
   text('win-score', ar(score));
+  const modal = document.querySelector<HTMLElement>('[data-screen="win"]');
+  if (modal) modal.scrollTop = 0;
 }
 export function toast(text: string) {
   const el = document.getElementById('toast')!;

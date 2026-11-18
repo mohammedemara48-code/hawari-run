@@ -1850,14 +1850,15 @@ footer {
   margin-inline-start: 6px;
 }
 .credits {
-  height: 120px;
+  --credits-h: 120px;
+  height: var(--credits-h);
   overflow: hidden;
   margin: 6px 0 14px;
   mask-image: linear-gradient(transparent, #000 20%, #000 80%, transparent);
 }
 .credits-roll {
-  animation: credits-roll 26s linear 2.5s infinite;
-  padding-top: 120px;
+  animation: credits-roll 26s linear 1.2s infinite;
+  padding-top: var(--credits-h);
 }
 .credits-roll h3 {
   font-family: Changa;
@@ -1917,6 +1918,6 @@ footer {
     font-size: 8px;
   }
   .credits {
-    height: 70px;
+    --credits-h: 84px;
   }
 }
