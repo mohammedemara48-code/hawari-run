@@ -431,7 +431,10 @@ export function updateAlexEnemy(s: Alley, e: Sprite, time: number) {
         Math.abs(dx) < 200 &&
         dy > 10 &&
         dy < 280 &&
-        time > e.getData('until')
+        time > e.getData('until') &&
+        // Like the crows: never dive-bomb the start or the checkpoint.
+        !s.nearSpawn(s.hero.x) &&
+        !s.nearSpawn(e.x)
       ) {
         e.setData('state', 'dive').setData('until', time + 900);
         const lead = body(s.hero).velocity.x * 0.45;
@@ -478,10 +481,23 @@ export function updateAlexEnemy(s: Alley, e: Sprite, time: number) {
     frame(Math.floor(time / 110) % 4);
     return true;
   }
-  // Beach ball: bounces along, turning at walls.
+  // Beach ball: bounces along, turning at walls and at the edge of its
+  // ground, so it keeps to its own stretch instead of rolling off ledges
+  // onto the path below (or piling up in the tide pools).
   let d = (e.getData('dir') as number) || -1;
   if (eb.blocked.left) d = 1;
   if (eb.blocked.right) d = -1;
+  if (eb.blocked.down) {
+    // A step down of up to two rows is fine; a taller drop or water is not.
+    const row = Math.floor((eb.bottom + 4) / TILE);
+    const floorNear = (col: number) =>
+      [0, 1, 2].some((k) => s.standable(col, row + k));
+    for (let k = 1; k <= 2; k++)
+      if (!floorNear(Math.floor((eb.center.x + d * k * TILE) / TILE))) {
+        d = -d;
+        break;
+      }
+  }
   e.setData('dir', d).setVelocityX(d * 78);
   if (eb.blocked.down) {
     e.setVelocityY(e.getData('hop') ? -300 : -380);

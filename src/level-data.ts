@@ -1242,8 +1242,9 @@ function qaitbay() {
   g.text(25, 8, 'o o');
   g.ground(31, 60, G4);
   g.run(31, 44, G4, '$');
+  // Two waves, not three: breaking toward you on wet tiles, three in a row
+  // left almost no gap to run through.
   g.set(34, 10, '*');
-  g.set(38, 10, '*');
   g.set(42, 10, '*');
   g.set(36, 4, '1');
   g.set(46, 7, '3');
@@ -1262,18 +1263,21 @@ function qaitbay() {
   g.rect(90, 5, 128, 7);
   g.run(82, 89, 8, '$');
   g.set(85, 7, '*');
-  g.set(88, 3, '1');
-  g.set(94, 4, '4');
+  // Gulls over the bastion fly above head height, like everywhere else,
+  // and not right over the step up from the slippery ledge (there they sat
+  // in the arc of the only jump up).
+  g.set(108, 1, '1');
   g.text(96, 1, 'B?B');
   g.set(100, 4, '3');
   g.run(104, 114, 5, '$');
   g.set(108, 4, '*');
+  // One beach ball on the bastion. Balls used to roll off it straight
+  // away; now they keep to their ledge, so three would crowd the climb.
   g.set(112, 4, '4');
   // Secret: the lantern of the old lighthouse, on the tower top.
   g.rect(116, 3, 119, 4);
   g.text(116, 2, 'o  G');
-  g.set(122, 4, '1');
-  g.set(125, 4, '4');
+  g.set(122, 1, '1');
   // Down into the courtyard by the battlements.
   g.rect(129, 8, 132, 10);
   g.ground(129, 160, G4);

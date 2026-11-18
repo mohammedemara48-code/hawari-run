@@ -2388,12 +2388,17 @@ export class Alley extends Phaser.Scene {
         (this.bossKind === 'crab' || this.bossKind === 'gull') &&
         this.bossPhase() === 3
       )
-        for (const dx of [-140, 140])
-          this.enemy(
+        for (const dx of [-140, 140]) {
+          const e = this.enemy(
             Phaser.Math.Clamp(boss.x + dx, s.arenaX + 60, this.L.width - 60),
             3 * TILE,
             this.bossKind === 'gull' ? 'skua' : 'gull',
           );
+          // Storm gulls called in wheel about first instead of diving at
+          // بلبل while he is still bouncing off the boss.
+          if (this.bossKind === 'gull')
+            e.setData('until', this.time.now + 1800);
+        }
     }
     this.bossSet('hurt', 450);
     if (this.bossKind === 'crab')
@@ -3481,6 +3486,20 @@ export class Alley extends Phaser.Scene {
     )
       this.complete();
     if (this.hero.x < 12) this.hero.x = 12;
+    // Once the gull's fight starts the camera is locked to the keep roof;
+    // keep the hero inside it too, so you can't walk (or be blown by his
+    // wing-beat) off screen.
+    if (
+      this.bossKind === 'gull' &&
+      this.bossState.active &&
+      this.boss?.active
+    ) {
+      const lo = this.bossState.arenaX + 12;
+      if (this.hero.x < lo) {
+        this.hero.x = lo;
+        if (body(this.hero).velocity.x < 0) body(this.hero).velocity.x = 0;
+      }
+    }
     if (this.hero.x > this.L.width - 12) this.hero.x = this.L.width - 12;
     if (this.hero.y > this.L.height + 60) {
       this.lastHurtBy = 'fall';

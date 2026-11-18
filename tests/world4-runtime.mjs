@@ -308,9 +308,11 @@ await shot('14-w4-l1-corniche.png');
   await wait(120);
   assert.ok(!(await ev(() => window.T.e.active)), 'the umbrella folds');
   assert.ok(await ev(() => window.T.s.w4.umbrella), 'and you keep it');
-  // Storm gull: wheels about, dives at you.
-  await ev((g) => window.T.place(g.x, g.feet), g);
-  await ev((g) => window.T.spawn(g.x + 60, g.feet - 150, 'skua'), g);
+  // Storm gull: wheels about, dives at you (away from the start, which
+  // gulls leave alone like the crows do).
+  const gg = { x: g.x + 12 * 24, feet: g.feet };
+  await ev((g) => window.T.place(g.x, g.feet), gg);
+  await ev((g) => window.T.spawn(g.x + 60, g.feet - 150, 'skua'), gg);
   const states = await sample(2500, () => window.T.e.getData('state'));
   assert.ok(states.includes('dive'), 'the storm gull dives');
   await shot('14-w4-storm-gull.png');

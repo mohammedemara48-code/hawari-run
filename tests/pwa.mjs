@@ -417,7 +417,7 @@ await ctx.setOffline(false);
   await page.locator('.update-dialog').waitFor({ timeout: 5000 });
   assert.match(
     await page.locator('.update-dialog').innerText(),
-    /الجديد في التحديث[\s\S]*تحت المترو/,
+    /الجديد في التحديث[\s\S]*قلعة قايتباي/,
   );
   await page.getByRole('button', { name: /تمام/ }).tap();
   await page.reload();
