@@ -580,7 +580,7 @@ export const BALLOON = {
 /** Rotating doors: seconds open, and the last seconds they warn. */
 export const DOOR = { open: 6.5, warn: 1.8 };
 /** Crushing pillars: seconds up, shaking, falling, down, rising. */
-export const PILLAR = { up: 1.6, warn: 0.5, fall: 0.14, down: 0.7, rise: 0.9 };
+export const PILLAR = { up: 1.6, warn: 0.8, fall: 0.14, down: 0.7, rise: 0.9 };
 /** Pillar phase at clock t for a pillar in column col. */
 export function pillarState(
   col: number,
@@ -602,4 +602,4 @@ export function pillarState(
   return { state: 'up', k: 0 };
 }
 /** Falling sand: warning trickle (ms) and cooldown before it pours again. */
-export const SANDFALL = { warn: 520, cooldown: 2600 };
+export const SANDFALL = { warn: 750, cooldown: 2600 };

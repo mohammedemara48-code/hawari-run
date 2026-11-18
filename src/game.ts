@@ -1449,12 +1449,7 @@ export class Alley extends Phaser.Scene {
           s.setVelocityY(-160);
           s.setData('bounces', (s.getData('bounces') || 0) + 1);
         } else {
-          this.burst(
-            s.x,
-            s.y,
-            s.getData('splat') ?? 0xf5a34d,
-            4,
-          );
+          this.burst(s.x, s.y, s.getData('splat') ?? 0xf5a34d, 4);
           s.destroy();
         }
       });
@@ -2513,9 +2508,12 @@ export class Alley extends Phaser.Scene {
       return;
     }
     if (this.bossKind === 'ram' && s.state !== 'bowed') {
-      // Chili just scorches the stone; only the bowed brow feels it.
+      // Shots just glance off the stone; only the bowed brow feels them.
       this.burst(this.boss!.x, this.boss!.y - 20, 0xf5a34d, 4);
-      this.hint('ram-chili', 'الشطة مش بتأثر في الحجر… غير لما يوطّي راسه');
+      this.hint(
+        'ram-chili',
+        'العصاية مش بتأثر في الحجر… غير لما يوطّي راسه، أو اتنطّ على جوهرته',
+      );
       return;
     }
     s.chili++;

@@ -11,8 +11,10 @@ import {
   BALLOON,
   DOOR,
   SAND,
+  LEDGE,
   SANDFALL,
   SLIDE,
+  SOLID,
   pillarState,
 } from './level-parse';
 import { isW5 } from './world5-art';
@@ -49,12 +51,30 @@ export interface Pillar {
   /** Inside the boss court: still until the guardian's third phase. */
   arena: boolean;
   state: string;
+  /** Its shadow on the floor: faint always, blinking while it shudders. */
+  mark: Phaser.GameObjects.Ellipse;
 }
 export interface SandTrap {
   x: number;
   y: number;
   next: number;
   pourAt: number;
+  /** Where the sand lands: blinks while it trickles. */
+  mark: Phaser.GameObjects.Ellipse;
+}
+
+/** Top of the first floor (solid or ledge) at or below y, in px. */
+export function floorBelow(s: Alley, x: number, y: number) {
+  const col = Math.floor(x / TILE);
+  for (let r = Math.max(0, Math.floor(y / TILE)); r < s.L.rows; r++) {
+    const ch = s.L.at(col, r);
+    if (SOLID.has(ch) || LEDGE.has(ch)) return r * TILE;
+  }
+  return s.L.height;
+}
+/** A dark spot on the floor where something is about to land. */
+function floorMark(s: Alley, x: number, y: number, w = 26) {
+  return s.add.ellipse(x, y - 2, w, 7, 0x000000, 0).setDepth(8);
 }
 export interface W5 {
   doors: Door[];
@@ -148,6 +168,7 @@ export function buildLuxor(s: Alley): W5 | undefined {
       shaft,
       arena: p.col >= arenaCol,
       state: 'up',
+      mark: floorMark(s, p.x, f * TILE, 30),
     });
   }
   for (const p of L.sands) {
@@ -155,7 +176,14 @@ export function buildLuxor(s: Alley): W5 | undefined {
       .image(p.x, p.row * TILE, 'crack')
       .setOrigin(0.5, 0)
       .setDepth(2);
-    w5.sands.push({ x: p.x, y: (p.row + 1) * TILE, next: 0, pourAt: 0 });
+    const y = (p.row + 1) * TILE;
+    w5.sands.push({
+      x: p.x,
+      y,
+      next: 0,
+      pourAt: 0,
+      mark: floorMark(s, p.x, floorBelow(s, p.x, y)),
+    });
   }
   // Balloons: wicker baskets under painted envelopes.
   L.balloons.forEach((p, i) => {
@@ -291,6 +319,20 @@ export function updateLuxorWorld(s: Alley, time: number, dt: number) {
     }
     if (st.state === 'warn' && Math.floor(time / 90) % 3 === 0)
       s.burst(p.x + (Math.random() - 0.5) * 20, p.top + 4, 0xc8a070, 1);
+    // Its shadow: always faintly there (unless asleep in the court), dark and
+    // blinking while it shudders, so you can see where it will land.
+    p.mark.setFillStyle(
+      0x000000,
+      p.arena && !armed
+        ? 0
+        : st.state === 'warn'
+          ? Math.floor(time / 110) % 2
+            ? 0.6
+            : 0.3
+          : st.state === 'up'
+            ? 0.14
+            : 0.45,
+    );
     if (
       play &&
       (st.state === 'fall' || st.state === 'down' || st.state === 'rise') &&
@@ -319,6 +361,14 @@ export function updateLuxorWorld(s: Alley, time: number, dt: number) {
       t.pourAt = time + SANDFALL.warn;
       sound.fx('sand');
     }
+    t.mark.setFillStyle(
+      0x000000,
+      t.pourAt && time < t.pourAt
+        ? Math.floor(time / 100) % 2
+          ? 0.6
+          : 0.3
+        : 0,
+    );
     if (t.pourAt && time < t.pourAt && Math.floor(time / 50) % 2 === 0) {
       const g = s.add
         .image(t.x + (Math.random() - 0.5) * 8, t.y, 'sand-grain')
@@ -614,7 +664,7 @@ export function luxorContact(s: Alley, e: Sprite, fromTop: boolean) {
     }
     s.hint(
       'devil',
-      'زوبعة التراب ما تنداسش من الجنب! نطّ من فوقها أو ارميها بالشطة',
+      'زوبعة التراب ما تنداسش من الجنب! نطّ من فوقها أو ارميها بالعصاية',
     );
     const before = s.hurtUntil;
     s.hurt();
@@ -646,7 +696,7 @@ export function luxorContact(s: Alley, e: Sprite, fromTop: boolean) {
       s.hero.setVelocityY(s.jumpWas ? -420 : -300);
       s.hint(
         'mummy',
-        'المومياء بتتلم وتقوم تاني! عدّي بسرعة… أو ولّعها بالشطة',
+        'المومياء بتتلم وتقوم تاني! عدّي بسرعة… أو اضربها بالعصاية',
       );
       return true;
     }
@@ -724,7 +774,7 @@ export function updateRamBoss(s: Alley, time: number) {
         sound.fx('shock');
         s.cameras.main.shake(260, 0.014);
         s.burst(boss.x + d * 60, boss.y, 0xd8aa6e, 14);
-        sandRain(s, phase === 4 ? 5 : 4);
+        sandRain(s, phase === 4 ? 3 : 2);
         st.state = 'bowed';
         st.until = time + P([1500, 1300, 1150, 1000]);
       }
@@ -768,20 +818,31 @@ function slam(s: Alley, boss: Sprite, phase: number, time: number) {
       .setDepth(9)
       .setFlipX(d < 0);
   }
-  if (phase >= 2) sandRain(s, phase >= 4 ? 5 : 3);
+  if (phase >= 2) sandRain(s, phase >= 4 ? 3 : 2);
 }
-/** Sand shaken off the architrave over (and around) the hero. */
+/** Sand shaken off the architrave: a few clumps beside the hero (never
+ * straight onto him), each spot marked by a blinking shadow well before
+ * the clump lets go, so there is always time to step aside. */
 export function sandRain(s: Alley, n: number) {
   const st = s.bossState;
+  const side = Math.random() < 0.5 ? -1 : 1;
   for (let i = 0; i < n; i++) {
     const x = Phaser.Math.Clamp(
-      s.hero.x + (i - (n - 1) / 2) * 64 + (Math.random() - 0.5) * 24,
+      s.hero.x + side * (44 + i * 84) + (Math.random() - 0.5) * 16,
       st.arenaX + 30,
       s.L.width - 40,
     );
-    // Staggered so the clumps patter down one after another under the
-    // architrave (they would burst at once inside the roof stones).
-    s.time.delayedCall(i * 110, () => {
+    const mark = floorMark(s, x, floorBelow(s, x, 3 * TILE));
+    s.tweens.add({
+      targets: mark,
+      fillAlpha: 0.6,
+      scaleX: 1.3,
+      yoyo: true,
+      repeat: -1,
+      duration: 220,
+    });
+    s.time.delayedCall(1900, () => mark.destroy());
+    s.time.delayedCall(700 + i * 160, () => {
       if (s.mode === 'play' && !st.defeated) dropSand(s, x, 2 * TILE + 6);
     });
   }
