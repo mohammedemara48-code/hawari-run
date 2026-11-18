@@ -334,7 +334,7 @@ describe('authored levels', () => {
     );
     // World 5: the sphinx avenue with sand slides, the Nile on feluccas and
     // balloons against the current, the dark tomb (collapsing slabs, burning
-    // torches, doors, pillars, falling sand) and Karnak with everything.
+    // torches, doors, pillars, falling sand) and Karnak with the ram at the end.
     const count = (l: typeof e, ch: string) =>
       l.meta.rows.join('').split(ch).length - 1;
     expect(count(q17, ',')).toBeGreaterThanOrEqual(30);
@@ -470,6 +470,33 @@ describe('World 5 playability', () => {
       for (const e of fly)
         expect(e.col - L.start.col, L.meta.id).toBeGreaterThanOrEqual(20);
     }
+  });
+  it('keeps the ram court to the ram, and spaces Karnak hazards apart', () => {
+    const L = parseLevel(19);
+    expect(L.meta.id).toBe('karnak');
+    const arena = L.boss!.col - 17;
+    expect(
+      L.enemies.filter((e) => e.kind === 'mummy' && e.col >= arena).length,
+    ).toBe(0);
+    expect(L.pillars.filter((p) => p.col >= arena).length).toBe(0);
+    expect(L.sands.filter((p) => p.col >= arena).length).toBe(0);
+    expect(L.armories.some((a) => a.col < arena && a.col >= arena - 20)).toBe(
+      true,
+    );
+    // Never a pillar, a falling-sand crack and a mummy in the same stretch.
+    const marks = [
+      ...L.pillars.map((p) => ({ col: p.col, kind: 'pillar' })),
+      ...L.sands.map((p) => ({ col: p.col, kind: 'sand' })),
+      ...L.enemies
+        .filter((e) => e.kind === 'mummy')
+        .map((e) => ({ col: e.col, kind: 'mummy' })),
+    ].sort((a, b) => a.col - b.col);
+    for (let i = 1; i < marks.length; i++)
+      if (marks[i].kind !== marks[i - 1].kind)
+        expect(
+          marks[i].col - marks[i - 1].col,
+          `${marks[i - 1].kind}@${marks[i - 1].col} next to ${marks[i].kind}@${marks[i].col}`,
+        ).toBeGreaterThan(6);
   });
   it('spreads the enemies out, a little more each level', () => {
     const per100 = w5.map(

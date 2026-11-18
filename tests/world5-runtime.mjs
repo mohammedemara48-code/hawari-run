@@ -206,7 +206,8 @@ for (let k = 0; k < 30 && !marked; k++) {
 assert.ok(marked, 'the sand spot is marked before it pours');
 log('telegraphs: pillar shadows, sand spots');
 
-/* Karnak: one stick crate before the arena; the ram can be stomped. */
+/* Karnak: one stick crate before the arena; the ram can be stomped.
+ * The court is just the ram and one telegraphed falling stone. */
 await ev(() => window.T.go(19));
 await wait(300);
 assert.equal(await ev(() => window.T.s.L.armories.length), 1, 'stick crate');
@@ -225,6 +226,48 @@ for (let k = 0; k < 80 && !active; k++) {
   }
 }
 assert.ok(active, 'the ram wakes');
+const court = await ev(() => {
+  const s = window.T.s,
+    lo = s.bossState.arenaX;
+  return {
+    mummies: s.enemies
+      .getChildren()
+      .filter((e) => e.active && e.getData('kind') === 'mummy' && e.x >= lo)
+      .length,
+    pillars: (s.w5?.pillars || []).filter((p) => p.arena).length,
+  };
+});
+assert.equal(court.mummies, 0, 'no mummies in the ram court');
+assert.equal(court.pillars, 0, 'no crushing pillars in the ram court');
+// One telegraphed sand clump to the side of the hero, after a slam.
+await ev(() => {
+  const s = window.T.s,
+    st = s.bossState,
+    b = s.boss;
+  st.state = 'rear';
+  st.until = s.time.now + 80;
+  b.setData('next', 'slam');
+  b.setVelocity(0, 0);
+  window.T.place(b.x - 180, 12 * 24);
+});
+await wait(400);
+await shot('22-karnak-calm.png');
+let sand = { n: 0, dx: 0 };
+for (let k = 0; k < 40 && sand.n === 0; k++) {
+  sand = await ev(() => {
+    const s = window.T.s;
+    const clumps = s.hazards
+      .getChildren()
+      .filter((h) => h.active && h.getData('kind') === 'sand');
+    return {
+      n: clumps.length,
+      dx: clumps.length ? Math.abs(clumps[0].x - s.hero.x) : 0,
+    };
+  });
+  if (sand.n === 0) await wait(40);
+}
+assert.equal(sand.n, 1, 'one falling stone after a slam');
+assert.ok(sand.dx >= 30, `the stone lands to the side (${sand.dx | 0}px)`);
 const hp0 = await ev(() => window.T.s.bossState.hp);
 await ev(() => {
   const s = window.T.s,
@@ -242,7 +285,7 @@ assert.ok(
   'stomping the bowed brow hurts the ram',
 );
 await shot('19-luxor-ram-stomp.png');
-log('karnak: stick crate, ram stomped while bowed');
+log('karnak: stick crate, calm court, one sand, ram stomped while bowed');
 
 /* World 4 boss down → the road opens to Luxor. */
 await ev(() => window.T.go(15));

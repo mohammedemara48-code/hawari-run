@@ -706,10 +706,9 @@ export function luxorContact(s: Alley, e: Sprite, fromTop: boolean) {
 }
 
 /* ───────────── Boss «الكبش الحارس» ───────────── */
-/** walk → rear (tell) → slam (shockwaves; sand falls from phase 2) or,
- * from phase 3, a charge across the court → bowed (his brow gem is open:
- * stomp it) → walk. Phase 3 wakes the court's crushing pillars; phase 4
- * puts out the moon. */
+/** walk → rear (tell) → slam (shockwaves and one telegraphed sand clump
+ * to the side) or, from phase 3, a charge across the court → bowed (his
+ * brow gem is open: stomp it) → walk. Phase 4 puts out the moon. */
 export function updateRamBoss(s: Alley, time: number) {
   const boss = s.boss!,
     st = s.bossState,
@@ -775,7 +774,6 @@ export function updateRamBoss(s: Alley, time: number) {
         sound.fx('shock');
         s.cameras.main.shake(260, 0.014);
         s.burst(boss.x + d * 60, boss.y, 0xd8aa6e, 14);
-        sandRain(s, phase === 4 ? 3 : 2);
         st.state = 'bowed';
         st.until = time + P([1500, 1300, 1150, 1000]);
       }
@@ -819,7 +817,7 @@ function slam(s: Alley, boss: Sprite, phase: number, time: number) {
       .setDepth(9)
       .setFlipX(d < 0);
   }
-  if (phase >= 2) sandRain(s, phase >= 4 ? 3 : 2);
+  sandRain(s, 1);
 }
 /** Sand shaken off the architrave: a few clumps beside the hero (never
  * straight onto him), each spot marked by a blinking shadow well before
@@ -848,22 +846,13 @@ export function sandRain(s: Alley, n: number) {
     });
   }
 }
-/** Phase changes: helpers join, the pillars wake, the moon goes out. */
+/** Phase changes: the ram gets faster; phase 4 puts out the moon. */
 export function ramPhase(s: Alley, phase: number) {
-  const boss = s.boss!,
-    st = s.bossState;
-  const kinds = ['', '', 'scarab', 'mummy', 'devil'];
-  for (const dx of [-150, 150])
-    s.enemy(
-      Phaser.Math.Clamp(boss.x + dx, st.arenaX + 60, s.L.width - 60),
-      phase === 4 ? 9 * TILE : 10 * TILE,
-      kinds[phase],
-    );
   toast(
     phase === 2
-      ? 'الكبش الحارس اتعصّب! لما يخبط الأرض الرمل بيقع من السقف'
+      ? 'الكبش اتعصّب! حجر واحد بينزل من السقف وظلّه بيبان قبله… اتبع الظل'
       : phase === 3
-        ? 'الأعمدة صحيت! وبقى بيجري عليك بقرونه… خلّيه يخبط في الحيطة'
+        ? 'بقى بيجري عليك بقرونه… خلّيه يخبط في الحيطة'
         : 'آخر نَفَس! القمر غاب… ولّع المشاعل وخلّي عينك على عينيه',
   );
   if (phase === 4 && s.w5) s.w5.darkTarget = 0.62;

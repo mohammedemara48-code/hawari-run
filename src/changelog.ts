@@ -8,6 +8,13 @@ export interface Release {
 }
 export const CHANGELOG: Release[] = [
   {
+    version: '2.2.2',
+    date: '2026-11-19',
+    notes: [
+      'الكرنك أهدى: الكبش وحجر واحد بينزل وظلّه بيبان قبله، مفيش مومياء ولا عمدان في الساحة',
+    ],
+  },
+  {
     version: '2.2.1',
     date: '2026-11-19',
     notes: [

@@ -1598,6 +1598,7 @@ function karnak() {
   g.set(3, 11, 'P');
   g.text(6, 11, 'o o o');
   g.text(9, 8, 'B?B');
+  g.set(21, 11, '5');
   // Broken lotus columns over a sand pit.
   g.rect(27, 9, 28, 14, '/');
   g.rect(31, 8, 32, 14, '/');
@@ -1613,20 +1614,17 @@ function karnak() {
   g.set(58, 5, '9');
   g.set(62, 5, '9');
   g.text(63, 11, 'o o');
-  // The hypostyle hall: a roof and crushing pillars on a beat.
+  // The hypostyle hall: a roof and spaced crushing pillars on a beat.
   g.rect(66, 0, 88, 2);
   g.set(70, 3, '[');
-  g.set(72, 11, '6');
-  g.set(74, 3, '[');
-  g.set(76, 3, '9');
   g.set(78, 3, '[');
-  g.set(82, 3, '[');
-  g.set(86, 3, '9');
+  g.set(86, 3, '[');
   g.set(92, 11, 'c');
   g.ground(91, 109, G5);
   g.text(95, 8, 'BFB');
   g.rect(100, 9, 103, 11);
   slide(g, 104, 10, 2, ';');
+  g.set(109, 11, '5');
   g.ground(114, 165, G5);
   g.set(117, 11, '7');
   // Secret: lotus columns up to the fanoos on the tallest capital.
@@ -1637,21 +1635,19 @@ function karnak() {
   g.set(127, 2, 'G');
   g.set(125, 3, '8');
   g.set(131, 11, '5');
+  g.set(137, 11, '7');
   gateway(g, 146, 8);
-  g.set(142, 11, '7');
   g.set(144, 5, '9');
   g.set(148, 5, '9');
-  g.set(152, 11, '6');
+  g.set(156, 11, '6');
   g.set(160, 10, '8');
-  // The boss court: torches for when the moon goes dark, crushing
-  // pillars from the architrave, ledges to escape the shockwaves.
+  // The boss court: torches for when the moon goes dark, and ledges
+  // to escape the shockwaves. The ram fights alone here, plus one
+  // telegraphed falling stone (spawned in the fight, not on the map).
   g.ground(166, 219, G5);
-  g.set(170, 11, '6');
   g.rect(184, 0, 218, 1);
   g.set(188, 11, 'L');
   g.set(212, 11, 'L');
-  g.set(193, 2, '[');
-  g.set(207, 2, '[');
   g.run(186, 189, 8, '-');
   g.run(209, 212, 8, '-');
   g.rect(219, 0, 219, 11);
