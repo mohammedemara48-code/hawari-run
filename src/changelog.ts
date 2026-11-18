@@ -8,6 +8,13 @@ export interface Release {
 }
 export const CHANGELOG: Release[] = [
   {
+    version: '2.2.1',
+    date: '2026-11-19',
+    notes: [
+      'اللعبة بتفتكرك: بتسجّل مرة واحدة بس، حتى لو فتحتها من لينك تليجرام',
+    ],
+  },
+  {
     version: '2.2.0',
     date: '2026-11-18',
     notes: [

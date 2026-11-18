@@ -17,9 +17,43 @@ export function normalizeName(name: string) {
 export function validPin(pin: string) {
   return /^\d{4}$/.test(pin);
 }
+// Some in-app browsers (Telegram, Facebook) wipe localStorage between visits,
+// so the player is also kept in a year-long cookie.
+function readCookie(): string | null {
+  try {
+    const m = document.cookie.match(/(?:^|; )hawari-player=([^;]*)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch {
+    return null;
+  }
+}
+function writeCookie(v: string | null) {
+  try {
+    document.cookie = v
+      ? `hawari-player=${encodeURIComponent(v)}; max-age=31536000; path=/; SameSite=Lax; Secure`
+      : 'hawari-player=; max-age=0; path=/';
+  } catch {
+    /* ignore */
+  }
+}
 export function getPlayer(): Player | null {
   try {
-    const p = JSON.parse(localStorage.getItem(PLAYER_KEY) || 'null');
+    let raw: string | null = null;
+    try {
+      raw = localStorage.getItem(PLAYER_KEY);
+    } catch {
+      /* storage blocked */
+    }
+    if (!raw) {
+      raw = readCookie();
+      if (raw)
+        try {
+          localStorage.setItem(PLAYER_KEY, raw);
+        } catch {
+          /* ignore */
+        }
+    }
+    const p = JSON.parse(raw || 'null');
     if (!p || typeof p.name !== 'string' || !validPin(p.pin)) return null;
     const name = normalizeName(p.name);
     return name.length >= 2 ? { name, pin: p.pin } : null;
@@ -28,16 +62,16 @@ export function getPlayer(): Player | null {
   }
 }
 export function setPlayer(p: Player) {
+  const v = JSON.stringify({ name: normalizeName(p.name), pin: p.pin });
+  writeCookie(v);
   try {
-    localStorage.setItem(
-      PLAYER_KEY,
-      JSON.stringify({ name: normalizeName(p.name), pin: p.pin }),
-    );
+    localStorage.setItem(PLAYER_KEY, v);
   } catch {
     /* Private browsing can disable storage. */
   }
 }
 export function clearPlayer() {
+  writeCookie(null);
   try {
     localStorage.removeItem(PLAYER_KEY);
   } catch {
