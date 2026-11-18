@@ -1432,7 +1432,7 @@ function ramAvenue() {
   // Sand pouring against you along the ground.
   g.run(199, 203, G5, '_');
   g.text(199, 9, 'o o o');
-  g.set(219, 11, '7');
+  g.set(223, 11, '7');
   g.ground(220, 259, G5);
   g.text(223, 8, 'B?B');
   g.set(228, 11, '5');
