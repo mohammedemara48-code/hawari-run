@@ -89,7 +89,14 @@ import {
   toast,
   touch,
 } from './ui';
-import { loadProgress, recordClear, recordSecret } from './progress';
+import {
+  clearResume,
+  loadProgress,
+  recordClear,
+  recordSecret,
+  saveResume,
+} from './progress';
+import { getPlayer, needsLogin, pullProgress } from './account';
 
 type Sprite = Phaser.Physics.Arcade.Sprite;
 type Img = Phaser.Physics.Arcade.Image;
@@ -115,18 +122,37 @@ export function lockLandscape() {
 /** Fullscreen on the first tap of a phone; iOS falls back to standalone + 100dvh. */
 export function enterFullscreen() {
   try {
-    const el = document.getElementById('game-wrap') as HTMLElement & {
+    if (document.fullscreenElement) return;
+    const wrap = document.getElementById('game-wrap') as HTMLElement & {
       webkitRequestFullscreen?: () => void;
     };
-    if (document.fullscreenElement) return;
-    if (el.requestFullscreen)
-      el.requestFullscreen({ navigationUI: 'hide' })
-        .then(() => lockLandscape())
-        .catch(() => {});
-    else el.webkitRequestFullscreen?.();
+    const root = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => void;
+    };
+    const el = wrap || root;
+    const go = (
+      node: HTMLElement & { webkitRequestFullscreen?: () => void },
+    ) => {
+      if (node.requestFullscreen)
+        return node
+          .requestFullscreen({ navigationUI: 'hide' })
+          .then(() => lockLandscape());
+      node.webkitRequestFullscreen?.();
+      return Promise.resolve();
+    };
+    go(el).catch(() => go(root).catch(() => {}));
   } catch {
     /* Fullscreen is unavailable (e.g. iOS Safari): CSS fills the viewport. */
   }
+}
+function armFirstTapFullscreen() {
+  if (!coarse()) return;
+  const ask = (e: Event) => {
+    const t = e.target as HTMLElement | null;
+    if (t?.closest?.('input, textarea, select')) return;
+    enterFullscreen();
+  };
+  document.addEventListener('pointerdown', ask, { capture: true });
 }
 function oneWay(b: SBody | Body) {
   b.checkCollision.down = false;
@@ -360,7 +386,10 @@ export class Alley extends Phaser.Scene {
     this.scale.on('resize', () => this.fitView());
     this.loadLevel();
     this.physics.pause();
-    screen('title');
+    armFirstTapFullscreen();
+    if (needsLogin()) screen('login');
+    else screen('title');
+    void this.bootSession();
     const portrait = window.matchMedia(
       '(orientation: portrait) and (pointer: coarse) and (max-width: 700px)',
     );
@@ -368,8 +397,12 @@ export class Alley extends Phaser.Scene {
       if (e.matches && this.mode === 'play') this.action('pause');
     });
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden && this.mode === 'play') this.action('pause');
+      if (document.hidden && this.mode === 'play') {
+        this.stashRun();
+        this.action('pause');
+      }
     });
+    window.addEventListener('pagehide', () => this.stashRun());
   }
   /* ───────────────────────── Flow ───────────────────────── */
   action(action: string) {
@@ -380,17 +413,41 @@ export class Alley extends Phaser.Scene {
       this.coinCount = 0;
       this.lives = 3;
       this.power = 0;
+      clearResume();
       this.startLevel(n);
       return;
     }
     switch (action) {
+      case 'start-after-login':
+        this.showTitle();
+        break;
       case 'start':
         sound.start();
         if (coarse()) enterFullscreen();
         lockLandscape();
         this.showMap();
         break;
+      case 'resume':
+        sound.start();
+        if (coarse()) enterFullscreen();
+        lockLandscape();
+        this.resumeLevel();
+        break;
+      case 'switch-player': {
+        if (this.mode === 'play' || this.mode === 'pause') this.stashRun();
+        screen('login');
+        const cancel = document.getElementById('login-cancel');
+        if (cancel) cancel.hidden = false;
+        document
+          .getElementById('login-form')
+          ?.setAttribute('data-switching', '1');
+        break;
+      }
+      case 'login-cancel':
+        if (getPlayer()) this.showTitle();
+        break;
       case 'map':
+        if (this.mode === 'play' || this.mode === 'pause') this.stashRun();
         this.showMap();
         break;
       case 'retry':
@@ -435,6 +492,17 @@ export class Alley extends Phaser.Scene {
         break;
     }
   }
+  showTitle() {
+    this.mode = 'title';
+    this.physics.pause();
+    screen('title');
+    bossBar(false);
+  }
+  async bootSession() {
+    if (needsLogin()) return;
+    await pullProgress();
+    if (this.mode === 'title') this.showTitle();
+  }
   showMap() {
     this.mode = 'map';
     this.physics.pause();
@@ -442,17 +510,46 @@ export class Alley extends Phaser.Scene {
     screen('map');
     bossBar(false);
   }
+  /** Snapshot a mid-level run so كمّل can bring the player back. */
+  stashRun() {
+    if (this.mode !== 'play' && this.mode !== 'pause' && this.mode !== 'dead')
+      return;
+    saveResume({
+      levelIndex: this.level,
+      checkpoint: this.checkpoint,
+      lives: Math.max(1, this.lives),
+      score: this.score,
+      coins: this.coinCount,
+      power: this.power,
+    });
+  }
+  resumeLevel() {
+    const r = loadProgress().resume;
+    if (!r) {
+      this.showMap();
+      return;
+    }
+    this.score = r.score;
+    this.coinCount = r.coins;
+    this.lives = r.lives;
+    this.power = r.power;
+    this.startLevel(r.levelIndex, { checkpoint: r.checkpoint });
+  }
   /** Start a level (keeps the run's score and lives). Public for tests. */
-  startLevel(index: number) {
+  startLevel(index: number, opts?: { checkpoint?: boolean }) {
     sound.start();
     this.level = index;
-    this.checkpoint = false;
+    this.checkpoint = !!opts?.checkpoint;
     this.secretFound = false;
     this.loadLevel();
     this.mode = 'play';
     this.physics.resume();
     screen('hidden');
-    toast(`${LEVELS[index].name} — ${LEVELS[index].subtitle}`);
+    toast(
+      this.checkpoint
+        ? `${LEVELS[index].name} — رجوع من علم الأمان`
+        : `${LEVELS[index].name} — ${LEVELS[index].subtitle}`,
+    );
   }
   /* ───────────────────────── Building ───────────────────────── */
   loadLevel() {
@@ -2384,6 +2481,7 @@ export class Alley extends Phaser.Scene {
       if (this.lives <= 0) {
         this.mode = 'over';
         this.physics.pause();
+        clearResume();
         this.updateHud();
         const row = (a: string, b: string) =>
           `<div class="tally-row"><span>${a}</span><strong>${b}</strong></div>`;
@@ -3749,6 +3847,7 @@ export class Alley extends Phaser.Scene {
       this.burst(cp.x, cp.y - 50, 0xffd36b, 16);
       toast('علم الأمان اترفع — هترجع هنا لو وقعت');
       sound.fx('checkpoint');
+      this.stashRun();
     }
     if (
       this.exitDoor?.visible &&

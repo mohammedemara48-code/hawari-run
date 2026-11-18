@@ -9,7 +9,7 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 await page.goto(process.env.GAME_URL || 'http://localhost:5173');
 await page.waitForFunction(() => window.hawari?.scene.getScene('alley')?.hero);
-await page.locator('[data-screen="title"] button').click();
+await page.locator('[data-screen="title"] [data-action="start"]').click();
 await page.locator('.map-node[data-node="0"]').click();
 await page.waitForFunction(
   () => window.hawari.scene.getScene('alley').mode === 'play',

@@ -53,6 +53,8 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   // The live build number is always asked of the network, never the cache.
   if (url.pathname === '/version.json') return;
+  // Player login and progress must never be served from the cache.
+  if (url.pathname.startsWith('/api/')) return;
 
   // Pages (including start_url "/?source=pwa"): network first with a short
   // timeout, then this version's own index.html. Fresh pages are not written

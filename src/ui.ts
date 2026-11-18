@@ -1,10 +1,11 @@
 import { paintEgypt, type WorldState } from './map-art';
 import { sound } from './audio';
-import { BOSS_NAMES, WORLDS, type LevelMeta } from './level-data';
-import type { Progress } from './progress';
+import { BOSS_NAMES, LEVELS, WORLDS, type LevelMeta } from './level-data';
+import { loadProgress, type Progress } from './progress';
+import { getPlayer, login } from './account';
 import { powerLabel, worldWeapon, type WorldWeapon } from './weapons';
 export type Screen =
-  'title' | 'map' | 'pause' | 'clear' | 'over' | 'win' | 'hidden';
+  'title' | 'map' | 'pause' | 'clear' | 'over' | 'win' | 'hidden' | 'login';
 export const touch = {
   left: false,
   right: false,
@@ -203,6 +204,7 @@ export function bindUI(fn: (action: string) => void) {
     music.style.setProperty('--fill', music.value + '%');
     sfx.style.setProperty('--fill', sfx.value + '%');
   }
+  bindLogin();
 }
 export function screen(which: Screen, details = '') {
   document
@@ -230,6 +232,7 @@ export function screen(which: Screen, details = '') {
     // preventScroll: a long modal (the ending) must open at its top.
     first?.focus({ preventScroll: true });
   }
+  refreshJourney();
 }
 function text(id: string, value: string) {
   const el = document.getElementById(id)!;
@@ -427,4 +430,71 @@ export function toast(text: string) {
   el.textContent = text;
   el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function bindLogin() {
+  const form = document.getElementById('login-form') as HTMLFormElement | null;
+  if (!form || form.dataset.bound) return;
+  form.dataset.bound = '1';
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    void submitLogin(form);
+  });
+}
+async function submitLogin(form: HTMLFormElement) {
+  const name = (
+    document.getElementById('player-name-input') as HTMLInputElement
+  ).value;
+  const pin = (document.getElementById('player-pin-input') as HTMLInputElement)
+    .value;
+  const err = document.getElementById('login-error');
+  const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+  if (err) {
+    err.hidden = true;
+    err.textContent = '';
+  }
+  if (btn) btn.disabled = true;
+  const result = await login(name, pin);
+  if (btn) btn.disabled = false;
+  if (!result.ok) {
+    if (err) {
+      err.hidden = false;
+      err.textContent = result.error;
+    }
+    return;
+  }
+  form.removeAttribute('data-switching');
+  refreshJourney();
+  handler('start-after-login');
+}
+/** Fill كمّل buttons and the player name on every screen. */
+export function refreshJourney() {
+  const progress = loadProgress();
+  const resume = progress.resume;
+  const player = getPlayer();
+  const label = resume
+    ? resume.checkpoint
+      ? `كمّل: ${LEVELS[resume.levelIndex]?.name ?? ''} من علم الأمان`
+      : `كمّل: ${LEVELS[resume.levelIndex]?.name ?? ''}`
+    : '';
+  document.querySelectorAll<HTMLElement>('[data-resume]').forEach((el) => {
+    el.hidden = !resume;
+    if (resume && el.tagName === 'BUTTON') el.textContent = 'كمّل ◀';
+  });
+  document
+    .querySelectorAll<HTMLElement>('[data-resume-label]')
+    .forEach((el) => {
+      el.hidden = !resume;
+      if (resume) el.textContent = label;
+    });
+  const name = player?.name ?? '';
+  document.querySelectorAll<HTMLElement>('[data-player-name]').forEach((el) => {
+    el.textContent = name;
+    el.hidden = !name;
+  });
+  document.querySelectorAll<HTMLElement>('[data-player-wrap]').forEach((el) => {
+    el.hidden = !name;
+  });
+  const cancel = document.getElementById('login-cancel');
+  if (cancel) cancel.hidden = !player;
 }

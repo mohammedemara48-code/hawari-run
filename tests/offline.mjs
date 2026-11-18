@@ -18,7 +18,7 @@ assert.equal(
 await ctx.setOffline(true);
 await p.reload();
 await p.waitForFunction(() => window.hawari?.scene.getScene('alley')?.hero);
-await p.locator('[data-screen="title"] button').click();
+await p.locator('[data-screen="title"] [data-action="start"]').click();
 assert.equal(
   await p.evaluate(() => window.hawari.scene.getScene('alley').mode),
   'map',

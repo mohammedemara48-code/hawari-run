@@ -139,6 +139,10 @@
               <path d="M5 10h2v2H5z" fill="currentColor" />
             </svg>
           </div>
+          <div class="hud-chip hud-player" data-player-wrap hidden>
+            <span class="hud-label">اللاعب</span>
+            <b id="hud-player" data-player-name></b>
+          </div>
           <button
             class="pause-button"
             id="pause-btn"
@@ -165,6 +169,25 @@
             <button class="primary" data-action="start">
               يلا بينا <span>◀</span>
             </button>
+            <button
+              class="primary resume-btn"
+              data-action="resume"
+              data-resume
+              hidden
+            >
+              كمّل ◀
+            </button>
+            <p class="resume-line" data-resume-label hidden></p>
+            <p class="player-line" data-player-wrap hidden>
+              بتلعب باسم <strong data-player-name></strong>
+              <button
+                type="button"
+                class="text-btn"
+                data-action="switch-player"
+              >
+                تغيير اللاعب
+              </button>
+            </p>
             <p class="title-note">
               ٥ محطات في مصر · زعيم في آخر كل محطة · فانوس دهبي مستخبّي في كل
               مرحلة
@@ -181,6 +204,22 @@
             <h2>اختار مرحلتك</h2>
             <p class="map-secrets-line">
               الفوانيس الدهبي: <b id="map-secrets">0 / 4</b>
+            </p>
+            <div class="map-resume" data-resume hidden>
+              <button class="primary resume-btn" data-action="resume">
+                كمّل ◀
+              </button>
+              <p class="resume-line" data-resume-label></p>
+            </div>
+            <p class="player-line" data-player-wrap hidden>
+              بتلعب باسم <strong data-player-name></strong>
+              <button
+                type="button"
+                class="text-btn"
+                data-action="switch-player"
+              >
+                تغيير اللاعب
+              </button>
             </p>
           </div>
           <div class="map-board">
@@ -225,10 +264,16 @@
                 value="100"
             /></label>
           </div>
+          <p class="player-line" data-player-wrap hidden>
+            بتلعب باسم <strong data-player-name></strong>
+          </p>
           <div class="modal-actions">
             <button class="primary" data-action="pause">كمّل المشوار ◀</button>
-            <button class="ghost-btn" data-action="map">الخريطة</button>
+            <button class="ghost-btn" data-action="map">ارجع للخريطة</button>
             <button class="ghost-btn" data-action="sound">الصوت: شغّال</button>
+            <button class="ghost-btn" data-action="switch-player">
+              تغيير اللاعب
+            </button>
           </div>
         </div>
         <div class="screen modal" data-screen="clear" hidden>
@@ -290,6 +335,52 @@
           <div class="modal-actions">
             <button class="primary" data-action="map">الخريطة ◀</button>
           </div>
+        </div>
+        <div class="screen modal login-screen" data-screen="login" hidden>
+          <p class="overline">حساب اللاعب</p>
+          <h2>اسمك والرقم السري</h2>
+          <p>
+            اكتب اسمك ورقم من ٤ أرقام. تقدّمك بيتحفظ، وتقدر تكمل من أي جهاز بنفس
+            الاسم والرقم.
+          </p>
+          <form id="login-form" class="login-form" autocomplete="on">
+            <label
+              >اسم اللاعب
+              <input
+                id="player-name-input"
+                name="username"
+                maxlength="24"
+                required
+                autocomplete="username"
+                enterkeyhint="next"
+            /></label>
+            <label
+              >رقم سري (٤ أرقام)
+              <input
+                id="player-pin-input"
+                name="pin"
+                inputmode="numeric"
+                pattern="[0-9]{4}"
+                maxlength="4"
+                minlength="4"
+                required
+                autocomplete="current-password"
+                enterkeyhint="done"
+            /></label>
+            <p id="login-error" class="login-error" hidden></p>
+            <div class="modal-actions">
+              <button class="primary" type="submit">ادخل ◀</button>
+              <button
+                type="button"
+                class="ghost-btn"
+                id="login-cancel"
+                data-action="login-cancel"
+                hidden
+              >
+                رجوع
+              </button>
+            </div>
+          </form>
         </div>
         <div id="toast" class="toast" role="status"></div>
         <div class="rotate-hint" aria-live="polite">

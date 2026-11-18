@@ -12,7 +12,7 @@ const errors = [];
 p.on('pageerror', (e) => errors.push(e.message));
 await p.goto(process.env.GAME_URL || 'http://localhost:5173');
 await p.waitForFunction(() => window.hawari?.scene.getScene('alley')?.hero);
-await p.locator('[data-screen="title"] button').click();
+await p.locator('[data-screen="title"] [data-action="start"]').click();
 await p.waitForTimeout(250);
 await p.locator('.map-node[data-node="0"]').click();
 await p.waitForFunction(

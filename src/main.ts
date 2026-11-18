@@ -7,14 +7,27 @@ import './style.css';
 export const VIEW_HEIGHT = 360;
 export function viewWidth(w: number, h: number) {
   if (!w || !h) return 640;
-  return Math.max(560, Math.min(900, Math.round((VIEW_HEIGHT * w) / h)));
+  return Math.max(560, Math.min(1280, Math.round((VIEW_HEIGHT * w) / h)));
 }
 const wrap = document.getElementById('game-wrap')!;
+const phoneFill = () =>
+  window.matchMedia?.(
+    '(pointer: coarse) and (max-width: 1200px), (max-height: 600px) and (orientation: landscape)',
+  ).matches;
+function measure() {
+  if (phoneFill()) {
+    const vv = window.visualViewport;
+    const w = Math.round(vv?.width ?? window.innerWidth);
+    const h = Math.round(vv?.height ?? window.innerHeight);
+    return viewWidth(w, h);
+  }
+  return viewWidth(wrap.clientWidth, wrap.clientHeight);
+}
 function boot() {
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',
-    width: viewWidth(wrap.clientWidth, wrap.clientHeight),
+    width: measure(),
     height: VIEW_HEIGHT,
     pixelArt: true,
     roundPixels: true,
@@ -30,13 +43,14 @@ function boot() {
     fps: { target: 60, forceSetTimeOut: false },
   });
   const fit = () => {
-    const w = viewWidth(wrap.clientWidth, wrap.clientHeight);
+    const w = measure();
     if (game.scale.gameSize.width !== w) game.scale.setGameSize(w, VIEW_HEIGHT);
     else game.scale.refresh();
   };
   new ResizeObserver(fit).observe(wrap);
   window.addEventListener('orientationchange', () => setTimeout(fit, 250));
   document.addEventListener('fullscreenchange', () => setTimeout(fit, 50));
+  window.visualViewport?.addEventListener('resize', () => setTimeout(fit, 50));
   // Public engine handle makes state inspectable for debugging; no service credentials.
   Object.assign(window, { hawari: game, hawariAudio: sound });
 }

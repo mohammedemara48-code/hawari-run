@@ -79,7 +79,7 @@ await writeFile(
   '/workspace/hawari-shots/04-hero-sheet.png',
   Buffer.from(png, 'base64'),
 );
-await p.locator('[data-screen="title"] button').click();
+await p.locator('[data-screen="title"] [data-action="start"]').click();
 await p.locator('.map-node[data-node="0"]').click();
 await p.evaluate(() => {
   const s = window.hawari.scene.getScene('alley');
