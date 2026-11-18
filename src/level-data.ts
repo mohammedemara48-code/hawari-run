@@ -1392,7 +1392,6 @@ function ramAvenue() {
   g.run(35, 39, G5, 'X');
   g.text(35, 10, 'o o o');
   g.ground(40, 76, G5);
-  g.set(44, 10, '8');
   g.text(47, 8, 'BFB');
   sphinx(g, 52);
   g.set(54, 7, '5');
@@ -1424,18 +1423,16 @@ function ramAvenue() {
   g.set(158, 11, '7');
   g.text(160, 8, 'BCB');
   sphinx(g, 165);
-  g.set(175, 11, '5');
   // Secret: up the stepped pylon of a gateway to the golden fanoos.
   g.rect(178, 10, 179, 11);
   g.rect(180, 7, 181, 11);
   g.rect(182, 4, 186, 11);
   g.text(182, 3, 'ooo');
   g.set(185, 2, 'G');
-  g.set(190, 10, '8');
   // Sand pouring against you along the ground.
-  g.run(198, 205, G5, '_');
-  g.text(199, 9, 'o o o o');
-  g.set(207, 11, '7');
+  g.run(199, 203, G5, '_');
+  g.text(199, 9, 'o o o');
+  g.set(219, 11, '7');
   g.ground(220, 259, G5);
   g.text(223, 8, 'B?B');
   g.set(228, 11, '5');

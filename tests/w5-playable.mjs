@@ -77,6 +77,10 @@ await page.waitForFunction(
 );
 const ev = (fn, arg) => page.evaluate(fn, arg);
 const wait = (ms) => page.waitForTimeout(ms);
+// Close the «الجديد في التحديث» note so it doesn't cover the game.
+await wait(800);
+const ok = page.locator('[data-update="ok"]');
+if (await ok.count()) await ok.first().click();
 await ev(() => {
   window.T = { s: window.hawari.scene.getScene('alley') };
 });
@@ -113,6 +117,12 @@ const state = () =>
           Math.abs(h.x - hx) < 90 &&
           h.y < b.top &&
           h.getData('kind') !== 'shock',
+      );
+    const venom = s.hazards
+      .getChildren()
+      .some(
+        (h) =>
+          h.active && h.getData('kind') === 'venom' && Math.abs(h.x - hx) < 140,
       );
     const shock = s.hazards
       .getChildren()
@@ -171,6 +181,7 @@ const state = () =>
       near,
       hazard,
       shock,
+      venom,
       gap,
       edge,
       land,
@@ -203,6 +214,8 @@ const play = async (index) => {
   while (Date.now() - t0 < limit) {
     const st = await state();
     if (st.lives < lives) {
+      if (process.env.DEBUG_SHOTS)
+        await shot(`_w5-death-${index}-${deaths.length}.png`);
       deaths.push({ cause: st.lastHurtBy || 'hit', x: Math.round(st.x / 24) });
       lives = st.lives;
     } else if (st.lives > lives) lives = st.lives;
@@ -224,6 +237,7 @@ const play = async (index) => {
     let hold = true;
     let back = false;
     if (st.x > st.exit + 10) back = true;
+    else if (st.venom) hold = true;
     else if (st.pillarBad && st.ground) hold = false;
     else if (st.ride && !st.land) hold = false;
     else if (st.moverAhead && st.edge && !st.hopOn && !st.land && !st.swim)

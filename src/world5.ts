@@ -553,7 +553,7 @@ export function updateLuxorEnemy(s: Alley, e: Sprite, time: number) {
     } else if (state === 'spit') {
       frame(3);
       if (time > e.getData('until'))
-        e.setData('state', 'walk').setData('until', time + 1700);
+        e.setData('state', 'walk').setData('until', time + 2300);
     } else {
       frame(Math.floor(time / 380 + seed) % 2);
       if (
@@ -561,7 +561,7 @@ export function updateLuxorEnemy(s: Alley, e: Sprite, time: number) {
         Math.abs(dy) < 130 &&
         time > e.getData('until')
       ) {
-        e.setData('state', 'rear').setData('until', time + 480);
+        e.setData('state', 'rear').setData('until', time + 700);
         sound.fx('hiss');
       }
     }
@@ -632,7 +632,8 @@ function spit(s: Alley, e: Sprite) {
   const g = 500;
   const dx = s.hero.x - e.x,
     dy = s.hero.y - (e.y - 10);
-  const t = Phaser.Math.Clamp(Math.abs(dx) / 230, 0.45, 1.1);
+  // A slow lob at where you stand now: keep moving and it misses.
+  const t = Phaser.Math.Clamp(Math.abs(dx) / 200, 0.6, 1.2);
   const v = s.hazards.create(
     e.x + Math.sign(dx) * 10,
     e.y - 10,
