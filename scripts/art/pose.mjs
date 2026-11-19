@@ -11,8 +11,10 @@ fs.mkdirSync(outDir, { recursive: true });
 const b = await chromium.launch({ args: ['--no-sandbox'] });
 const p = await b.newPage();
 await p.setContent('<body style="margin:0"></body>');
-const svgText = fs.readFileSync(job.svg, 'utf8');
+const read = (path) => fs.readFileSync(path, 'utf8');
 for (const f of job.frames) {
+  // A frame may name its own SVG (several creatures in one job).
+  const svgText = read(f.svg || job.svg);
   const url = await p.evaluate(
     async ({ svgText, f }) => {
       document.body.innerHTML = svgText;

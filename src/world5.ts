@@ -19,6 +19,9 @@ import {
 } from './level-parse';
 import { isW5 } from './world5-art';
 import { isW6 } from './world6-art';
+import { isW7 } from './world7-art';
+/** Aswan and Port Said use steel gates wound up into a frame. */
+const steel = (t: Parameters<typeof isW6>[0]) => isW6(t) || isW7(t);
 import { sound } from './audio';
 import { toast } from './ui';
 
@@ -90,7 +93,7 @@ export interface W5 {
 
 export function buildLuxor(s: Alley): W5 | undefined {
   const L = s.L;
-  const aswan = isW6(L.meta.theme);
+  const aswan = steel(L.meta.theme);
   if (!isW5(L.meta.theme) && !aswan) return undefined;
   const w5: W5 = {
     doors: [],
@@ -220,7 +223,8 @@ export function buildLuxor(s: Alley): W5 | undefined {
   });
   // Feluccas: the harbour boats re-dressed with a lateen sail.
   for (const m of s.moverList)
-    if (m.boat) {
+    if (m.boat && isW7(L.meta.theme)) m.img.setTexture('ferry');
+    else if (m.boat) {
       m.img.setTexture('felucca');
       w5.sails.push({
         img: s.add.image(0, 0, 'felucca-sail').setOrigin(0.5, 1).setDepth(9),
@@ -438,8 +442,8 @@ function openDoor(s: Alley, d: Door, time: number) {
   sound.fx('rumble');
   s.cameras.main.shake(160, 0.003);
   s.burst(d.x, d.y1 - 4, 0xd8aa6e, 10);
-  if (isW6(s.L.meta.theme)) {
-    // Aswan: the steel sluice gate is wound up into its frame.
+  if (steel(s.L.meta.theme)) {
+    // Aswan / Port Said: the steel sluice gate is wound up into its frame.
     for (const b of d.blocks) {
       if (b.getData('y0') === undefined) b.setData('y0', b.y);
       s.tweens.add({
@@ -449,7 +453,12 @@ function openDoor(s: Alley, d: Door, time: number) {
         ease: 'Quad.inOut',
       });
     }
-    s.hint('gate', 'بوابة السد اترفعت! عدّي بسرعة قبل ما تنزل تاني');
+    s.hint(
+      'gate',
+      isW7(s.L.meta.theme)
+        ? 'بوابة الرصيف اترفعت! عدّي بسرعة قبل ما تنزل تاني'
+        : 'بوابة السد اترفعت! عدّي بسرعة قبل ما تنزل تاني',
+    );
     return;
   }
   // The slab turns on its pivot until it's edge-on.
@@ -467,7 +476,7 @@ function closeDoor(s: Alley, d: Door) {
   d.lever?.img.setTexture('lever-off');
   sound.fx('rumble');
   for (const b of d.blocks) b.clearTint().setX(d.x);
-  if (isW6(s.L.meta.theme))
+  if (steel(s.L.meta.theme))
     for (const b of d.blocks)
       s.tweens.add({
         targets: b,

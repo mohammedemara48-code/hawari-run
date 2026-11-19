@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" stroke="#1b140f" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+  <g id="barrel">
+    <circle cx="60" cy="60" r="54" fill="#a8703e"/>
+    <circle cx="60" cy="60" r="46" fill="none" stroke="#5a5a62" stroke-width="8"/>
+    <circle cx="60" cy="60" r="54" fill="none"/>
+    <circle cx="60" cy="60" r="38" fill="#c88a50"/>
+    <path d="M30 46 h60 M24 60 h72 M30 74 h60" fill="none" stroke="#8a5a32" stroke-width="4"/>
+    <path id="face" d="M40 52 l14 6 M80 52 l-14 6" fill="none" stroke-width="5"/>
+    <circle cx="46" cy="62" r="5" fill="#1b140f" stroke="none"/>
+    <circle cx="74" cy="62" r="5" fill="#1b140f" stroke="none"/>
+    <path d="M48 82 q12 -8 24 0" fill="none" stroke-width="5"/>
+    <circle cx="60" cy="14" r="4" fill="#d8d8e0" stroke-width="3"/>
+    <circle cx="106" cy="60" r="4" fill="#d8d8e0" stroke-width="3"/>
+    <circle cx="60" cy="106" r="4" fill="#d8d8e0" stroke-width="3"/>
+    <circle cx="14" cy="60" r="4" fill="#d8d8e0" stroke-width="3"/>
+  </g>
+</svg>

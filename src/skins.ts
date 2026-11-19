@@ -187,6 +187,17 @@ export const SKINS: Record<string, Skin> = {
     collectible: 'dates',
     bond: 'mud',
   },
+  // Port Said: pastel plaster and green wooden balconies, a blue fish crate
+  // and a little grilled fish from the corniche.
+  portsaid: {
+    brick: ['#f0c8a0', '#fff0dc', '#c89878', '#7a5a48'],
+    box: ['#2a7ac8', '#7ab8f0', '#1a4a8a', '#fbf6ea', '#c8e8ff', '#d83a3a'],
+    emblem: 'fishcrate',
+    used: ['#7a8a96', '#9aaab6', '#4e5a64'],
+    coin: ['#5a3418', '#e0a040', '#f8d880', '#ffffff'],
+    collectible: 'fish',
+    bond: 'tile',
+  },
   // The tomb: painted plaster, a canopic jar glinting in torchlight.
   tomb: {
     brick: ['#8a6a44', '#a8845a', '#5a4028', '#2e1e12'],
@@ -442,18 +453,19 @@ export function makeSkins(scene: Phaser.Scene) {
       for (const x of [5, 10, 15]) rect(c, x, 11, 2, 1, '#e8e0c8');
       rect(c, 2, 14, 20, 2, '#a86a2a');
     });
-    tex(scene, 'harbor-food', 24, 20, (c) => {
-      rect(c, 0, 14, 24, 5, INK);
-      rect(c, 1, 15, 22, 3, '#e8e4dc');
-      rect(c, 3, 6, 16, 9, INK);
-      rect(c, 4, 7, 14, 7, '#c87a3a');
-      rect(c, 4, 7, 14, 2, '#e8a060');
-      for (const x of [7, 11, 15]) rect(c, x, 8, 1, 5, '#6a3a1a');
-      rect(c, 18, 5, 5, 11, INK);
-      rect(c, 19, 6, 3, 9, '#c87a3a');
-      rect(c, 6, 9, 2, 2, '#14100e');
-      rect(c, 2, 12, 3, 2, '#f0e060');
-    });
+    for (const key of ['harbor-food', 'portsaid-food'])
+      tex(scene, key, 24, 20, (c) => {
+        rect(c, 0, 14, 24, 5, INK);
+        rect(c, 1, 15, 22, 3, '#e8e4dc');
+        rect(c, 3, 6, 16, 9, INK);
+        rect(c, 4, 7, 14, 7, '#c87a3a');
+        rect(c, 4, 7, 14, 2, '#e8a060');
+        for (const x of [7, 11, 15]) rect(c, x, 8, 1, 5, '#6a3a1a');
+        rect(c, 18, 5, 5, 11, INK);
+        rect(c, 19, 6, 3, 9, '#c87a3a');
+        rect(c, 6, 9, 2, 2, '#14100e');
+        rect(c, 2, 12, 3, 2, '#f0e060');
+      });
   }
   // Luxor power-up: a round loaf of عيش شمسي, the sun-risen bread of Upper
   // Egypt, slashed on top and dusted with bran.

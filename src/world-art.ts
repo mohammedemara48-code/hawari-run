@@ -57,6 +57,16 @@ import {
   w6Stone,
   w6Window,
 } from './world6-art';
+import {
+  W7_PALETTES,
+  isW7,
+  w7Cap,
+  w7Ledge,
+  w7Near,
+  w7Slab,
+  w7Stone,
+  w7Window,
+} from './world7-art';
 import { disc, grad, hash, poly, rect, tex, type Palette } from './art-kit';
 export { disc, hash, poly, rect, tex, type Palette };
 
@@ -169,6 +179,7 @@ export const PALETTES: Record<Theme, Palette> = {
   ...W4_PALETTES,
   ...W5_PALETTES,
   ...W6_PALETTES,
+  ...W7_PALETTES,
 };
 
 /* ─────────────────────── Tile painting ─────────────────────── */
@@ -184,6 +195,7 @@ function stoneFill(
   if (isW3(theme)) return w3Stone(c, x, y, col, row, pal, theme);
   if (isW4(theme)) return w4Stone(c, x, y, col, row, pal, theme);
   if (isW5(theme)) return w5Stone(c, x, y, col, row, pal, theme);
+  if (isW7(theme)) return w7Stone(c, x, y, col, row);
   if (isW6(theme)) return w6Stone(c, x, y, col, row);
   const h = hash(col, row),
     base = pal.stone[Math.floor(h * pal.stone.length)];
@@ -248,6 +260,7 @@ function capTop(
   if (isW3(theme)) return w3Cap(c, x, y, col, row, pal, theme);
   if (isW4(theme)) return w4Cap(c, x, y, col, row, pal, theme);
   if (isW5(theme)) return w5Cap(c, x, y, col, row, pal, theme);
+  if (isW7(theme)) return w7Cap(c, x, y, col, row);
   if (isW6(theme)) return w6Cap(c, x, y, col, row);
   const h = hash(col, row, 7);
   if (theme === 'farm') {
@@ -313,6 +326,7 @@ function facadeWindow(
   if (isW3(theme)) return w3Window(c, x, y, col, row, pal, theme);
   if (isW4(theme)) return w4Window(c, x, y, col, row, pal, theme);
   if (isW5(theme)) return w5Window(c, x, y, col, row, pal, theme);
+  if (isW7(theme)) return w7Window(c, x, y, col, row);
   if (isW6(theme)) return w6Window(c, x, y, col, row);
   const h = hash(col, row, 3),
     lit = theme === 'night' ? h > 0.45 : theme === 'sewer' ? h > 0.8 : false;
@@ -368,6 +382,7 @@ function slab(
   if (isW3(theme)) return w3Slab(c, x, y, col, row, pal, theme);
   if (isW4(theme)) return w4Slab(c, x, y, col, row, pal, theme);
   if (isW5(theme)) return w5Slab(c, x, y, col, row, pal, theme);
+  if (isW7(theme)) return w7Slab(c, x, y);
   if (isW6(theme)) return w6Slab(c, x, y);
   const h = hash(col, row, 11);
   if (theme === 'farm') {
@@ -412,6 +427,7 @@ function ledge(
   if (isW3(theme)) return w3Ledge(c, x, y, col, row, pal, theme, end);
   if (isW4(theme)) return w4Ledge(c, x, y, col, row, pal, theme, end);
   if (isW5(theme)) return w5Ledge(c, x, y, col, row, pal, theme, end);
+  if (isW7(theme)) return w7Ledge(c, x, y, end);
   if (isW6(theme)) return w6Ledge(c, x, y, end);
   const h = hash(col, row, 5);
   if (theme === 'farm') {
@@ -1857,7 +1873,9 @@ export function makeParallax(scene: Phaser.Scene, theme: Theme) {
             : theme === 'farm'
               ? '#1e2a14'
               : '#050909';
-    if (isW6(theme)) {
+    if (isW7(theme)) {
+      w7Near(c, W);
+    } else if (isW6(theme)) {
       w6Near(c, W);
     } else if (isW5(theme)) {
       w5Near(c, theme, W);

@@ -54,6 +54,8 @@ export const ENEMY: Record<string, string> = {
   '7': 'cobra',
   '8': 'devil',
   ت: 'croc',
+  ب: 'pelican',
+  ر: 'barrel',
 };
 /** Flying enemies ignore gravity and floors (jellyfish swim). */
 export const FLYING = new Set([
@@ -152,7 +154,23 @@ export interface Parsed {
   doors: { col: number; row0: number; row1: number; lever?: Pt }[];
   pillars: Pt[];
   sands: Pt[];
+  /** World 7: crane hooks on a trolley rail (hang from them), containers
+   * slung from cranes that carry you sideways, and hoisted containers that
+   * rise and sink in place. */
+  hooks: { a: Pt; endCol: number }[];
+  slings: { a: Pt; endCol: number }[];
+  hoists: { a: Pt; topRow: number }[];
 }
+/** World 7 cranes (px/s, ms, tiles). The hook hangs from its trolley rail;
+ * containers are three tiles wide. */
+export const CRANE = {
+  hookSpeed: 78,
+  hookPause: 650,
+  slingSpeed: 64,
+  hoistSpeed: 46,
+  width: 3,
+  grab: 16,
+};
 const pt = (col: number, row: number): Pt => ({
   col,
   row,
@@ -211,6 +229,9 @@ export function parseLevel(index: number): Parsed {
     doors: [],
     pillars: [],
     sands: [],
+    hooks: [],
+    slings: [],
+    hoists: [],
   };
   const carts: Pt[] = [],
     cartEnds: Pt[] = [];
@@ -219,6 +240,12 @@ export function parseLevel(index: number): Parsed {
   const windCells: Pt[] = [];
   const boats: Pt[] = [],
     boatEnds: Pt[] = [];
+  const hookA: Pt[] = [],
+    hookB: Pt[] = [],
+    slingA: Pt[] = [],
+    slingB: Pt[] = [],
+    hoistA: Pt[] = [],
+    hoistB: Pt[] = [];
   const trams: Pt[] = [],
     tramEnds: Pt[] = [];
   let tankSeen = false;
@@ -328,6 +355,24 @@ export function parseLevel(index: number): Parsed {
           case '@':
             out.pickups.push(p);
             break;
+          case 'ه':
+            hookA.push(p);
+            break;
+          case 'ة':
+            hookB.push(p);
+            break;
+          case 'ح':
+            slingA.push(p);
+            break;
+          case 'خ':
+            slingB.push(p);
+            break;
+          case 'ص':
+            hoistA.push(p);
+            break;
+          case 'ض':
+            hoistB.push(p);
+            break;
           case 'z':
             out.balloons.push(p);
             break;
@@ -361,6 +406,21 @@ export function parseLevel(index: number): Parsed {
       .sort((x, y) => x.col - y.col)[0];
     out.donkeys.push({ a, endCol: end ? end.col : a.col + 8 });
   }
+  const pair = (as: Pt[], bs: Pt[], dflt: number) =>
+    as.map((a) => {
+      const end = bs
+        .filter((e) => e.row === a.row && e.col > a.col)
+        .sort((x, y) => x.col - y.col)[0];
+      return { a, endCol: end ? end.col : a.col + dflt };
+    });
+  out.hooks = pair(hookA, hookB, 6);
+  out.slings = pair(slingA, slingB, 6);
+  out.hoists = hoistA.map((a) => {
+    const top = hoistB
+      .filter((e) => e.col === a.col && e.row < a.row)
+      .sort((x, y) => y.row - x.row)[0];
+    return { a, topRow: top ? top.row : a.row - 4 };
+  });
   for (const a of boats) {
     const end = boatEnds
       .filter((e) => e.row === a.row && e.col > a.col)

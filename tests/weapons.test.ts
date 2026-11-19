@@ -46,6 +46,11 @@ describe('per-world weapons', () => {
     expect(worldWeapon(2).id).toBe('chili');
     expect(worldWeapon(99).id).toBe('chili');
   });
+  it('hides the throw button in Port Said — the cranes are the weapon', () => {
+    expect(worldWeapon(6).hidden).toBe(true);
+    expect(worldWeapon(6).id).toBe('none');
+    expect(worldWeapon(5).hidden).toBeFalsy();
+  });
 });
 
 describe('canal swimming', () => {

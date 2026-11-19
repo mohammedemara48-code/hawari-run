@@ -5,8 +5,8 @@ import { heroBody } from '../src/hero-state';
 import { fitsThrough, onSurface, reach, standable } from './level-graph';
 
 describe('authored levels', () => {
-  it('has six playable worlds; Aswan adds a fifth, sailing level', () => {
-    expect(LEVELS.length).toBe(25);
+  it('has seven playable worlds; Aswan sails, Port Said swings on cranes', () => {
+    expect(LEVELS.length).toBe(28);
     const cairo = LEVELS.filter((l) => l.world === 0),
       rif = LEVELS.filter((l) => l.world === 1);
     expect(cairo.length).toBe(4);
@@ -29,17 +29,32 @@ describe('authored levels', () => {
     expect(new Set(aswan.map((l) => l.timeOfDay)).size).toBe(5);
     expect(aswan.filter((l) => l.sail).map((l) => l.id)).toEqual(['cataract']);
     expect(aswan.every((l) => !l.dark)).toBe(true);
-    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(25);
-    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(25);
+    const portsaid = LEVELS.filter((l) => l.world === 6);
+    expect(portsaid.length).toBe(3);
+    expect(portsaid.every((l) => l.theme === 'portsaid' && !l.dark)).toBe(true);
+    expect(new Set(portsaid.map((l) => l.timeOfDay)).size).toBe(3);
+    // Every Port Said level is built on the cranes, and one is a chase.
+    expect(portsaid.filter((l) => l.chase).map((l) => l.id)).toEqual([
+      'freezone',
+    ]);
+    portsaid.forEach((l) => {
+      const L = parseLevel(LEVELS.indexOf(l));
+      expect(L.hooks.length).toBeGreaterThan(0);
+      expect(L.pickups.length + L.armories.length).toBe(0);
+    });
+    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(28);
+    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(28);
     // Levels are grouped by world in order, and each world ends with a boss.
     expect(LEVELS.map((l) => l.world)).toEqual([
       0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5,
+      6, 6, 6,
     ]);
-    expect([3, 7, 11, 15, 19, 24].every((i) => LEVELS[i].boss)).toBe(true);
-    expect(LEVELS.filter((l) => l.boss).length).toBe(6);
+    expect([3, 7, 11, 15, 19, 24, 27].every((i) => LEVELS[i].boss)).toBe(true);
+    expect(LEVELS.filter((l) => l.boss).length).toBe(7);
     expect(LEVELS[19].bossKind).toBe('ram');
     expect(LEVELS[24].bossKind).toBe('croc');
-    expect(WORLDS.filter((w) => w.playable).length).toBe(6);
+    expect(LEVELS[27].bossKind).toBe('captain');
+    expect(WORLDS.filter((w) => w.playable).length).toBe(7);
     expect(WORLDS.map((w) => w.name)).toEqual([
       'القاهرة',
       'الأرياف',
@@ -47,6 +62,7 @@ describe('authored levels', () => {
       'اسكندرية',
       'الأقصر',
       'أسوان',
+      'بورسعيد',
     ]);
   });
   LEVELS.forEach((meta, index) => {
@@ -111,7 +127,8 @@ describe('authored levels', () => {
           expect(ok, `box ${b.col},${b.row}`).toBe(true);
         }
       });
-      if (L.boss)
+      // The captain is beaten with the gantry crane, not a thrown weapon.
+      if (L.boss && meta.bossKind !== 'captain')
         it('a chili crate waits after the checkpoint, before the arena locks', () => {
           expect(L.armories, 'one chili crate').toHaveLength(1);
           const a = L.armories[0];

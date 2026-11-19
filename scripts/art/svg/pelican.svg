@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136 128" stroke="#1b140f" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+  <g id="pelican">
+    <g id="leg-far"><path d="M78 96 v22 h-10" fill="none" stroke="#e88a2a" stroke-width="6"/></g>
+    <g id="tail"><path d="M108 66 l24 6 l-22 14 Z" fill="#e8e4dc"/></g>
+    <g id="body"><path d="M50 70 q10 -22 46 -18 q22 4 24 26 q-4 24 -38 24 q-30 0 -32 -32 Z" fill="#fbf6ea"/>
+      <path d="M72 66 q22 -6 40 8 q-6 14 -26 12 Z" fill="#d8d4cc" stroke-width="4"/>
+      <path d="M84 70 q12 0 20 6 M88 78 q10 2 16 4" fill="none" stroke="#a8a49c" stroke-width="3"/></g>
+    <g id="neck-head">
+      <path id="neck" d="M58 76 q-8 -20 -2 -40 l14 2 q-6 18 4 36 Z" fill="#fbf6ea"/>
+      <g id="head">
+        <ellipse cx="60" cy="30" rx="15" ry="13" fill="#fbf6ea"/>
+        <path id="crest" d="M66 18 q10 -8 14 -2 q-6 0 -8 6 Z" fill="#f4e8a8" stroke-width="3"/>
+        <g id="beak">
+          <path d="M50 26 L4 32 L6 38 L48 36 Z" fill="#f4b040"/>
+          <path id="pouch" d="M48 36 L8 38 q8 18 26 16 q14 -2 16 -14 Z" fill="#f08a3a"/>
+          <path d="M4 32 l-2 6 l6 0" fill="#d0602a" stroke-width="3"/>
+        </g>
+        <circle cx="58" cy="27" r="3.5" fill="#1b140f" stroke="none"/>
+        <circle cx="57" cy="26" r="1.2" fill="#ffffff" stroke="none"/>
+      </g>
+    </g>
+    <g id="leg-near"><path d="M90 98 v22 h-12" fill="none" stroke="#f0a040" stroke-width="6"/></g>
+  </g>
+</svg>

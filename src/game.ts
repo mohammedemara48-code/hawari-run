@@ -12,6 +12,21 @@ import { isW5, makeLuxorProps } from './world5-art';
 import { isW6, makeAswanProps } from './world6-art';
 import { buildSail, sailIdle, sailStep, type Sail } from './sail';
 import {
+  buildCrane,
+  craneIdle,
+  hangStep,
+  letGo,
+  tryHook,
+  type Crane,
+} from './crane';
+import { isW7, makePortSaidProps } from './world7-art';
+import {
+  captainContact,
+  captainPhase,
+  updateCaptainBoss,
+  updatePortSaidEnemy,
+} from './world7';
+import {
   crocContact,
   crocPhase,
   updateAswanEnemy,
@@ -312,6 +327,8 @@ export class Alley extends Phaser.Scene {
     arenaX: 0,
   };
   zip: { line: number; dir: number } | null = null;
+  /** World 7: hooks, slung containers, the chase magnet. */
+  crane?: Crane;
   zipCooldown = 0;
   /** Standing on a swinging lamp or a bobbing boat this frame. */
   riding = false;
@@ -384,6 +401,7 @@ export class Alley extends Phaser.Scene {
     makeLuxorCreatures(this);
     makeLuxorProps(this);
     makeAswanProps(this);
+    makePortSaidProps(this);
     makeSkins(this);
     for (const l of LEVELS) makeParallax(this, l.theme);
     this.keys = this.input.keyboard!.addKeys(
@@ -596,6 +614,7 @@ export class Alley extends Phaser.Scene {
     this.w3 = undefined;
     this.w5 = undefined;
     this.sail = undefined;
+    this.crane = undefined;
     this.darkBoost = 0;
     this.wheels = [];
     this.swimming = false;
@@ -1066,6 +1085,7 @@ export class Alley extends Phaser.Scene {
     this.w4 = buildAlexandria(this);
     this.w5 = buildLuxor(this);
     this.sail = buildSail(this);
+    this.crane = buildCrane(this);
     for (const e of L.enemies) this.enemy(e.x, e.y, e.kind);
     if (L.boss) this.makeBoss(L.boss.x, (L.boss.row + 1) * TILE);
     if (L.checkpoint)
@@ -1430,6 +1450,17 @@ export class Alley extends Phaser.Scene {
         frequency: 120,
         emitZone: zone(1000, 380),
       },
+      portsaid: {
+        // Bright sea air: a few warm motes blowing in off the canal.
+        lifespan: 4400,
+        speedX: { min: 18, max: 40 },
+        speedY: { min: -6, max: 6 },
+        scale: { min: 0.6, max: 1.4 },
+        alpha: { start: 0.45, end: 0 },
+        tint: 0xfff8e0,
+        frequency: 150,
+        emitZone: zone(1000, 380),
+      },
       harbor: {
         // Salt spray and sea mist blown off the water.
         lifespan: 4200,
@@ -1457,6 +1488,7 @@ export class Alley extends Phaser.Scene {
       nile: 'mote',
       tomb: 'sand-grain',
       nubia: 'mote',
+      portsaid: 'mote',
     }[meta.theme];
     this.ambient = this.add
       .particles(0, 0, key, conf[meta.theme])
@@ -1586,6 +1618,15 @@ export class Alley extends Phaser.Scene {
     this.physics.add.collider(this.hazards, this.terrain, (h) => {
       const s = h as Sprite;
       const k = s.getData('kind');
+      if (k === 'container') {
+        // A dropped container slams down and breaks open.
+        sound.fx('crush');
+        this.cameras.main.shake(160, 0.008);
+        this.burst(s.x, s.y + 8, 0xc83a2a, 10);
+        this.burst(s.x, s.y + 12, 0xc8b898, 8);
+        s.destroy();
+        return;
+      }
       if (['bone', 'clod', 'shell', 'bubble', 'sand', 'venom'].includes(k)) {
         this.burst(
           s.x,
@@ -1682,6 +1723,8 @@ export class Alley extends Phaser.Scene {
       cobra: [14, 24, 8, 8],
       devil: [22, 40, 6, 6],
       croc: [34, 11, 5, 9],
+      pelican: [20, 22, 7, 8],
+      barrel: [22, 22, 4, 6],
     };
     const [w, h, ox, oy] = sizes[type];
     const b = body(e);
@@ -1722,6 +1765,8 @@ export class Alley extends Phaser.Scene {
           mummy: 30,
           cobra: 0,
           croc: 22,
+          pelican: 30,
+          barrel: 0,
         } as Record<string, number>
       )[type] ?? 40
     );
@@ -1741,6 +1786,7 @@ export class Alley extends Phaser.Scene {
       {
         ram: 'boss5-',
         croc: 'boss6-',
+        captain: 'boss7-',
         buffalo: 'boss2-',
         crab: 'boss3-',
         gull: 'boss4-',
@@ -1767,6 +1813,9 @@ export class Alley extends Phaser.Scene {
     } else if (this.bossKind === 'croc') {
       body(boss).setSize(120, 40).setOffset(14, 30);
       boss.y = bottom - 26;
+    } else if (this.bossKind === 'captain') {
+      body(boss).setSize(64, 60).setOffset(48, 50);
+      boss.y = bottom - 54;
     } else if (crab) body(boss).setSize(92, 40).setOffset(16, 30);
     else if (buffalo) body(boss).setSize(76, 50).setOffset(12, 14);
     else body(boss).setSize(52, 54).setOffset(13, 10);
@@ -1796,9 +1845,11 @@ export class Alley extends Phaser.Scene {
                   ? 'جمبري مشوي من الكورنيش… بقيت أقوى!'
                   : isW5(this.L.meta.theme)
                     ? 'عيش شمسي سخن من فرن الأقصر… بقيت أقوى!'
-                    : isW6(this.L.meta.theme)
-                      ? 'عيش شمسي من فرن النجع… بقيت أقوى!'
-                      : 'سندوتش فول… بقيت أقوى!',
+                    : isW7(this.L.meta.theme)
+                      ? 'سمك بلطي مشوي من الكورنيش… بقيت أقوى!'
+                      : isW6(this.L.meta.theme)
+                        ? 'عيش شمسي من فرن النجع… بقيت أقوى!'
+                        : 'سندوتش فول… بقيت أقوى!',
       );
       this.burst(this.hero.x, this.hero.y, 0xffc879, 16);
     }
@@ -1852,7 +1903,7 @@ export class Alley extends Phaser.Scene {
       hurtUntil: this.hurtPoseUntil,
       dead: this.mode === 'dead',
     });
-    if (this.zip && this.mode === 'play') pose = 'throw1';
+    if ((this.zip || this.crane?.hang) && this.mode === 'play') pose = 'throw1';
     const form = pose === 'grow0' ? 'small' : this.power > 0 ? 'big' : 'small';
     this.hero.setTexture(`hero-${form}-${pose}`).setData('pose', pose);
     this.heroShadow
@@ -2251,7 +2302,10 @@ export class Alley extends Phaser.Scene {
     c.setData('shaking', true);
     const home = c.getData('home');
     // Luxor's cracked slabs give way faster and take longer to come back.
-    const w5 = isW5(this.L.meta.theme) || isW6(this.L.meta.theme);
+    const w5 =
+      isW5(this.L.meta.theme) ||
+      isW6(this.L.meta.theme) ||
+      isW7(this.L.meta.theme);
     this.tweens.add({
       targets: c,
       x: home.x + 2,
@@ -2493,6 +2547,7 @@ export class Alley extends Phaser.Scene {
       return;
     }
     this.lastHurtBy = source;
+    if (this.crane) letGo(this, this.crane, this.time.now);
     dropUmbrella(this);
     this.cameras.main.shake(160, 0.007);
     this.unstickHero();
@@ -2515,6 +2570,7 @@ export class Alley extends Phaser.Scene {
     this.mode = 'dead';
     this.lives--;
     this.zip = null;
+    if (this.crane) this.crane.hang = null;
     this.unstickHero();
     body(this.hero).setAllowGravity(true);
     this.hero
@@ -2642,6 +2698,10 @@ export class Alley extends Phaser.Scene {
       crocContact(this, fromAbove);
       return;
     }
+    if (this.bossKind === 'captain') {
+      captainContact(this, fromAbove);
+      return;
+    }
     if (this.bossKind === 'buffalo' && s.state !== 'dazed') {
       // The buffalo's back is only open while it's dazed from a crash.
       if (fromAbove) {
@@ -2693,6 +2753,15 @@ export class Alley extends Phaser.Scene {
       );
       return;
     }
+    if (this.bossKind === 'captain') {
+      // Steel cab: only a container from the gantry hook dents it.
+      this.burst(this.boss!.x, this.boss!.y - 20, 0xf4c040, 4);
+      this.hint(
+        'captain-shot',
+        'الكابينة حديد… نزّل عليها الحاوية من خطّاف الونش الكبير',
+      );
+      return;
+    }
     if (this.bossKind === 'croc' && s.state !== 'stuck') {
       // The frond slaps off his hide unless his jaws are dug in.
       this.burst(this.boss!.x, this.boss!.y - 10, 0x5aa040, 4);
@@ -2738,6 +2807,7 @@ export class Alley extends Phaser.Scene {
       const buffalo = this.bossKind === 'buffalo';
       if (this.bossKind === 'ram') ramPhase(this, this.bossPhase());
       else if (this.bossKind === 'croc') crocPhase(this.bossPhase());
+      else if (this.bossKind === 'captain') captainPhase(this.bossPhase());
       else if (this.bossKind === 'crab')
         toast(
           this.bossPhase() === 2
@@ -2784,6 +2854,8 @@ export class Alley extends Phaser.Scene {
       boss.setVelocity(boss.x < this.hero.x ? -150 : 150, -260);
     else if (this.bossKind === 'gull')
       boss.setVelocity(boss.x < this.hero.x ? -180 : 180, -200);
+    else if (this.bossKind === 'captain')
+      boss.setVelocity(boss.x < this.hero.x ? -60 : 60, -120);
     else if (this.bossKind === 'ram' || this.bossKind === 'croc')
       boss.setVelocity(boss.x < this.hero.x ? -120 : 120, -220);
     else boss.setVelocity(boss.x < this.hero.x ? -200 : 200, -380);
@@ -2811,7 +2883,8 @@ export class Alley extends Phaser.Scene {
     toast(
       {
         ram: 'الكبش الحارس رجع حجر! باب الكرنك اتفتح… وأسوان مستنياك',
-        croc: 'التمساح الكبير رجع النيل! الجزيرة بقت بتاعتك… والمشوار خلص',
+        croc: 'التمساح الكبير رجع النيل! الجزيرة بقت بتاعتك… وبورسعيد مستنياك',
+        captain: 'ريّس الميناء نزل من الونش! الميناء بقى بتاعك… والمشوار خلص',
         buffalo: 'أبو قرون قعد في الطين! باب الجرن اتفتح',
         crab: 'أبو مقص رجع البحر! رأس البر بقت بتاعتك',
         gull: 'ريّس النوة طار مع الريح! النوة هديت والقلعة بقت بتاعتك',
@@ -2892,6 +2965,7 @@ export class Alley extends Phaser.Scene {
           {
             ram: 'rumble',
             croc: 'roar',
+            captain: 'rumble',
             buffalo: 'moo',
             crab: 'clack',
             gull: 'screech',
@@ -2902,6 +2976,8 @@ export class Alley extends Phaser.Scene {
         toast(
           {
             croc: 'تمساح النيل الكبير: «الجزيرة دي بتاعتي!» — لما يهجم ويغرز بقه في الرملة اتنطّ على راسه، ونطّ فوق موجة ديله',
+            captain:
+              'ريّس الميناء: «محدّش يرسى في ميناي!» — ابعد عن علامة الحاوية، اتشعبط في خطّاف الونش الكبير اللي فوق ونزّل الحاوية على كابينته',
             ram: 'الكبش الحارس: «محدّش يعدّي الكرنك!» — لما يخبط الأرض ويوطّي راسه اتنطّ على الجوهرة، وحجر واحد بينزل وظلّه بيبان قبله',
             buffalo:
               'أبو قرون: «مين داس على جرني؟!» — خلّيه يخبط ويدوخ واتنطّ على ضهره',
@@ -2937,6 +3013,11 @@ export class Alley extends Phaser.Scene {
     }
     if (this.bossKind === 'croc') {
       updateCrocBoss(this, time);
+      this.updateHazards(time);
+      return;
+    }
+    if (this.bossKind === 'captain') {
+      updateCaptainBoss(this, time);
       this.updateHazards(time);
       return;
     }
@@ -3249,7 +3330,7 @@ export class Alley extends Phaser.Scene {
       else if (k === 'shell' || k === 'bubble') {
         h.angle += k === 'shell' ? 9 : 0;
         if (h.y > this.L.height + 40) h.destroy();
-      } else if (k === 'sand' || k === 'venom') {
+      } else if (k === 'sand' || k === 'venom' || k === 'container') {
         if (h.y > this.L.height + 40) h.destroy();
       } else if (k === 'bone' || k === 'clod') {
         h.angle += k === 'bone' ? 12 : 4;
@@ -3529,13 +3610,14 @@ export class Alley extends Phaser.Scene {
       );
     // Ride carts and planks: carry the hero by the platform's own step.
     this.riding = false;
-    if (this.mode === 'play' && !this.zip) {
+    if (this.mode === 'play' && !this.zip && !this.crane?.hang) {
       const hb = body(this.hero);
       const on = this.moverList.find((m) => {
         const mb = body(m.img);
+        const slop = m.lamp || m.boat || m.axis === 'y' ? 8 : 3;
         return (
           m.carry &&
-          Math.abs(hb.bottom - mb.top) < (m.lamp || m.boat ? 5 : 3) &&
+          Math.abs(hb.bottom - mb.top) < slop &&
           hb.right > mb.left + 2 &&
           hb.left < mb.right - 2
         );
@@ -3543,14 +3625,18 @@ export class Alley extends Phaser.Scene {
       const ob = on && body(on.img);
       this.riding = !!(
         ob &&
-        (on.lamp || on.boat || on.tram) &&
+        (on.lamp || on.boat || on.tram || on.axis === 'y') &&
         hb.velocity.y >= Math.min(0, ob.velocity.y) - 5
       );
       if (ob && hb.velocity.y >= Math.min(0, ob.velocity.y) - 5) {
         this.hero.x += ob.velocity.x * dt;
         // Swinging lamps and bobbing boats also drop away under you: stick.
-        if ((on.lamp || on.boat) && ob.velocity.y > hb.velocity.y)
+        // Port Said's hoists need the same stick going up, or gravity
+        // leaves you behind the rising container.
+        if (on.lamp || on.boat || on.axis === 'y') {
           hb.velocity.y = ob.velocity.y;
+          if (on.axis === 'y') this.hero.y += ob.top - hb.bottom;
+        }
       }
       for (const m of this.moverList)
         if (m.donkey) {
@@ -3608,6 +3694,7 @@ export class Alley extends Phaser.Scene {
     updateAlexWorld(this, time, dt);
     updateLuxorWorld(this, time, dt);
     if (this.sail && !this.sail.on) sailIdle(this, this.sail);
+    if (this.crane) craneIdle(this, this.crane, time, dt);
     if (this.water) {
       this.water.top.tilePositionX = this.clock * 20;
       this.water.top.y = this.water.y;
@@ -3661,6 +3748,16 @@ export class Alley extends Phaser.Scene {
         });
         this.lastPress = -1000;
         this.animateHero(time, true, 0, false);
+        break move;
+      }
+      if (this.crane?.hang) {
+        hangStep(this, this.crane, time, {
+          dir: Number(right) - Number(left),
+          jumpPressed: jump && !this.jumpWas,
+          downPressed: down && !this.downWas,
+        });
+        this.lastPress = -1000;
+        this.animateHero(time, false, 0, false);
         break move;
       }
       // Wind gusts: the level's strength and rhythm (Cairo: 2.6 s on, 1.6
@@ -3767,6 +3864,8 @@ export class Alley extends Phaser.Scene {
         this.lastPress = -1000;
       } else {
         if (!grounded && time > this.zipCooldown) this.tryGrab();
+        if (!grounded && !this.zip && this.crane)
+          tryHook(this, this.crane, time);
         if (
           !this.zip &&
           jumpAllowed(time - this.lastGround, time - this.lastPress)
@@ -3850,6 +3949,7 @@ export class Alley extends Phaser.Scene {
       throwing &&
       !this.actionWas &&
       this.power === 2 &&
+      !this.weapon().hidden &&
       time - this.lastShot > 280
     ) {
       const w = this.weapon();
@@ -4072,6 +4172,7 @@ export class Alley extends Phaser.Scene {
   updateEnemy(e: Sprite, time: number) {
     if (updateLuxorEnemy(this, e, time)) return;
     if (updateAswanEnemy(this, e, time)) return;
+    if (updatePortSaidEnemy(this, e, time)) return;
     if (updateAlexEnemy(this, e, time)) return;
     const eb = body(e),
       kind = e.getData('kind') as string,

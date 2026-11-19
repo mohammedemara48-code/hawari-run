@@ -35,6 +35,8 @@ export interface WorldWeapon {
   spin?: number;
   /** Splinter colour when the shot breaks on a wall. */
   splat?: number;
+  /** When true, this world has no throwable — the throw button is hidden. */
+  hidden?: boolean;
 }
 
 export const WEAPONS: Record<number, WorldWeapon> = {
@@ -124,6 +126,24 @@ export const WEAPONS: Record<number, WorldWeapon> = {
     bounce: false,
     spin: 720,
     splat: 0x4a9a3a,
+  },
+  // بورسعيد: no throwable. The city's weapon is the cranes themselves
+  // (hooks, slung containers, the gantry drop). Chili must not appear.
+  6: {
+    id: 'none',
+    item: 'none',
+    projectile: 'none',
+    sfx: 'fire',
+    short: '',
+    armedLabel: 'شطارة الفول',
+    readyLabel: '',
+    lockedLabel: '',
+    toast: '',
+    vx: 0,
+    vy: 0,
+    gravityY: 0,
+    bounce: false,
+    hidden: true,
   },
 };
 

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 224" stroke="#1b140f" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+  <g id="crane">
+    <g id="boom">
+      <path d="M150 104 L36 22 L24 38 L134 116 Z" fill="#f4c040"/>
+      <path d="M140 108 L52 40 M120 98 L62 32 M118 110 L70 52 M100 88 L74 46 M96 96 L86 62 M80 76 L92 72" fill="none" stroke-width="4"/>
+    <g id="load">
+        <path d="M30 30 L30 66" fill="none" stroke-width="4"/>
+        <path id="hook" d="M30 64 q-10 6 -2 14 q8 4 10 -4" fill="none" stroke="#3a3a42" stroke-width="5"/>
+        <g id="container">
+          <rect x="2" y="78" width="58" height="36" rx="3" fill="#d8443a"/>
+          <path d="M12 82 v28 M22 82 v28 M32 82 v28 M42 82 v28 M52 82 v28" fill="none" stroke="#9a2a1e" stroke-width="3"/>
+          <rect x="2" y="78" width="58" height="36" rx="3" fill="none"/>
+          <rect x="20" y="90" width="22" height="10" fill="#fbf6ea" stroke-width="3"/>
+        </g>
+      </g>
+      <circle cx="30" cy="30" r="9" fill="#5a5a62"/>
+    </g>
+    <g id="tracks">
+      <rect x="92" y="180" width="140" height="38" rx="19" fill="#3a3a42"/>
+      <g id="wheels">
+        <circle cx="112" cy="199" r="11" fill="#7a7a84"/>
+        <circle cx="146" cy="199" r="11" fill="#7a7a84"/>
+        <circle cx="180" cy="199" r="11" fill="#7a7a84"/>
+        <circle cx="212" cy="199" r="11" fill="#7a7a84"/>
+      </g>
+      <g id="treads" fill="none" stroke="#5a5a62" stroke-width="4">
+        <path d="M108 183 v-0 M124 183 h0 M140 183 h0 M156 183 h0 M172 183 h0 M188 183 h0 M204 183 h0 M220 183 h0" stroke-width="7"/>
+      </g>
+    </g>
+    <g id="cab">
+      <rect x="102" y="104" width="118" height="80" rx="6" fill="#f08a30"/>
+      <path d="M108 112 h106" fill="none" stroke="#ffb870" stroke-width="5"/>
+      <rect x="200" y="122" width="20" height="40" fill="#d06a20" stroke-width="4"/>
+      <rect id="stack" x="200" y="70" width="14" height="36" fill="#5a5a62"/>
+      <path d="M102 168 h118" fill="none" stroke-width="4"/>
+      <path d="M110 176 h10 M130 176 h10 M150 176 h10 M170 176 h10 M190 176 h10 M206 176 h8" fill="none" stroke="#1b140f" stroke-width="4"/>
+    </g>
+    <g id="window">
+      <rect x="114" y="120" width="72" height="44" rx="4" fill="#bfe8ff"/>
+    </g>
+    <g id="captain">
+      <path id="body" d="M126 164 q0 -22 24 -22 q24 0 24 22 Z" fill="#24407a"/>
+      <path d="M146 144 l4 10 l4 -10" fill="#fbf6ea" stroke-width="3"/>
+      <g id="head">
+        <ellipse cx="150" cy="128" rx="16" ry="17" fill="#e8b888"/>
+        <path id="mustache" d="M134 136 q8 -6 16 0 q8 -6 16 0 q-8 6 -16 2 q-8 4 -16 -2 Z" fill="#2a1a12" stroke-width="3"/>
+        <circle id="eye" cx="141" cy="126" r="3" fill="#1b140f" stroke="none"/>
+        <path id="brow" d="M134 119 l12 3" fill="none" stroke-width="4"/>
+        <g id="cap">
+          <path d="M132 116 q18 -16 36 0 v4 h-36 Z" fill="#fbf6ea"/>
+          <path d="M124 118 h22 v5 h-22 Z" fill="#1b140f" stroke-width="2"/>
+          <circle cx="150" cy="110" r="3" fill="#f4c040" stroke-width="2"/>
+        </g>
+      </g>
+      <g id="arm">
+        <path d="M134 150 q-14 0 -24 -10" fill="none" stroke="#24407a" stroke-width="11"/>
+        <path d="M134 150 q-14 0 -24 -10" fill="none" stroke-width="3" stroke="#1b140f" opacity="0"/>
+        <circle cx="108" cy="138" r="6" fill="#e8b888" stroke-width="4"/>
+      </g>
+    </g>
+    <rect x="114" y="120" width="72" height="44" rx="4" fill="none"/>
+    <path d="M118 124 l14 0 l-12 14 Z" fill="#ffffff" opacity="0.6" stroke="none"/>
+  </g>
+</svg>

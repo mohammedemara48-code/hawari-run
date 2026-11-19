@@ -141,6 +141,8 @@ export function setThrowReady(
 ) {
   const b = document.querySelector<HTMLButtonElement>('[data-touch="throw"]');
   if (!b) return;
+  b.hidden = !!weapon.hidden;
+  if (weapon.hidden) return;
   b.classList.toggle('off', !ready);
   b.classList.toggle('sling-touch', weapon.id === 'sling');
   b.classList.toggle('stick-touch', weapon.id === 'stick');
@@ -281,6 +283,8 @@ export function bossBar(
     `${Math.round(fraction * 100)}%`;
 }
 const THEME_ICON: Record<string, string> = {
+  portsaid:
+    '<path d="M10 4h4v15h-4z" fill="#fbf6ea"/><path d="M10 8h4v2h-4zm0 5h4v2h-4z" fill="#d83a3a"/><path d="M9 2h6v2H9z" fill="#2a2a30"/><path d="M11 1h2v1h-2z" fill="#ffd84a"/><path d="M15 3l7-2v2zM9 3L2 1v2z" fill="#fff2a8"/><path d="M0 19h24v2H0z" fill="#d8ccb0"/><path d="M0 21h24v2H0z" fill="#3a9ae0"/>',
   nubia:
     '<path d="M2 10h9v11H2z" fill="#5aa0d8"/><path d="M11 7h11v14H11z" fill="#e8a83a"/><path d="M2 10h9v2H2zm9-3h11v2H11z" fill="#f8f4ea"/><path d="M5 15h3v6H5zm10-3h3v9h-3z" fill="#2a1c12"/><path d="M14 7a3 3 0 0 1 5 0z" fill="#3ab0a0"/><path d="M0 21h24v2H0z" fill="#e8d0a0"/>',
   night:

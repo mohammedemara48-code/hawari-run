@@ -814,6 +814,64 @@ export const TRACKS: Track[] = [
       4 . 4 5 7 . 5 .   4 2 4 5 4 . . .   2 . 4 . 2 1 2 .   0 . . . 0 . . .`),
     bass: seq('0 . . 0 4 . . .   2 . . 2 4 . 0 .'),
   },
+  // بورسعيد: the canal's own sound — the plucked simsimiyya of the Port
+  // Said bands, bright عجم and راست over bahari and maqsum.
+  {
+    name: 'ساحة الحاويات (عجم · سمسمية · بحري)',
+    maqam: 'ajam',
+    root: 64,
+    bpm: 116,
+    rhythm: 'bahari',
+    lead: 'triangle',
+    timbre: 'simsimiyya',
+    sea: true,
+    melody: seq(`
+      0 . 2 . 4 . 4 .   5 4 2 . 4 . . .   7 . 5 . 4 . 2 .   4 2 1 . 0 . . .
+      4 . 5 . 7 . 7 .   9 7 5 . 7 . . .   5 4 2 . 1 . 2 .   0 . . . 0 . . .`),
+    bass: seq('0 . . . 4 . . .   3 . . . 4 . 0 .'),
+  },
+  {
+    name: 'مطاردة السوق الحرة (راست · سمسمية · مقسوم)',
+    maqam: 'rast',
+    root: 62,
+    bpm: 124,
+    rhythm: 'maqsum',
+    lead: 'triangle',
+    timbre: 'simsimiyya',
+    melody: seq(`
+      0 0 2 . 3 . 4 .   3 2 1 . 2 . . .   4 . 5 . 4 3 2 .   3 2 1 . 0 . . .
+      7 . 6 5 4 . 5 .   4 3 2 . 3 . . .   2 3 4 . 3 2 1 .   0 . . . 0 . . .`),
+    bass: seq('0 . 0 . 4 . . .   3 . 3 . 4 . 0 .'),
+  },
+  {
+    name: 'رصيف الميناء (راست · سمسمية · مقسوم)',
+    maqam: 'rast',
+    root: 58,
+    bpm: 108,
+    rhythm: 'maqsum',
+    lead: 'triangle',
+    timbre: 'simsimiyya',
+    drone: true,
+    melody: seq(`
+      0 . . 2 3 . 4 .   3 . 2 . 0 . . .   4 . 5 . 4 3 2 .   3 . . . 0 . . .
+      5 . 4 . 5 7 5 .   4 . 3 . 2 . . .   3 2 0 . 2 . 3 .   0 . . . . . . .`),
+    bass: seq('0 . . . 4 . . .   -2 . . . 0 . . .'),
+  },
+  {
+    name: 'ريّس الميناء (راست · سمسمية · طبل حربي)',
+    maqam: 'rast',
+    root: 62,
+    bpm: 150,
+    rhythm: 'harbi',
+    lead: 'triangle',
+    timbre: 'simsimiyya',
+    drone: true,
+    boss: true,
+    melody: seq(`
+      0 2 3 . 2 0 -1 0  4 5 4 . 3 . 2 .   5 7 5 4 3 . 4 5   4 3 2 . 0 . . .
+      7 . 6 5 4 5 6 .   7 8 7 6 5 . 4 .   4 3 2 0 2 3 2 .   0 . 0 . 0 . . .`),
+    bass: seq('0 0 . 0 3 . 0 .   0 0 . 0 -2 . -1 .'),
+  },
 ];
 const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
 export function degreeToSemis(maqam: MaqamName, degree: number) {

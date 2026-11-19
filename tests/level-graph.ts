@@ -4,6 +4,7 @@ import {
   BELT,
   BOAT,
   BOUNCE,
+  CRANE,
   LAMP,
   LEDGE,
   SLIDE,
@@ -136,6 +137,18 @@ export function surfaces(L: Parsed): Surface[] {
   L.lifts.forEach((p) => span(p, MOVERS.lift, true));
   // Balloons climb and sink over their whole range.
   L.balloons.forEach((p) => span(p, BALLOON, true));
+  // World 7: slung containers cover their run, hoists their climb, and a
+  // crane hook is a place to hang (like a net) anywhere along its rail.
+  for (const k of L.slings)
+    for (let c = k.a.col; c < k.endCol + CRANE.width; c++)
+      cell.set(key(c, k.a.row), { bounce: 0, solid: false });
+  for (const h of L.hoists)
+    for (let r = h.topRow; r <= h.a.row; r++)
+      for (let c = h.a.col; c < h.a.col + CRANE.width; c++)
+        cell.set(key(c, r), { bounce: 0, solid: false });
+  for (const h of L.hooks)
+    for (let c = h.a.col; c <= h.endCol; c++)
+      cell.set(key(c, h.a.row + 2), { bounce: 0, solid: false, net: true });
   // Donkey carts ride from their start to the end marker.
   for (const d of L.donkeys)
     for (let c = d.a.col; c <= d.endCol; c++)

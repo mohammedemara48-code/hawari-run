@@ -54,6 +54,11 @@ JOBS = {
     # then the crocodile island at dusk.
     'l24': ('bg-w6-aswan', 0.92, 0.86, 0.88, 'afternoon'),
     'l25': ('bg-w6-aswan', 0.82, 0.84, 0.88, 'dusk'),
+    # World 7 (Port Said): the free-market chase at noon, the container
+    # yard in the morning and the quay at a warm early dusk — all bright.
+    'l26': ('bg-w7-portsaid', 0.96, 0.9, 0.88, 'noon'),
+    'l27': ('bg-w7-portsaid', 0.94, 0.88, 0.88, 'morning'),
+    'l28': ('bg-w7-portsaid', 0.86, 0.86, 0.88, 'dusk'),
 }
 # Per-channel multipliers and a lift towards a sky tint for each grade.
 GRADES = {

@@ -220,7 +220,9 @@ export function updateAlexWorld(s: Alley, time: number, dt: number) {
             'wave',
             meta.theme === 'nubia'
               ? 'المية نازلة من البوابة! استنى الرغوة تهدى وبعدين اجري'
-              : 'الموجة بتضرب! استنى الرغوة تهدى وبعدين اجري',
+              : meta.theme === 'portsaid'
+                ? 'موج البحر بيضرب في الفنار! استنى الرغوة تهدى وبعدين اجري'
+                : 'الموجة بتضرب! استنى الرغوة تهدى وبعدين اجري',
           );
           const before = s.hurtUntil;
           s.hurt('wave', true);

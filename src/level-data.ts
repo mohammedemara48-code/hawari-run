@@ -62,6 +62,15 @@
 //   mud-brick slabs (X), levers (0) and gates (]) — here steel sluice gates
 //   of the old dam — and the timed bursts (*) — here water spilling from a
 //   gate. New: ت a Nile crocodile (lies low, gapes, then lunges a short way)
+// World 7 (بورسعيد) is built around the port's cranes, not walking:
+//   ه / ة  a crane hook's trolley run (start / end, same row): the hook
+//          slides along its rail; jump up to grab it, ride, jump to let go
+//   ح / خ  a container slung from a crane (start / end, same row): a
+//          3-wide platform that carries you across
+//   ص / ض  a hoisted container (bottom / top marker, same column): rises
+//          and sinks in place, 3 wide
+//   ب a pelican (waddles, then darts its beak forward)
+//   ر a harbour barrel (rolls along and bounces off walls)
 export const TILE = 24;
 export type Theme =
   | 'night'
@@ -76,7 +85,8 @@ export type Theme =
   | 'temple'
   | 'nile'
   | 'tomb'
-  | 'nubia';
+  | 'nubia'
+  | 'portsaid';
 /** One region of the journey across Egypt. */
 export interface WorldMeta {
   id: string;
@@ -145,6 +155,15 @@ export const WORLDS: WorldMeta[] = [
     side: 'left',
     playable: true,
   },
+  {
+    id: 'portsaid',
+    name: 'بورسعيد',
+    subtitle: 'كورنيش ومراكب وأسواق والفنار القديم',
+    x: 0.74,
+    y: 0.16,
+    side: 'right',
+    playable: true,
+  },
 ];
 /** Each world's boss, by kind (map, HUD bar and the ending recap). */
 export const BOSS_NAMES: Record<NonNullable<LevelMeta['bossKind']>, string> = {
@@ -154,6 +173,7 @@ export const BOSS_NAMES: Record<NonNullable<LevelMeta['bossKind']>, string> = {
   gull: 'ريّس النوة',
   ram: 'الكبش الحارس',
   croc: 'تمساح النيل الكبير',
+  captain: 'ريّس الميناء',
 };
 export interface LevelMeta {
   /** Index into WORLDS. */
@@ -180,7 +200,7 @@ export interface LevelMeta {
   boss?: boolean;
   /** Which boss: the Cairo tough, the countryside buffalo, the giant crab,
    * the Alexandrian storm gull, the ram guardian of Karnak. */
-  bossKind?: 'fatwa' | 'buffalo' | 'crab' | 'gull' | 'ram' | 'croc';
+  bossKind?: 'fatwa' | 'buffalo' | 'crab' | 'gull' | 'ram' | 'croc' | 'captain';
   /** World 5: torches burn out after this many seconds. */
   torchBurn?: number;
   /** World 5: the Nile current (px/s, negative = flowing left). */
@@ -205,6 +225,9 @@ export interface LevelMeta {
     crocs: [number, number][];
     coins: [number, number, number][];
   };
+  /** World 7: the crane's runaway magnet sweeps along behind you from
+   * `fromCol` until `toCol` (px/s); let it catch you and you're gone. */
+  chase?: { fromCol: number; toCol: number; speed: number };
   /** Sea levels: the tide lifts the water `amp` rows over `period` seconds. */
   tide?: { amp: number; period: number };
   /** Music track for the level and for its boss fight (indices into TRACKS). */
@@ -1988,6 +2011,155 @@ export const CATARACT: NonNullable<LevelMeta['sail']> = {
     [218, 0, 3],
   ],
 };
+/* ─────────────── World 7: بورسعيد ─────────────── */
+const G7 = 12;
+/** A Port Said house front: a block `h` rows tall (wooden balconies on top). */
+function balconyHouse(g: Grid, x: number, w: number, h: number) {
+  g.rect(x, G7 - h, x + w - 1, G7 - 1);
+}
+
+/* 26 ─ مطاردة السوق الحرة: the runaway crane magnet sweeps through the
+ * free-market behind you — keep moving, swing across the gaps on crane
+ * hooks, ride a slung container, climb a hoist over the container wall. */
+function freeZone() {
+  const g = new Grid(260, 15);
+  g.ground(0, 59, G7);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(7, 8, 'BFB');
+  balconyHouse(g, 24, 3, 2);
+  g.text(24, 9, 'ooo');
+  g.set(34, 11, 'ر');
+  balconyHouse(g, 40, 4, 3);
+  g.set(52, 11, 'ر');
+  // Gap 1: one hook across.
+  g.set(58, 7, 'ه');
+  g.set(70, 7, 'ة');
+  g.text(62, 4, 'ooo');
+  g.ground(72, 108, G7);
+  g.set(80, 11, 'ب');
+  balconyHouse(g, 88, 4, 2);
+  g.text(96, 8, 'B?B');
+  g.set(102, 11, 'ر');
+  // Gap 2: a slung container carries you over.
+  g.set(108, 9, 'ح');
+  g.set(122, 9, 'خ');
+  g.text(112, 6, 'oooo');
+  g.ground(126, 168, G7);
+  g.set(128, 11, 'c');
+  g.set(140, 11, 'ب');
+  // Secret: bounce off the awning onto the shop roof for the fanoos.
+  balconyHouse(g, 146, 4, 4);
+  g.set(144, 11, 'A');
+  g.text(146, 7, 'ooo');
+  g.set(149, 7, 'G');
+  g.set(158, 11, 'ر');
+  // Gap 3: hook, a container pillar, hook.
+  g.set(167, 7, 'ه');
+  g.set(176, 7, 'ة');
+  g.rect(178, 9, 179, 14);
+  g.set(180, 7, 'ه');
+  g.set(190, 7, 'ة');
+  g.ground(192, 259, G7);
+  g.text(196, 8, 'BFB');
+  g.set(204, 11, 'ر');
+  // The container wall: ride the hoist up and over.
+  g.set(209, 11, 'ص');
+  g.set(209, 4, 'ض');
+  g.rect(212, 4, 217, 11);
+  g.text(212, 3, 'oooooo');
+  g.set(230, 11, 'ب');
+  g.set(252, 11, 'E');
+  return g.rows();
+}
+
+/* 27 ─ ساحة الحاويات: container stacks over a sheer drop — slung
+ * containers, hooks and hoists are the only way across. */
+function containerYard() {
+  const g = new Grid(220, 15);
+  g.ground(0, 14, G7);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(8, 8, 'BFB');
+  g.rect(15, 9, 24, 14);
+  g.text(17, 8, 'ooo');
+  g.set(25, 8, 'ح');
+  g.set(33, 8, 'خ');
+  g.rect(37, 8, 46, 14);
+  g.set(44, 7, 'ر');
+  g.set(46, 5, 'ه');
+  g.set(58, 5, 'ة');
+  g.text(50, 2, 'ooo');
+  g.rect(61, 9, 70, 14);
+  g.set(66, 8, 'ب');
+  // The hoist up the tall stack (the fanoos waits on its far end).
+  g.set(71, 11, 'ص');
+  g.set(71, 4, 'ض');
+  g.rect(74, 4, 84, 14);
+  g.text(76, 3, 'ooooo');
+  g.set(83, 3, 'G');
+  g.rect(85, 9, 100, 14);
+  g.text(88, 5, 'B?B');
+  g.set(96, 8, 'ر');
+  g.set(101, 8, 'ح');
+  g.set(113, 8, 'خ');
+  g.set(117, 6, 'ح');
+  g.set(127, 6, 'خ');
+  g.text(119, 3, 'oooo');
+  g.rect(131, 9, 150, 14);
+  g.set(133, 8, 'c');
+  g.text(138, 5, 'BFB');
+  g.set(146, 8, 'ب');
+  g.set(150, 6, 'ه');
+  g.set(160, 6, 'ة');
+  g.rect(162, 9, 163, 14);
+  g.set(163, 6, 'ه');
+  g.set(174, 6, 'ة');
+  g.rect(177, 10, 195, 14);
+  g.set(186, 9, 'ر');
+  g.ground(196, 219, G7);
+  g.text(200, 11, 'o o o');
+  g.set(214, 11, 'E');
+  return g.rows();
+}
+
+/* 28 ─ رصيف الميناء: the captain's crane on the quay. Overhead, the port's
+ * gantry hook carries a container back and forth: hang from it and drop
+ * the container on his cab. */
+function harbourQuay() {
+  const g = new Grid(200, 15);
+  g.ground(0, 26, G7);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(9, 8, 'BFB');
+  g.set(20, 11, 'ر');
+  g.set(27, 9, 'ح');
+  g.set(37, 9, 'خ');
+  g.text(30, 6, 'oooo');
+  g.ground(41, 199, G7);
+  g.set(50, 11, 'ب');
+  g.text(55, 8, 'B?B');
+  // Containers stacked on the quay; the fanoos on top of the stack.
+  g.rect(62, 10, 65, 11);
+  g.rect(67, 7, 70, 11);
+  g.rect(72, 4, 74, 11);
+  g.text(72, 3, 'ooo');
+  g.set(73, 2, 'G');
+  g.set(80, 11, 'ر');
+  g.set(98, 11, 'c');
+  g.text(102, 8, 'BFB');
+  g.set(118, 11, 'ب');
+  // The arena: ledges up to the gantry hook's height.
+  g.run(150, 153, 9, '-');
+  g.run(168, 171, 9, '-');
+  g.run(189, 192, 9, '-');
+  g.set(150, 4, 'ه');
+  g.set(194, 4, 'ة');
+  g.rect(199, 0, 199, 11);
+  g.set(176, 11, 'Z');
+  g.set(196, 11, 'E');
+  return g.rows();
+}
 
 export const LEVELS: LevelMeta[] = [
   {
@@ -2381,5 +2553,51 @@ export const LEVELS: LevelMeta[] = [
     mechanic: 'جزيرة رملية وتمساح بيهجم بفكّه وديله + الزعيم',
     enemy: 'تمساح النيل الكبير',
     rows: crocIsland(),
+  },
+  {
+    world: 6,
+    id: 'freezone',
+    track: 32,
+    name: 'مطاردة السوق الحرة',
+    subtitle: 'مغناطيس الونش فلت وجاي وراك… اجري واتشعبط في الخطاطيف',
+    theme: 'portsaid',
+    timeOfDay: 'ps-noon',
+    time: 200,
+    dark: 0,
+    chase: { fromCol: 12, toCol: 238, speed: 92 },
+    mechanic: 'مطاردة: مغناطيس ونش وراك وخطاطيف ماشية فوق الفجوات',
+    enemy: 'المغناطيس + البراميل + البجعة',
+    rows: freeZone(),
+  },
+  {
+    world: 6,
+    id: 'yard',
+    track: 31,
+    name: 'ساحة الحاويات',
+    subtitle: 'الحاويات متعلّقة في الأوناش… والأرض بعيدة تحت',
+    theme: 'portsaid',
+    timeOfDay: 'ps-morning',
+    time: 240,
+    dark: 0,
+    mechanic: 'حاويات طايرة على الأوناش ورافعات بتطلع وتنزل',
+    enemy: 'البراميل + البجعة',
+    rows: containerYard(),
+  },
+  {
+    world: 6,
+    id: 'quay',
+    track: 33,
+    bossTrack: 34,
+    bossKind: 'captain',
+    name: 'رصيف الميناء',
+    subtitle: 'ريّس الميناء فوق ونشه… والونش الكبير فوقكم الاتنين',
+    theme: 'portsaid',
+    timeOfDay: 'ps-dusk',
+    time: 240,
+    dark: 0,
+    boss: true,
+    mechanic: 'خطاف الونش الكبير شايل حاوية: نزّلها على كابينة الريّس',
+    enemy: 'ريّس الميناء',
+    rows: harbourQuay(),
   },
 ];
