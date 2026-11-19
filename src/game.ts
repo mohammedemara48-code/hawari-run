@@ -9,6 +9,13 @@ import { makeAlexCreatures } from './creatures-alex';
 import { makeAlexProps } from './world4-art';
 import { makeLuxorCreatures } from './creatures-luxor';
 import { isW5, makeLuxorProps } from './world5-art';
+import { isW6, makeAswanProps } from './world6-art';
+import {
+  crocContact,
+  crocPhase,
+  updateAswanEnemy,
+  updateCrocBoss,
+} from './world6';
 import {
   buildLuxor,
   luxorContact,
@@ -367,6 +374,7 @@ export class Alley extends Phaser.Scene {
     makeAlexProps(this);
     makeLuxorCreatures(this);
     makeLuxorProps(this);
+    makeAswanProps(this);
     makeSkins(this);
     for (const l of LEVELS) makeParallax(this, l.theme);
     this.keys = this.input.keyboard!.addKeys(
@@ -1382,6 +1390,17 @@ export class Alley extends Phaser.Scene {
         frequency: 140,
         emitZone: zone(1000, 380),
       },
+      nubia: {
+        // Warm motes drifting in the bright Aswan air.
+        lifespan: 4800,
+        speedX: { min: 10, max: 30 },
+        speedY: { min: -8, max: 6 },
+        scale: { min: 0.6, max: 1.3 },
+        alpha: { start: 0.5, end: 0 },
+        tint: 0xfff0c8,
+        frequency: 150,
+        emitZone: zone(1000, 380),
+      },
       tomb: {
         // Dust sifting down through the torchlight.
         lifespan: 3400,
@@ -1418,6 +1437,7 @@ export class Alley extends Phaser.Scene {
       temple: 'sand-grain',
       nile: 'mote',
       tomb: 'sand-grain',
+      nubia: 'mote',
     }[meta.theme];
     this.ambient = this.add
       .particles(0, 0, key, conf[meta.theme])
@@ -1642,6 +1662,7 @@ export class Alley extends Phaser.Scene {
       mummy: [18, 32, 7, 6],
       cobra: [14, 24, 8, 8],
       devil: [22, 40, 6, 6],
+      croc: [34, 11, 5, 9],
     };
     const [w, h, ox, oy] = sizes[type];
     const b = body(e);
@@ -1681,6 +1702,7 @@ export class Alley extends Phaser.Scene {
           scarab: 58,
           mummy: 30,
           cobra: 0,
+          croc: 22,
         } as Record<string, number>
       )[type] ?? 40
     );
@@ -1699,6 +1721,7 @@ export class Alley extends Phaser.Scene {
     return (
       {
         ram: 'boss5-',
+        croc: 'boss6-',
         buffalo: 'boss2-',
         crab: 'boss3-',
         gull: 'boss4-',
@@ -1722,6 +1745,9 @@ export class Alley extends Phaser.Scene {
     } else if (this.bossKind === 'ram') {
       body(boss).setSize(116, 56).setOffset(26, 52);
       boss.y = bottom - 52;
+    } else if (this.bossKind === 'croc') {
+      body(boss).setSize(120, 40).setOffset(14, 30);
+      boss.y = bottom - 26;
     } else if (crab) body(boss).setSize(92, 40).setOffset(16, 30);
     else if (buffalo) body(boss).setSize(76, 50).setOffset(12, 14);
     else body(boss).setSize(52, 54).setOffset(13, 10);
@@ -1751,7 +1777,9 @@ export class Alley extends Phaser.Scene {
                   ? 'جمبري مشوي من الكورنيش… بقيت أقوى!'
                   : isW5(this.L.meta.theme)
                     ? 'عيش شمسي سخن من فرن الأقصر… بقيت أقوى!'
-                    : 'سندوتش فول… بقيت أقوى!',
+                    : isW6(this.L.meta.theme)
+                      ? 'عيش شمسي من فرن النجع… بقيت أقوى!'
+                      : 'سندوتش فول… بقيت أقوى!',
       );
       this.burst(this.hero.x, this.hero.y, 0xffc879, 16);
     }
@@ -2204,7 +2232,7 @@ export class Alley extends Phaser.Scene {
     c.setData('shaking', true);
     const home = c.getData('home');
     // Luxor's cracked slabs give way faster and take longer to come back.
-    const w5 = isW5(this.L.meta.theme);
+    const w5 = isW5(this.L.meta.theme) || isW6(this.L.meta.theme);
     this.tweens.add({
       targets: c,
       x: home.x + 2,
@@ -2591,6 +2619,10 @@ export class Alley extends Phaser.Scene {
       ramContact(this, fromAbove);
       return;
     }
+    if (this.bossKind === 'croc') {
+      crocContact(this, fromAbove);
+      return;
+    }
     if (this.bossKind === 'buffalo' && s.state !== 'dazed') {
       // The buffalo's back is only open while it's dazed from a crash.
       if (fromAbove) {
@@ -2642,6 +2674,15 @@ export class Alley extends Phaser.Scene {
       );
       return;
     }
+    if (this.bossKind === 'croc' && s.state !== 'stuck') {
+      // The frond slaps off his hide unless his jaws are dug in.
+      this.burst(this.boss!.x, this.boss!.y - 10, 0x5aa040, 4);
+      this.hint(
+        'croc-frond',
+        'السعفة مش بتأثر في جلده… غير لما يغرز بقه في الرملة',
+      );
+      return;
+    }
     s.chili++;
     this.boss!.setTintFill(0xffa040);
     this.time.delayedCall(60, () => this.boss?.active && this.boss.clearTint());
@@ -2677,6 +2718,7 @@ export class Alley extends Phaser.Scene {
       sound.fx('roar');
       const buffalo = this.bossKind === 'buffalo';
       if (this.bossKind === 'ram') ramPhase(this, this.bossPhase());
+      else if (this.bossKind === 'croc') crocPhase(this.bossPhase());
       else if (this.bossKind === 'crab')
         toast(
           this.bossPhase() === 2
@@ -2723,7 +2765,7 @@ export class Alley extends Phaser.Scene {
       boss.setVelocity(boss.x < this.hero.x ? -150 : 150, -260);
     else if (this.bossKind === 'gull')
       boss.setVelocity(boss.x < this.hero.x ? -180 : 180, -200);
-    else if (this.bossKind === 'ram')
+    else if (this.bossKind === 'ram' || this.bossKind === 'croc')
       boss.setVelocity(boss.x < this.hero.x ? -120 : 120, -220);
     else boss.setVelocity(boss.x < this.hero.x ? -200 : 200, -380);
   }
@@ -2749,7 +2791,8 @@ export class Alley extends Phaser.Scene {
     bossBar(false);
     toast(
       {
-        ram: 'الكبش الحارس رجع حجر! باب الكرنك اتفتح… والمشوار خلص',
+        ram: 'الكبش الحارس رجع حجر! باب الكرنك اتفتح… وأسوان مستنياك',
+        croc: 'التمساح الكبير رجع النيل! الجزيرة بقت بتاعتك… والمشوار خلص',
         buffalo: 'أبو قرون قعد في الطين! باب الجرن اتفتح',
         crab: 'أبو مقص رجع البحر! رأس البر بقت بتاعتك',
         gull: 'ريّس النوة طار مع الريح! النوة هديت والقلعة بقت بتاعتك',
@@ -2829,6 +2872,7 @@ export class Alley extends Phaser.Scene {
         sound.fx(
           {
             ram: 'rumble',
+            croc: 'roar',
             buffalo: 'moo',
             crab: 'clack',
             gull: 'screech',
@@ -2838,6 +2882,7 @@ export class Alley extends Phaser.Scene {
         bossBar(true, 1, 1, this.bossName);
         toast(
           {
+            croc: 'تمساح النيل الكبير: «الجزيرة دي بتاعتي!» — لما يهجم ويغرز بقه في الرملة اتنطّ على راسه، ونطّ فوق موجة ديله',
             ram: 'الكبش الحارس: «محدّش يعدّي الكرنك!» — لما يخبط الأرض ويوطّي راسه اتنطّ على الجوهرة، وحجر واحد بينزل وظلّه بيبان قبله',
             buffalo:
               'أبو قرون: «مين داس على جرني؟!» — خلّيه يخبط ويدوخ واتنطّ على ضهره',
@@ -2868,6 +2913,11 @@ export class Alley extends Phaser.Scene {
     }
     if (this.bossKind === 'ram') {
       updateRamBoss(this, time);
+      this.updateHazards(time);
+      return;
+    }
+    if (this.bossKind === 'croc') {
+      updateCrocBoss(this, time);
       this.updateHazards(time);
       return;
     }
@@ -3982,6 +4032,7 @@ export class Alley extends Phaser.Scene {
   }
   updateEnemy(e: Sprite, time: number) {
     if (updateLuxorEnemy(this, e, time)) return;
+    if (updateAswanEnemy(this, e, time)) return;
     if (updateAlexEnemy(this, e, time)) return;
     const eb = body(e),
       kind = e.getData('kind') as string,

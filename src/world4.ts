@@ -216,7 +216,12 @@ export function updateAlexWorld(s: Alley, time: number, dt: number) {
           hb.bottom > w.y - 96 &&
           hb.top < w.y;
         if (hit) {
-          s.hint('wave', 'الموجة بتضرب! استنى الرغوة تهدى وبعدين اجري');
+          s.hint(
+            'wave',
+            meta.theme === 'nubia'
+              ? 'المية نازلة من البوابة! استنى الرغوة تهدى وبعدين اجري'
+              : 'الموجة بتضرب! استنى الرغوة تهدى وبعدين اجري',
+          );
           const before = s.hurtUntil;
           s.hurt('wave', true);
           if (s.mode === 'play' && s.hurtUntil !== before)

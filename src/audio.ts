@@ -728,6 +728,77 @@ export const TRACKS: Track[] = [
       7 . 6 5 4 5 6 .   7 8 7 6 5 . 4 .   5 4 3 2 1 2 1 .   0 . 0 . 0 . . .`),
     bass: seq('0 0 . 0 1 . 0 .   0 0 . 0 -2 . -1 .'),
   },
+  // أسوان: Nubian tunes — the five-note scale (degrees 0 1 2 4 5 of عجم)
+  // over a clapped maqsum, with the ney carrying the melody.
+  {
+    name: 'نجع النوبة (عجم خماسي · ناي · كفوف)',
+    maqam: 'ajam',
+    root: 62,
+    bpm: 112,
+    rhythm: 'maqsum',
+    lead: 'triangle',
+    timbre: 'ney',
+    melody: seq(`
+      0 . 2 . 4 . 5 4   2 . 1 . 0 . . .   4 . 5 . 7 . 5 4   2 . 4 . 2 1 0 .
+      7 . 5 4 5 . 4 2   4 . 2 1 0 . . .   1 2 4 . 2 1 0 .   0 . . . 0 . . .`),
+    bass: seq('0 . . 0 4 . . .   2 . . 2 4 . 0 .'),
+  },
+  {
+    name: 'فلايك أسوان (عجم خماسي · ربابة · بحري)',
+    maqam: 'ajam',
+    root: 60,
+    bpm: 98,
+    rhythm: 'bahari',
+    lead: 'triangle',
+    timbre: 'rababa',
+    sea: true,
+    melody: seq(`
+      4 . 2 . 1 . 0 .   1 . 2 . 4 . . .   5 . 4 . 2 . 4 .   2 1 0 . . . . .
+      0 2 4 . 5 . 7 .   5 4 2 . 4 . . .   2 . 1 . 0 1 2 .   0 . . . 0 . . .`),
+    bass: seq('0 . . . 4 . . .   2 . . . 0 . . .'),
+  },
+  {
+    name: 'بوابات السد (عجم خماسي · ناي · صعيدي)',
+    maqam: 'ajam',
+    root: 64,
+    bpm: 120,
+    rhythm: 'saidi',
+    lead: 'triangle',
+    timbre: 'ney',
+    melody: seq(`
+      0 0 2 . 4 . 2 .   4 5 4 . 2 . . .   7 . 5 . 4 . 5 .   4 2 1 . 0 . . .
+      5 . 7 . 5 4 2 .   4 . 2 . 1 . 2 .   4 2 1 0 1 . 2 .   0 . . . 0 . . .`),
+    bass: seq('0 . 0 . 4 . . .   2 . 2 . 4 . 0 .'),
+  },
+  {
+    name: 'جزيرة التمساح (عجم خماسي · ناي · مقسوم)',
+    maqam: 'ajam',
+    root: 58,
+    bpm: 104,
+    rhythm: 'maqsum',
+    lead: 'triangle',
+    timbre: 'ney',
+    drone: true,
+    melody: seq(`
+      0 . . 1 2 . 4 .   2 . 1 . 0 . . .   4 . 5 . 4 2 1 .   2 . . . 0 . . .
+      5 . 4 . 5 7 5 .   4 . 2 . 1 . . .   2 1 0 . 1 . 2 .   0 . . . . . . .`),
+    bass: seq('0 . . . 4 . . .   -1 . . . 0 . . .'),
+  },
+  {
+    name: 'تمساح النيل الكبير (عجم خماسي · ناي · طبل حربي)',
+    maqam: 'ajam',
+    root: 62,
+    bpm: 148,
+    rhythm: 'harbi',
+    lead: 'triangle',
+    timbre: 'ney',
+    drone: true,
+    boss: true,
+    melody: seq(`
+      0 2 4 . 2 0 -1 0  4 5 4 . 2 . 1 .   5 7 5 4 2 . 4 5   4 2 1 . 0 . . .
+      7 . 5 4 5 4 2 .   4 5 4 2 1 . 2 .   4 2 1 0 1 2 1 .   0 . 0 . 0 . . .`),
+    bass: seq('0 0 . 0 2 . 0 .   0 0 . 0 -1 . -1 .'),
+  },
 ];
 const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
 export function degreeToSemis(maqam: MaqamName, degree: number) {

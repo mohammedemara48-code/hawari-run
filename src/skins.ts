@@ -176,6 +176,17 @@ export const SKINS: Record<string, Skin> = {
     collectible: 'dates',
     bond: 'mud',
   },
+  // Aswan: a whitewashed Nubian box with a painted turquoise border and
+  // coins of Aswan granite and gold.
+  nubia: {
+    brick: ['#e8b048', '#f8d070', '#b07a28', '#6a4a20'],
+    box: ['#f8f4ea', '#ffffff', '#c8c0b0', '#2a8ac8', '#8ad0f8', '#e88a8a'],
+    emblem: 'canopic',
+    used: ['#8a7a6a', '#a8988a', '#5e5044'],
+    coin: ['#5a2a1a', '#c86a3a', '#f8c060', '#ffffff'],
+    collectible: 'dates',
+    bond: 'mud',
+  },
   // The tomb: painted plaster, a canopic jar glinting in torchlight.
   tomb: {
     brick: ['#8a6a44', '#a8845a', '#5a4028', '#2e1e12'],
@@ -447,7 +458,7 @@ export function makeSkins(scene: Phaser.Scene) {
   // Luxor power-up: a round loaf of عيش شمسي, the sun-risen bread of Upper
   // Egypt, slashed on top and dusted with bran.
   if (!scene.textures.exists('temple-food'))
-    for (const key of ['temple-food', 'nile-food', 'tomb-food'])
+    for (const key of ['temple-food', 'nile-food', 'tomb-food', 'nubia-food'])
       tex(scene, key, 24, 20, (c) => {
         rect(c, 2, 6, 20, 13, INK);
         rect(c, 4, 4, 16, 2, INK);

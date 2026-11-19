@@ -53,6 +53,7 @@ export const ENEMY: Record<string, string> = {
   '6': 'mummy',
   '7': 'cobra',
   '8': 'devil',
+  ت: 'croc',
 };
 /** Flying enemies ignore gravity and floors (jellyfish swim). */
 export const FLYING = new Set([

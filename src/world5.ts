@@ -18,6 +18,7 @@ import {
   pillarState,
 } from './level-parse';
 import { isW5 } from './world5-art';
+import { isW6 } from './world6-art';
 import { sound } from './audio';
 import { toast } from './ui';
 
@@ -89,7 +90,8 @@ export interface W5 {
 
 export function buildLuxor(s: Alley): W5 | undefined {
   const L = s.L;
-  if (!isW5(L.meta.theme)) return undefined;
+  const aswan = isW6(L.meta.theme);
+  if (!isW5(L.meta.theme) && !aswan) return undefined;
   const w5: W5 = {
     doors: [],
     pillars: [],
@@ -110,12 +112,16 @@ export function buildLuxor(s: Alley): W5 | undefined {
     for (let y = y0; y < y1; y += TILE)
       blocks.push(
         s.add
-          .image(x + TILE / 2, y + TILE / 2, 'door-stone')
+          .image(
+            x + TILE / 2,
+            y + TILE / 2,
+            aswan ? 'gate-steel' : 'door-stone',
+          )
           .setDepth(3)
           .setFlipX(((y / TILE) | 0) % 2 === 1),
       );
     s.add
-      .image(x + TILE / 2, y0 - 2, 'door-hinge')
+      .image(x + TILE / 2, y0 - 2, aswan ? 'gate-gear' : 'door-hinge')
       .setOrigin(0.5, 0.5)
       .setDepth(4);
     const lever = d.lever
@@ -432,6 +438,20 @@ function openDoor(s: Alley, d: Door, time: number) {
   sound.fx('rumble');
   s.cameras.main.shake(160, 0.003);
   s.burst(d.x, d.y1 - 4, 0xd8aa6e, 10);
+  if (isW6(s.L.meta.theme)) {
+    // Aswan: the steel sluice gate is wound up into its frame.
+    for (const b of d.blocks) {
+      if (b.getData('y0') === undefined) b.setData('y0', b.y);
+      s.tweens.add({
+        targets: b,
+        y: (b.getData('y0') as number) - (d.y1 - d.y0) + 8,
+        duration: 420,
+        ease: 'Quad.inOut',
+      });
+    }
+    s.hint('gate', 'بوابة السد اترفعت! عدّي بسرعة قبل ما تنزل تاني');
+    return;
+  }
   // The slab turns on its pivot until it's edge-on.
   s.tweens.add({
     targets: d.blocks,
@@ -447,12 +467,21 @@ function closeDoor(s: Alley, d: Door) {
   d.lever?.img.setTexture('lever-off');
   sound.fx('rumble');
   for (const b of d.blocks) b.clearTint().setX(d.x);
-  s.tweens.add({
-    targets: d.blocks,
-    scaleX: 1,
-    duration: 260,
-    ease: 'Quad.in',
-  });
+  if (isW6(s.L.meta.theme))
+    for (const b of d.blocks)
+      s.tweens.add({
+        targets: b,
+        y: b.getData('y0') as number,
+        duration: 260,
+        ease: 'Quad.in',
+      });
+  else
+    s.tweens.add({
+      targets: d.blocks,
+      scaleX: 1,
+      duration: 260,
+      ease: 'Quad.in',
+    });
   const zb = d.zone.body as SBody;
   zb.enable = true;
   // Caught in the doorway: shoved out (and hurt).

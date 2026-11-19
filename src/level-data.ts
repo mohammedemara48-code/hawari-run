@@ -58,6 +58,10 @@
 //      ledges their light holds up
 //   enemies: 5 scarab  6 mummy (reassembles)  7 cobra (spits)
 //            8 sand-dust devil
+// World 6 (أسوان) re-uses the Nile water (s), feluccas (U/I), cracked
+//   mud-brick slabs (X), levers (0) and gates (]) — here steel sluice gates
+//   of the old dam — and the timed bursts (*) — here water spilling from a
+//   gate. New: ت a Nile crocodile (lies low, gapes, then lunges a short way)
 export const TILE = 24;
 export type Theme =
   | 'night'
@@ -71,7 +75,8 @@ export type Theme =
   | 'fort'
   | 'temple'
   | 'nile'
-  | 'tomb';
+  | 'tomb'
+  | 'nubia';
 /** One region of the journey across Egypt. */
 export interface WorldMeta {
   id: string;
@@ -131,6 +136,15 @@ export const WORLDS: WorldMeta[] = [
     side: 'left',
     playable: true,
   },
+  {
+    id: 'aswan',
+    name: 'أسوان',
+    subtitle: 'نجوع نوبية وفلايك وتماسيح والسد',
+    x: 0.68,
+    y: 0.9,
+    side: 'left',
+    playable: true,
+  },
 ];
 /** Each world's boss, by kind (map, HUD bar and the ending recap). */
 export const BOSS_NAMES: Record<NonNullable<LevelMeta['bossKind']>, string> = {
@@ -139,6 +153,7 @@ export const BOSS_NAMES: Record<NonNullable<LevelMeta['bossKind']>, string> = {
   crab: 'أبو مقص',
   gull: 'ريّس النوة',
   ram: 'الكبش الحارس',
+  croc: 'تمساح النيل الكبير',
 };
 export interface LevelMeta {
   /** Index into WORLDS. */
@@ -165,7 +180,7 @@ export interface LevelMeta {
   boss?: boolean;
   /** Which boss: the Cairo tough, the countryside buffalo, the giant crab,
    * the Alexandrian storm gull, the ram guardian of Karnak. */
-  bossKind?: 'fatwa' | 'buffalo' | 'crab' | 'gull' | 'ram';
+  bossKind?: 'fatwa' | 'buffalo' | 'crab' | 'gull' | 'ram' | 'croc';
   /** World 5: torches burn out after this many seconds. */
   torchBurn?: number;
   /** World 5: the Nile current (px/s, negative = flowing left). */
@@ -1659,6 +1674,245 @@ function karnak() {
   return g.rows();
 }
 
+/* ─────────────── World 6: أسوان ─────────────── */
+const G6 = 12;
+/** A Nubian house: a painted block `h` rows tall with a flat roof. */
+function house(g: Grid, x: number, w: number, h: number) {
+  g.rect(x, G6 - h, x + w - 1, G6 - 1);
+}
+
+/* 21 ─ نجع النوبة: a painted Nubian village above the river. */
+function nubianVillage() {
+  const g = new Grid(240, 15);
+  g.ground(0, 40, G6);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.set(8, 11, '@');
+  g.text(11, 8, 'B?B');
+  house(g, 17, 4, 2);
+  g.text(17, 9, 'oooo');
+  g.set(26, 11, '5');
+  house(g, 30, 5, 3);
+  g.set(32, 8, '7');
+  g.run(36, 39, 7, '=');
+  g.text(36, 6, 'oooo');
+  // A garden pool by the river: a crocodile basks on the far bank.
+  g.sea(41, 46, G6);
+  g.text(41, 9, 'o o o');
+  g.ground(47, 83, G6);
+  g.set(50, 11, 'ت');
+  g.text(55, 8, 'BFB');
+  house(g, 60, 4, 2);
+  house(g, 64, 4, 4);
+  g.text(64, 7, 'oooo');
+  g.set(70, 11, '5');
+  g.run(73, 76, 9, '=');
+  g.set(80, 11, '7');
+  // Cracked mud-brick over a ditch: keep running.
+  g.run(84, 88, G6, 'X');
+  g.text(84, 10, 'o o o');
+  g.ground(89, 140, G6);
+  g.set(93, 11, 'c');
+  g.text(96, 8, 'B?B');
+  g.set(99, 8, 'i');
+  house(g, 104, 5, 2);
+  house(g, 109, 4, 4);
+  // Secret: up the stair of roofs to the dovecote's golden fanoos.
+  g.run(113, 115, 6, '=');
+  g.run(117, 118, 3, '=');
+  g.text(117, 2, 'oo');
+  g.set(118, 1, 'G');
+  g.set(116, 11, 'ت');
+  g.set(124, 11, '8');
+  g.set(132, 11, '5');
+  g.sea(141, 147, G6);
+  g.text(141, 9, 'o o o o');
+  g.ground(148, 200, G6);
+  g.set(152, 11, 'ت');
+  g.text(156, 8, 'BCB');
+  house(g, 161, 4, 2);
+  house(g, 165, 4, 3);
+  house(g, 169, 4, 2);
+  g.set(167, 8, '7');
+  g.set(176, 11, '5');
+  g.run(180, 183, 9, '=');
+  g.text(180, 8, 'oooo');
+  g.set(188, 11, 'ت');
+  g.set(195, 11, '8');
+  g.run(201, 205, G6, 'X');
+  g.text(201, 10, 'o o o');
+  g.ground(206, 239, G6);
+  g.text(210, 8, 'B?B');
+  house(g, 216, 4, 2);
+  g.set(223, 11, '5');
+  g.set(234, 11, 'E');
+  return g.rows();
+}
+
+/* 22 ─ فلايك أسوان: feluccas between the granite islands, crocodiles on
+ * the sandbars. */
+function feluccas() {
+  const g = new Grid(250, 15);
+  g.ground(0, 22, G6);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.set(8, 11, '@');
+  g.text(10, 8, 'B?B');
+  g.set(19, 11, '7');
+  g.sea(23, 50, G6);
+  g.set(24, G6, 'U');
+  g.set(43, G6, 'I');
+  g.text(26, 9, 'o o o o o o');
+  g.ground(51, 76, G6);
+  g.set(54, 11, 'ت');
+  g.rect(60, 9, 63, 11);
+  g.text(60, 8, 'oooo');
+  g.set(68, 11, '7');
+  g.sea(77, 104, G6);
+  g.set(78, G6, 'U');
+  g.set(96, G6, 'I');
+  // A granite boulder midstream with a crocodile on it.
+  g.rect(88, 10, 91, 13);
+  g.set(90, 9, 'ت');
+  g.text(82, 9, 'o o o');
+  g.ground(105, 134, G6);
+  g.set(107, 11, 'c');
+  g.text(110, 8, 'BFB');
+  g.set(118, 11, '5');
+  // Secret: up the granite rocks of the island to the fanoos.
+  g.rect(124, 10, 126, 11);
+  g.rect(127, 7, 129, 11);
+  g.rect(130, 4, 132, 11);
+  g.text(130, 3, 'ooo');
+  g.set(131, 2, 'G');
+  g.sea(135, 170, G6);
+  g.set(136, G6, 'U');
+  g.set(148, G6, 'I');
+  g.rect(151, 10, 153, 13);
+  g.set(152, 9, 'ت');
+  g.set(155, G6, 'U');
+  g.set(166, G6, 'I');
+  g.text(156, 9, 'o o o o');
+  g.ground(171, 190, G6);
+  g.text(174, 8, 'B?B');
+  g.set(180, 11, 'ت');
+  g.run(191, 194, G6, 'X');
+  g.text(191, 10, 'oooo');
+  g.ground(195, 214, G6);
+  g.set(199, 11, '5');
+  g.text(204, 8, 'BCB');
+  g.set(210, 11, '7');
+  g.sea(215, 236, G6);
+  g.set(216, G6, 'U');
+  g.set(229, G6, 'I');
+  g.ground(237, 249, G6);
+  g.set(240, 11, 'ت');
+  g.set(245, 11, 'E');
+  return g.rows();
+}
+
+/* 23 ─ بوابات السد: on the old dam — pull a lever to lift a sluice gate,
+ * and time your run past the gates spilling water. */
+function damGates() {
+  const g = new Grid(240, 15);
+  g.ground(0, 239, G6);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.set(8, 11, '@');
+  g.text(10, 8, 'B?B');
+  g.set(20, 11, '5');
+  // Lesson: a spillway bursts on a beat; the foam warns first.
+  g.set(28, 11, '*');
+  g.text(26, 9, 'o o o');
+  g.set(36, 11, 'ت');
+  gateway(g, 48, 6);
+  g.text(50, 11, 'o o');
+  g.set(56, 11, '*');
+  g.set(62, 11, '*');
+  g.run(58, 61, 8, '=');
+  g.text(58, 7, 'oooo');
+  g.text(68, 8, 'BFB');
+  g.set(74, 11, '7');
+  g.set(80, 11, 'ت');
+  g.set(86, 11, 'c');
+  gateway(g, 98, 6);
+  g.set(94, 11, '5');
+  g.set(104, 11, '*');
+  g.set(110, 11, '*');
+  g.set(116, 11, '*');
+  g.run(106, 108, 8, '=');
+  g.run(112, 114, 8, '=');
+  g.text(106, 7, 'ooo ooo');
+  g.set(122, 11, 'ت');
+  // Secret: a maintenance stair up the gate tower.
+  g.rect(128, 10, 129, 11);
+  g.rect(130, 7, 131, 11);
+  g.rect(132, 4, 135, 11);
+  g.text(132, 3, 'ooo');
+  g.set(134, 2, 'G');
+  g.text(140, 8, 'B?B');
+  g.set(146, 11, '5');
+  gateway(g, 158, 6);
+  g.set(154, 11, '7');
+  g.set(164, 11, '*');
+  g.set(172, 11, '*');
+  g.set(168, 11, 'ت');
+  g.text(176, 8, 'BCB');
+  g.set(184, 11, '5');
+  gateway(g, 196, 6);
+  g.set(202, 11, '*');
+  g.set(208, 11, 'ت');
+  g.set(214, 11, '7');
+  g.text(220, 8, 'B?B');
+  g.set(226, 11, '5');
+  g.set(235, 11, 'E');
+  return g.rows();
+}
+
+/* 24 ─ جزيرة التمساح: a sandbank island at sunset, and the great Nile
+ * crocodile. Only he and his tail-splash wave are ever in play. */
+function crocIsland() {
+  const g = new Grid(200, 15);
+  g.ground(0, 26, G6);
+  g.set(3, 11, 'P');
+  g.text(6, 11, 'o o o');
+  g.text(9, 8, 'B?B');
+  g.set(20, 11, '5');
+  g.sea(27, 46, G6);
+  g.set(28, G6, 'U');
+  g.set(40, G6, 'I');
+  g.text(30, 9, 'o o o o');
+  g.ground(47, 90, G6);
+  g.set(50, 11, 'ت');
+  g.text(55, 8, 'BFB');
+  g.rect(62, 9, 65, 11);
+  // Secret: palm stumps up to the fanoos.
+  g.rect(67, 7, 68, 11);
+  g.rect(70, 4, 71, 11);
+  g.text(70, 3, 'oo');
+  g.set(71, 2, 'G');
+  g.set(78, 11, '7');
+  g.set(85, 11, 'ت');
+  g.run(91, 94, G6, 'X');
+  g.text(91, 10, 'oooo');
+  g.ground(95, 199, G6);
+  g.set(98, 11, 'c');
+  g.text(102, 8, 'B?B');
+  g.set(110, 11, '5');
+  g.set(118, 11, 'ت');
+  // The arena: open sand with a reed ledge each side to hop clear of
+  // the splash wave.
+  g.set(126, 8, '!');
+  g.run(146, 149, 8, '-');
+  g.run(186, 189, 8, '-');
+  g.rect(199, 0, 199, 11);
+  g.set(168, 11, 'Z');
+  g.set(195, 11, 'E');
+  g.set(100, 11, '@');
+  g.set(7, 11, '@');
+  return g.rows();
+}
+
 export const LEVELS: LevelMeta[] = [
   {
     world: 0,
@@ -1974,5 +2228,66 @@ export const LEVELS: LevelMeta[] = [
       'أعمدة اللوتس والأبواب الدوّارة والأعمدة اللي بتهرس + الزعيم الأخير',
     enemy: 'الكبش الحارس',
     rows: karnak(),
+  },
+  {
+    world: 5,
+    id: 'nubia',
+    track: 25,
+    name: 'نجع النوبة',
+    subtitle: 'بيوت ملونة على النيل… والتمساح نايم على الشط',
+    theme: 'nubia',
+    timeOfDay: 'nubia-day',
+    time: 240,
+    dark: 0,
+    mechanic: 'أسطح بيوت نوبية ملونة وبرك فيها تماسيح',
+    enemy: 'التمساح + الكوبرا + الجعران',
+    rows: nubianVillage(),
+  },
+  {
+    world: 5,
+    id: 'feluccas',
+    track: 26,
+    name: 'فلايك أسوان',
+    subtitle: 'اركب الفلوكة بين الجزر… والتماسيح على الصخر',
+    theme: 'nubia',
+    timeOfDay: 'nubia-sunset',
+    time: 260,
+    dark: 0,
+    current: -70,
+    mechanic: 'فلايك ماشية على التيار بين صخور الجرانيت',
+    enemy: 'تماسيح على الجزر والصخر',
+    rows: feluccas(),
+  },
+  {
+    world: 5,
+    id: 'dam',
+    track: 27,
+    name: 'بوابات السد',
+    subtitle: 'شدّ الرافعة ترفع البوابة… واستنى المية تنزل قبل ما تعدّي',
+    theme: 'nubia',
+    timeOfDay: 'nubia-noon',
+    time: 240,
+    dark: 0,
+    waves: { period: 4.4, warn: 1.2, crash: 0.8, roll: 0.5 },
+    mechanic: 'بوابات السد بروافع ومية بتندفع على ميعاد',
+    enemy: 'التمساح + الكوبرا',
+    rows: damGates(),
+  },
+  {
+    world: 5,
+    id: 'crocisland',
+    track: 28,
+    bossTrack: 29,
+    bossKind: 'croc',
+    name: 'جزيرة التمساح',
+    subtitle: 'الغروب على الجزيرة… وتمساح النيل الكبير صاحي',
+    theme: 'nubia',
+    timeOfDay: 'nubia-dusk',
+    time: 230,
+    dark: 0,
+    boss: true,
+    mechanic: 'جزيرة رملية وتمساح بيهجم بفكّه وديله + الزعيم',
+    enemy: 'تمساح النيل الكبير',
+    rows: crocIsland(),
   },
 ];

@@ -762,6 +762,11 @@ footer {
   border-color: #ffd98a99;
   color: #fff0c8;
 }
+.touch-controls .chili-touch.frond-touch {
+  background: radial-gradient(circle at 40% 30%, #3a8a3add, #1e4a24dd);
+  border-color: #f4e08a99;
+  color: #f4ffe0;
+}
 .touch-controls button.held {
   transform: translateY(2px) scale(0.94);
   border-bottom-width: 2px;

@@ -144,6 +144,7 @@ export function setThrowReady(
   b.classList.toggle('off', !ready);
   b.classList.toggle('sling-touch', weapon.id === 'sling');
   b.classList.toggle('stick-touch', weapon.id === 'stick');
+  b.classList.toggle('frond-touch', weapon.id === 'frond');
   b.dataset.weapon = weapon.id;
   b.setAttribute('aria-disabled', String(!ready));
   b.setAttribute('aria-label', ready ? weapon.readyLabel : weapon.lockedLabel);
@@ -280,6 +281,8 @@ export function bossBar(
     `${Math.round(fraction * 100)}%`;
 }
 const THEME_ICON: Record<string, string> = {
+  nubia:
+    '<path d="M2 10h9v11H2z" fill="#5aa0d8"/><path d="M11 7h11v14H11z" fill="#e8a83a"/><path d="M2 10h9v2H2zm9-3h11v2H11z" fill="#f8f4ea"/><path d="M5 15h3v6H5zm10-3h3v9h-3z" fill="#2a1c12"/><path d="M14 7a3 3 0 0 1 5 0z" fill="#3ab0a0"/><path d="M0 21h24v2H0z" fill="#e8d0a0"/>',
   night:
     '<path d="M10 2h4v2h2v2h1v8h-1v3h-2v2h-4v-2H8v-3H7V6h1V4h2z" fill="#ffd36b"/><path d="M10 6h2v9h-2z" fill="#fff6c8"/><path d="M11 19h2v3h-2z" fill="#b8862a"/>',
   market:

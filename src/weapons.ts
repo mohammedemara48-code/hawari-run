@@ -105,6 +105,26 @@ export const WEAPONS: Record<number, WorldWeapon> = {
     spin: 900,
     splat: 0xd8a040,
   },
+  // أسوان: a green palm frond (سعف النخل), flung end over end — it flies
+  // a short, floaty arc that sweeps over a crocodile's back and breaks on
+  // the first wall.
+  5: {
+    id: 'frond',
+    item: 'frond',
+    projectile: 'frondshot',
+    sfx: 'stick',
+    short: 'سعفة',
+    armedLabel: 'سعف النخل',
+    readyLabel: 'ارمي السعفة',
+    lockedLabel: 'السعفة مقفولة: لمّ سعف النخل من أول المرحلة',
+    toast: 'سعف النخل! دوس X أو زرار السعفة وارميها',
+    vx: 330,
+    vy: -180,
+    gravityY: -560,
+    bounce: false,
+    spin: 720,
+    splat: 0x4a9a3a,
+  },
 };
 
 export function worldWeapon(world: number): WorldWeapon {
