@@ -1,0 +1,276 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 200" width="1400" height="200" fill="none">
+<!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
+  <defs>
+    <linearGradient id="batWing" x1="0" y1="100" x2="0" y2="175" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#80508b"/>
+      <stop offset="1" stop-color="#42214f"/>
+    </linearGradient>
+    <linearGradient id="batFur" x1="60" y1="117" x2="93" y2="187" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#80528c"/>
+      <stop offset=".55" stop-color="#623473"/>
+      <stop offset="1" stop-color="#382044"/>
+    </linearGradient>
+    <linearGradient id="redComb" x1="182" y1="70" x2="187" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ef3d29"/>
+      <stop offset="1" stop-color="#ae1711"/>
+    </linearGradient>
+    <linearGradient id="roosterTail" x1="229" y1="107" x2="280" y2="179" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14504b"/>
+      <stop offset=".47" stop-color="#063632"/>
+      <stop offset="1" stop-color="#001c21"/>
+    </linearGradient>
+    <linearGradient id="creamFeathers" x1="183" y1="119" x2="224" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff2d0"/>
+      <stop offset=".6" stop-color="#f2e0b9"/>
+      <stop offset="1" stop-color="#c7ae89"/>
+    </linearGradient>
+    <linearGradient id="pigeonWing" x1="372" y1="64" x2="360" y2="158" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b2b3b6"/>
+      <stop offset=".5" stop-color="#9499a3"/>
+      <stop offset="1" stop-color="#666c7b"/>
+    </linearGradient>
+    <linearGradient id="pigeonBody" x1="326" y1="115" x2="370" y2="181" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#70767d"/>
+      <stop offset=".45" stop-color="#888d94"/>
+      <stop offset="1" stop-color="#565e69"/>
+    </linearGradient>
+    <linearGradient id="ratFur" x1="481" y1="145" x2="514" y2="217" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#656467"/>
+      <stop offset="1" stop-color="#49494d"/>
+    </linearGradient>
+    <linearGradient id="ratSkin" x1="460" y1="138" x2="471" y2="167" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b56d6a"/>
+      <stop offset="1" stop-color="#7d4445"/>
+    </linearGradient>
+    <linearGradient id="gooseFeathers" x1="636" y1="98" x2="663" y2="202" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fffbed"/>
+      <stop offset=".6" stop-color="#f7f1e0"/>
+      <stop offset="1" stop-color="#d7c9b5"/>
+    </linearGradient>
+    <linearGradient id="blackWing" x1="801" y1="59" x2="794" y2="162" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34343e"/>
+      <stop offset="1" stop-color="#1d1e27"/>
+    </linearGradient>
+    <linearGradient id="ravenBody" x1="756" y1="126" x2="784" y2="188" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#333540"/>
+      <stop offset="1" stop-color="#20222c"/>
+    </linearGradient>
+    <linearGradient id="bullBody" x1="923" y1="116" x2="952" y2="218" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#373436"/>
+      <stop offset="1" stop-color="#252426"/>
+    </linearGradient>
+    <linearGradient id="hornIvory" x1="915" y1="99" x2="916" y2="129" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f5e4c7"/>
+      <stop offset="1" stop-color="#bc9b80"/>
+    </linearGradient>
+  </defs>
+  <g id="animal-lineup" transform="translate(162 -35) scale(1.05)" stroke="#211817" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <g id="purple-bat">
+      <path id="left-bat-wing" d="M62 133C51 117 46 100 37 101C19 105 6 126 2 148C13 139 25 147 30 164C43 153 52 167 61 175L70 148Z" fill="url(#batWing)"/>
+      <path id="right-bat-wing" d="M90 133C101 112 108 101 114 103C129 111 143 129 147 149C132 140 121 149 116 165C107 156 97 166 88 175L80 149Z" fill="url(#batWing)"/>
+      <path d="M4 144C12 123 22 113 36 108C33 125 29 145 30 160M36 108C41 123 47 144 53 159M12 138C17 128 23 122 28 119M113 108C124 115 137 129 143 144M113 108C117 125 118 146 116 160M111 109C105 129 99 146 96 158" stroke="#a46baa" stroke-width="2.2"/>
+      <path d="M35 109C31 125 30 142 30 158M113 109C118 127 120 144 117 157M36 110L57 152M112 111L92 152" stroke="#35183f" stroke-width="3"/>
+      <path d="M52 139C44 129 39 107 46 93C48 87 52 91 57 97C64 105 66 114 67 127L85 127C87 111 94 95 102 91C107 87 109 104 105 118C103 127 98 134 97 140Z" fill="#70437b"/>
+      <path d="M54 127C47 120 46 106 49 98C56 101 61 115 61 126Z" fill="#bc788b"/>
+      <path d="M89 127C89 116 97 101 101 98C103 108 99 122 94 129Z" fill="#bb7885"/>
+      <path d="M58 157C54 170 60 183 68 188L71 179L77 190L82 180L87 185C95 177 96 165 91 155Z" fill="url(#batFur)"/>
+      <path d="M61 163C65 176 79 181 88 170" stroke="#32183d"/>
+      <path d="M56 127C61 120 67 118 74 120L78 118L83 121C92 120 98 129 99 137C101 145 96 156 89 160L93 163L84 162C77 167 65 163 61 158L55 157L58 151C51 146 50 136 56 127Z" fill="url(#batFur)"/>
+      <path d="M60 132C64 136 68 137 72 136C70 145 59 146 60 136Z" fill="#f5b724"/>
+      <path d="M81 136C85 136 90 132 93 130C95 141 85 146 81 139Z" fill="#f6bd25"/>
+      <path d="M65 135L66 140M87 135L86 140" stroke="#181318" stroke-width="2.8"/>
+      <path d="M59 131L71 136M83 136L94 130" stroke="#37203b" stroke-width="2.4"/>
+      <path d="M73 144L79 144L76 148Z" fill="#2b172e" stroke-width="1.3"/>
+      <path d="M64 151C71 157 82 158 88 149C80 152 73 153 64 151Z" fill="#271a2a"/>
+      <path d="M66 152L69 158L72 153M81 153L83 157L86 151" fill="#f0e0c9" stroke-width="1"/>
+      <path d="M68 125L72 127M80 126L83 124M62 147L66 148M88 146L91 144" stroke="#9863a2" stroke-width="1.3"/>
+    </g>
+    <g id="rooster">
+      <g id="rooster-tail">
+        <path d="M225 155C222 129 232 99 253 93C277 84 294 104 294 122C281 104 265 108 255 120C279 111 294 126 296 146C282 128 266 131 257 139C282 132 294 152 286 171C284 154 272 150 260 151C278 158 281 178 266 194C268 173 257 164 245 163L235 173Z" fill="url(#roosterTail)"/>
+        <path d="M230 144C230 118 244 100 262 98C275 96 284 104 289 111M240 148C247 125 269 116 285 128M244 154C257 140 276 138 287 151M247 157C266 155 273 167 272 178" stroke="#215b52" stroke-width="2" opacity=".65"/>
+        <path d="M242 155C248 143 258 132 273 134M239 153C241 133 253 117 271 115M253 157C263 163 264 179 261 186" stroke="#002b2b" stroke-width="3"/>
+      </g>
+      <g id="rooster-feet" fill="#c98216">
+        <path d="M196 190L203 195L191 211C187 215 184 217 178 216L166 216C161 216 163 212 167 210L179 210L183 205L180 212L186 211Z"/>
+        <path d="M222 190L231 193L235 209L242 215C249 219 244 222 238 221L225 223C218 225 212 225 210 222C209 219 216 216 220 216L226 213Z"/>
+        <path d="M181 211C176 205 171 206 167 209M189 216L198 218C203 219 202 223 198 222L180 219M224 218L234 218L239 216M218 219L213 222M172 213L166 214" fill="none" stroke="#ecaa27" stroke-width="1.7"/>
+        <path d="M167 216L163 218M199 222L203 222M211 223L208 224M240 221L246 221" fill="none" stroke="#64421d" stroke-width="1.3"/>
+      </g>
+      <path id="rooster-body" d="M177 125C172 138 166 150 171 170C175 187 193 200 210 202C225 202 237 193 242 180C250 169 245 155 235 147C225 139 215 145 209 125Z" fill="url(#creamFeathers)"/>
+      <path d="M175 147C169 166 180 187 199 193M182 176C189 188 203 195 216 195" stroke="#b49b79" stroke-width="2"/>
+      <path id="rooster-neck" d="M177 95C166 104 175 117 173 125C170 132 168 143 172 152L178 147L181 155L186 148C193 155 199 148 200 143C207 146 210 141 211 136L217 140C214 126 210 118 208 105C203 96 188 89 177 95Z" fill="#fff0cd"/>
+      <path d="M176 122C173 131 174 141 177 143M186 126C184 135 184 141 187 145M200 120C199 129 200 137 203 140" stroke="#d3b993" stroke-width="1.8"/>
+      <path id="rooster-comb" d="M170 104C163 98 165 87 172 77C177 69 185 64 185 75C190 70 195 65 201 69C205 72 204 78 202 81C212 75 221 70 221 80C223 91 213 98 203 101C196 97 185 94 181 101Z" fill="url(#redComb)"/>
+      <path d="M169 91C169 84 174 76 179 73M187 78C191 74 196 72 199 72M207 82L215 78" stroke="#ff6950" stroke-width="2"/>
+      <path d="M178 104C183 100 190 100 194 105L191 116L181 120L174 113Z" fill="#f9e6b7" stroke-width="1.6"/>
+      <path d="M180 103C181 112 190 115 191 105" fill="#f6fbdf"/>
+      <path d="M186 104L185 110" stroke="#191816" stroke-width="3.7"/>
+      <path d="M177 103C183 103 188 100 193 99" stroke="#842a1a" stroke-width="2.3"/>
+      <path id="rooster-beak" d="M176 109C169 105 161 109 157 116L156 120L169 119L177 115Z" fill="#e8a119"/>
+      <path d="M158 117L170 115L176 116L170 125L164 119" fill="#c87d0f" stroke-width="1.4"/>
+      <path d="M162 113L168 111" stroke="#ffcc40" stroke-width="1.4"/>
+      <path d="M172 119C165 123 164 135 170 139C177 142 180 128 179 123C183 122 185 126 184 131C183 141 177 145 173 141" fill="#d83222"/>
+      <path d="M171 126C169 130 169 135 172 136" stroke="#f75a3f" stroke-width="1.6"/>
+      <path id="rooster-wing" d="M199 148C212 141 226 145 237 155L243 162C240 166 233 167 227 165C232 169 239 169 243 168C240 175 231 176 225 173C228 177 232 178 235 178C221 188 201 180 195 167C193 162 194 156 196 153" fill="#f6e3bc"/>
+      <path d="M200 154C202 165 207 170 216 171M215 147C223 149 231 154 236 158" stroke="#fff1d1" stroke-width="3"/>
+      <path d="M199 174C207 181 217 184 225 182" stroke="#c1a781" stroke-width="1.6"/>
+    </g>
+    <g id="gray-pigeon">
+      <g id="pigeon-far-wing" fill="#555b68">
+        <path d="M340 131C326 118 318 99 317 80C317 67 314 54 319 52C325 50 331 69 332 80C334 66 336 58 340 61C345 66 343 79 342 85C348 74 351 53 357 56C363 60 362 76 357 89C363 80 366 69 370 73C376 91 358 126 347 137Z"/>
+        <path d="M324 60C326 69 327 82 325 91C323 96 322 100 324 105M337 68C339 80 335 92 333 99M354 64C354 77 348 88 343 100M322 87C331 89 331 104 330 109C336 98 341 96 344 101C345 108 340 118 340 121" fill="#777d89" stroke="#414753" stroke-width="1.6"/>
+        <path d="M323 111C327 113 331 118 335 126M348 93L344 104" stroke="#91949d" stroke-width="1.5"/>
+      </g>
+      <g id="pigeon-tail">
+        <path d="M368 151C382 151 394 155 405 156C411 156 412 160 406 165L390 166C397 168 406 173 403 177C398 184 387 174 379 169C389 180 387 185 380 182L360 165Z" fill="#434c5c"/>
+        <path d="M374 156L400 161M372 160L395 174M369 163L381 177" stroke="#69717f" stroke-width="1.4"/>
+      </g>
+      <g id="pigeon-feet" fill="none" stroke="#aa5056" stroke-width="3">
+        <path d="M360 170L354 175C350 181 354 184 357 184M365 171L360 176C357 181 360 184 363 184M372 171L366 176C363 181 367 183 370 183"/>
+        <path d="M354 175L366 174M366 176L374 174" stroke="#572b32" stroke-width="1.3"/>
+      </g>
+      <path id="pigeon-body" d="M309 124C308 115 315 109 323 109C336 107 343 122 348 134C357 140 372 142 380 153C385 161 377 171 366 173C347 173 328 165 322 154C317 146 318 138 312 135L305 135Z" fill="url(#pigeonBody)"/>
+      <path d="M314 133C317 130 321 133 324 128C329 124 332 120 336 123L340 136C334 136 336 143 329 143L326 151C320 148 318 141 317 137Z" fill="#4d7b6f" stroke="none"/>
+      <path d="M317 132L324 135L331 132L335 126L339 130L335 140L329 145L327 153L322 148L323 141L318 140Z" fill="#765c82" stroke="none"/>
+      <path d="M319 135L326 136L332 131M328 145L333 139" stroke="#8b6a96" stroke-width="2" opacity=".65"/>
+      <path d="M309 124C311 128 319 128 325 123" stroke="#414652"/>
+      <path d="M313 119C317 116 322 115 326 117C325 124 318 126 315 122Z" fill="#e2ac28" stroke-width="1.3"/>
+      <ellipse cx="320.3" cy="119.4" rx="1.8" ry="3.1" fill="#121419" stroke="none"/>
+      <path d="M313 116L325 115" stroke="#34363e" stroke-width="2"/>
+      <path d="M311 125L304 130L302 136L313 134L318 131Z" fill="#414449"/>
+      <path d="M304 133L313 130" stroke="#80817e" stroke-width="1.1"/>
+      <path id="pigeon-raised-wing" d="M332 147C344 138 345 123 349 107C354 92 368 82 376 69C381 60 385 46 390 44C396 44 395 62 392 72C397 66 400 56 403 61C408 67 400 84 395 91C400 89 405 79 408 82C410 90 402 103 395 108C400 105 405 98 405 104C404 113 397 119 390 122C395 120 402 116 401 122C398 130 390 134 383 137C389 136 395 133 394 138C390 145 382 148 375 149C381 150 385 147 385 152C377 165 348 166 332 147Z" fill="url(#pigeonWing)"/>
+      <path d="M336 147C347 140 350 123 353 110C356 97 366 88 374 83C376 87 372 96 369 101C376 96 382 94 382 99C381 105 375 110 369 114C377 111 382 110 380 115C377 121 370 125 365 127C370 127 376 125 374 130C371 136 362 140 358 141C363 142 368 139 368 143C364 149 354 153 346 153Z" fill="#b9bdc4" stroke="#6d7380" stroke-width="1.6"/>
+      <path d="M377 82C385 74 390 60 390 51M380 93C388 88 398 73 400 66M381 106C390 100 399 91 403 86M380 119C388 115 396 109 400 105M373 133C383 130 391 125 395 121M368 145C377 143 384 141 388 137" stroke="#4f5664" stroke-width="1.7"/>
+      <path d="M338 150C346 159 359 162 369 161" stroke="#969ca7" stroke-width="2"/>
+      <path d="M310 112L316 109L322 110" stroke="#a1a2a2" stroke-width="1.4"/>
+    </g>
+    <g id="gray-rat">
+      <g id="rat-tail">
+        <path d="M542 179C555 188 568 198 581 190C591 184 596 174 590 163C585 154 574 153 569 147C566 144 566 138 569 134C562 138 561 145 567 152C573 159 584 162 584 170C585 181 578 185 570 184C561 183 554 174 548 174Z" fill="#a85c58"/>
+        <path d="M550 180L547 185M556 184L553 189M563 187L562 193M571 187L572 194M579 184L582 190M584 179L590 182M585 171L592 172M582 163L588 160M576 159L580 154M570 155L573 150M565 146L569 144" stroke="#6e3637" stroke-width="1.2"/>
+        <path d="M551 177C562 186 574 193 584 182" stroke="#d4867a" stroke-width="1.4"/>
+      </g>
+      <path id="rat-rear-ear" d="M444 155C443 142 449 133 457 133C465 133 469 143 466 151Z" fill="url(#ratSkin)"/>
+      <path d="M449 146C451 138 456 137 460 140" stroke="#d18a82" stroke-width="1.5"/>
+      <g id="rat-back-paws" fill="#a75e5c">
+        <path d="M513 202L508 211L500 215C496 220 503 221 509 219L519 216L525 204Z"/>
+        <path d="M542 199L548 211L541 215C538 220 544 223 551 220L558 218C562 213 559 202 556 195Z"/>
+        <path d="M506 216L503 220M511 215L508 219M547 217L544 221M552 217L550 220" fill="none" stroke="#6d383b" stroke-width="1.2"/>
+      </g>
+      <path id="rat-body" d="M435 165C441 154 451 148 463 149C471 150 478 153 487 148C501 142 515 142 527 148C544 153 554 168 554 187C554 202 542 213 528 211C517 211 508 203 499 205L481 209C472 214 461 205 459 199L450 193L434 191L424 187C421 182 425 177 430 173Z" fill="url(#ratFur)"/>
+      <path d="M478 153C495 145 510 145 520 150M533 156C544 163 548 173 548 182" stroke="#7b787a" stroke-width="2"/>
+      <path d="M471 152C460 149 454 150 451 153L449 158L440 163L438 168L431 172L433 176L426 181L436 186L446 188L453 193L458 192L465 198L469 193L477 198L473 188L481 189L477 181" fill="#626165" stroke="none"/>
+      <path d="M473 153C462 149 455 152 452 156M465 184L472 190L471 185M454 190L460 194L460 190" stroke="#373638" stroke-width="1.5"/>
+      <path id="rat-near-ear" d="M464 159C459 151 463 139 471 135C479 130 487 135 489 143C493 154 481 163 474 162L470 158" fill="url(#ratSkin)"/>
+      <path d="M471 155C468 150 473 141 478 140C483 139 485 145 482 152" stroke="#d68b81" stroke-width="2"/>
+      <path d="M471 157C475 154 478 155 480 158" stroke="#783f42" stroke-width="1.6"/>
+      <path d="M442 168C446 166 453 164 458 165C456 174 448 177 442 172Z" fill="#d9a326" stroke-width="1.5"/>
+      <ellipse cx="451" cy="168.5" rx="2" ry="3.5" fill="#141417" stroke="none"/>
+      <path d="M441 168C447 168 452 164 457 161" stroke="#303033" stroke-width="2.5"/>
+      <path d="M443 178L451 177L456 180L451 181M439 186L448 188L452 185" stroke="#2b292b" stroke-width="1.5"/>
+      <path id="rat-nose" d="M429 176C433 178 433 182 429 186C424 188 420 184 420 181C420 178 424 175 429 176Z" fill="#b77570"/>
+      <path d="M422 179L426 178" stroke="#e6a196" stroke-width="1.8"/>
+      <path d="M432 186C437 189 442 190 446 189" stroke="#282629" stroke-width="1.7"/>
+      <g id="rat-whiskers" stroke="#827470" stroke-width=".8">
+        <path d="M436 183L419 177M437 185L416 184M437 187L420 192M444 186L457 190M443 183L460 183"/>
+      </g>
+      <path id="rat-front-leg" d="M482 187C480 196 480 204 473 213L467 216C462 215 454 218 455 222C457 226 469 225 476 222L483 216L492 198" fill="#5a595d"/>
+      <path d="M471 212L468 216C461 214 453 219 454 222C457 226 470 225 476 221L480 216Z" fill="#ad6663"/>
+      <path d="M464 218C461 219 459 221 460 224M469 219L465 224M475 217L471 222" stroke="#6f393c" stroke-width="1.2"/>
+      <path d="M518 176C512 185 515 199 524 203C530 206 536 206 541 203" stroke="#353437" stroke-width="2"/>
+      <path d="M502 203C507 207 514 207 519 207M485 204L491 202" stroke="#343336" stroke-width="1.5"/>
+    </g>
+    <g id="white-goose">
+      <g id="goose-feet" fill="#bc6a0c">
+        <path d="M636 195L644 198L635 211L636 216C630 217 626 223 620 224L607 220C602 217 607 214 615 215L624 211Z"/>
+        <path d="M674 196L683 195L688 203L696 205L695 218C690 221 675 224 670 221C665 219 672 216 678 215L682 210L680 204Z"/>
+        <path d="M611 217L622 217L631 212M620 221L630 217M678 219L688 217L690 208M637 200L631 208" fill="none" stroke="#e48b16" stroke-width="1.7"/>
+        <path d="M607 220L605 222M618 224L621 225M671 221L668 223" fill="none" stroke="#6a3e16" stroke-width="1.3"/>
+      </g>
+      <path id="goose-body-neck" d="M619 82C626 76 639 75 645 84C655 99 647 111 642 126C637 138 642 143 653 142C669 141 683 149 692 158C700 160 704 162 710 159C711 164 706 169 702 172L712 165C710 176 699 181 697 186C687 200 675 205 659 204C639 204 620 190 613 172C606 155 613 141 619 126C625 113 622 109 616 104L609 99C611 92 613 86 619 82Z" fill="url(#gooseFeathers)"/>
+      <path d="M618 89C623 81 635 80 641 86M642 96C644 106 636 122 635 132C633 140 636 147 643 150" stroke="#fffdf2" stroke-width="3"/>
+      <path d="M616 154C611 168 625 190 642 197C656 203 672 203 681 198" stroke="#c7b6a0" stroke-width="2"/>
+      <path d="M621 111C625 110 628 108 630 105" stroke="#a8967e" stroke-width="1.7"/>
+      <path id="goose-beak" d="M614 94C609 99 601 102 596 107C592 113 601 114 610 112L624 107C623 101 619 98 614 94Z" fill="#de8b12"/>
+      <path d="M598 109C606 110 614 106 619 106" stroke="#f4b13b" stroke-width="1.8"/>
+      <path d="M596 110C602 113 612 110 621 107" stroke="#81480c" stroke-width="1.2"/>
+      <ellipse cx="611" cy="102" rx="1.4" ry="1" fill="#8a4d12" stroke="none"/>
+      <path d="M619 92C622 89 629 88 633 89C632 98 625 101 621 96Z" fill="#fff9df" stroke-width="1.4"/>
+      <ellipse cx="626" cy="93" rx="2.5" ry="3.4" fill="#151817" stroke="none"/>
+      <path d="M618 91C624 92 630 88 635 87" stroke="#342a1e" stroke-width="2"/>
+      <path id="goose-wing" d="M645 153C655 148 671 151 682 158L695 164C692 169 686 170 679 168C683 172 691 174 697 170C695 177 685 179 677 176C681 181 687 182 691 180C683 188 669 189 657 183C647 180 639 173 638 163" fill="#faf3e2"/>
+      <path d="M647 157C647 167 654 175 666 177M657 154C667 155 675 159 682 162" stroke="#fffcef" stroke-width="3"/>
+      <path d="M640 172C647 181 664 187 675 186" stroke="#cbbda9" stroke-width="1.7"/>
+      <path d="M695 162L701 164M697 178L703 175" stroke="#b4a28b" stroke-width="1.2"/>
+    </g>
+    <g id="black-raven">
+      <g id="raven-far-wing">
+        <path d="M771 138C759 126 746 111 742 99C738 85 747 72 749 61C750 48 755 50 760 60C763 66 764 73 762 80C771 72 773 56 779 59C786 64 782 79 778 86C785 80 789 74 792 79C796 91 786 107 782 118L781 136Z" fill="#262732"/>
+        <path d="M752 59C755 67 756 76 751 84M777 66C777 75 770 86 765 92M747 85C752 85 756 95 756 101C758 91 762 85 766 88C771 95 766 107 766 112C775 99 780 95 783 99C786 104 777 117 775 124" fill="#373945" stroke="#1d1f28" stroke-width="1.7"/>
+        <path d="M746 99C751 111 759 120 764 126" stroke="#454552" stroke-width="2"/>
+      </g>
+      <g id="raven-tail">
+        <path d="M799 163C811 167 829 171 840 175C847 178 849 181 842 184L829 183C837 187 837 192 832 193C826 194 817 187 810 183C822 192 821 198 814 196L788 178Z" fill="#242732"/>
+        <path d="M807 171L837 180M803 175L827 188M799 180L813 191" stroke="#3b3f4c" stroke-width="1.6"/>
+      </g>
+      <g id="raven-claws" fill="none" stroke="#34343e" stroke-width="3">
+        <path d="M775 178L773 184C766 184 763 188 765 193M778 184C772 188 771 194 776 196M787 182L784 188C779 189 779 195 783 198M786 189C789 186 793 186 794 190"/>
+      </g>
+      <path id="raven-body" d="M730 136C734 123 745 117 757 120C770 122 775 133 781 143C791 148 804 157 809 168C814 180 804 187 789 185C775 184 759 175 751 166C744 159 737 154 728 153L718 151Z" fill="url(#ravenBody)"/>
+      <path d="M741 124C746 121 752 122 756 124M754 160C762 174 780 181 791 180" stroke="#454852" stroke-width="1.7"/>
+      <path d="M742 149C749 150 753 155 755 161L761 159L762 166L769 165L772 174" stroke="#171c26" stroke-width="1.6"/>
+      <path id="raven-beak" d="M733 132C726 136 718 144 716 151C726 147 734 150 741 149L744 143Z" fill="#393c46"/>
+      <path d="M721 146C726 141 733 141 739 143" stroke="#5c5d65" stroke-width="1.3"/>
+      <path d="M719 149L736 146" stroke="#181c25" stroke-width="1.4"/>
+      <path d="M737 132C740 129 746 128 752 129C751 139 745 143 740 139Z" fill="#e5a62c" stroke-width="1.4"/>
+      <ellipse cx="745" cy="132.5" rx="2.3" ry="3.4" fill="#151923" stroke="none"/>
+      <path d="M735 132L752 127" stroke="#111721" stroke-width="2.6"/>
+      <path id="raven-raised-wing" d="M762 156C777 146 782 127 786 109C790 95 801 86 815 75C826 65 834 49 839 49C847 51 839 71 831 81C839 76 846 66 848 71C851 78 841 95 834 100C840 97 846 91 848 94C849 102 836 116 828 120C837 117 842 111 843 116C843 125 829 132 820 135C829 134 836 129 835 134C833 143 822 147 811 149C817 149 825 146 823 151C820 159 808 161 800 161C806 164 811 161 811 165C804 175 780 172 762 156Z" fill="url(#blackWing)"/>
+      <path d="M768 157C779 148 783 135 788 116C791 105 798 98 805 94C809 93 812 96 809 103C807 108 802 113 799 116C807 112 814 106 815 112C815 118 807 124 801 127C807 126 812 122 812 127C810 134 801 139 797 140C804 139 806 138 806 142C803 148 795 151 790 152C798 153 800 151 799 156C792 162 781 162 773 160" fill="#3d404b" stroke="#20232d" stroke-width="1.7"/>
+      <path d="M808 93C820 85 833 68 837 56M814 105C826 99 840 85 844 76M817 118C827 113 838 103 843 97M812 133C822 131 834 124 839 118M805 147C814 145 826 140 831 135M798 159C806 159 816 155 820 151" stroke="#171b24" stroke-width="1.9"/>
+      <path d="M795 101C799 94 809 86 817 81M821 82C828 75 833 67 836 61" stroke="#50525d" stroke-width="1.6"/>
+    </g>
+    <g id="black-bull">
+      <g id="bull-tail">
+        <path d="M981 134C1003 133 1004 152 1008 166L1012 173L1007 180C996 172 998 158 994 149C991 143 986 143 981 143Z" fill="#333033"/>
+        <path d="M1008 168C1015 168 1020 176 1020 183L1017 189L1013 187L1012 191C1006 186 1003 178 1005 173Z" fill="#25242a"/>
+        <path d="M1009 173C1013 176 1016 181 1016 185" stroke="#454047" stroke-width="1.4"/>
+      </g>
+      <g id="bull-far-legs" fill="#272628">
+        <path d="M912 168L916 187L904 216L904 222L886 221L889 211L897 193L897 173Z"/>
+        <path d="M966 173L982 185L969 205L961 222L945 223L947 214L956 194L953 180Z"/>
+        <path d="M888 212L903 215L903 222C897 225 891 224 885 222Z" fill="#493b37"/>
+        <path d="M948 214L961 217L960 224L944 224Z" fill="#4b3d38"/>
+        <path d="M895 216L892 223M953 219L951 224" stroke="#251e1d" stroke-width="1.2"/>
+      </g>
+      <path id="bull-body" d="M898 129C907 123 919 122 933 126C946 130 953 133 967 132C988 128 1000 141 997 162C995 174 991 183 997 194L1005 214L1002 222L987 222L982 211L973 194C962 198 949 195 939 188C934 195 932 198 931 204L937 217L932 225L918 224L916 211L911 197C905 186 897 174 896 158Z" fill="url(#bullBody)"/>
+      <path d="M933 131C946 136 960 136 972 134C984 133 990 140 992 148" stroke="#4a4446" stroke-width="1.9"/>
+      <path d="M970 171C969 180 973 189 978 195M944 170C944 180 941 185 938 189M915 169C914 183 919 194 923 199" stroke="#19191d" stroke-width="2"/>
+      <path d="M928 173C927 184 922 194 925 201L931 213" stroke="#484145" stroke-width="2"/>
+      <path d="M917 214L931 215L936 218L932 225L918 224Z" fill="#4e403b"/>
+      <path d="M984 212C990 215 998 215 1004 212L1008 220C1004 225 994 225 988 223Z" fill="#4c3e38"/>
+      <path d="M925 218L925 224M996 217L997 224" stroke="#241d1c" stroke-width="1.4"/>
+      <path id="bull-far-horn" d="M874 119C870 107 881 98 891 96C886 104 889 109 892 112Z" fill="url(#hornIvory)"/>
+      <path d="M879 108C881 103 885 101 887 100" stroke="#f1d9bd" stroke-width="1.6"/>
+      <path id="bull-head" d="M873 115C880 108 892 108 901 111L912 112C922 116 926 125 922 136C919 143 915 145 913 152C910 165 899 174 888 173C878 171 869 165 864 159C861 150 865 143 865 136C864 127 867 120 873 115Z" fill="#353234"/>
+      <path d="M874 118L881 116L883 112L891 114L895 110L901 114L908 113" stroke="#51464a" stroke-width="2"/>
+      <path d="M871 126C868 134 869 140 872 145M902 153C902 162 897 166 891 167" stroke="#19191b" stroke-width="1.9"/>
+      <path id="bull-near-horn" d="M906 113C918 114 925 111 927 104C928 98 927 95 931 97C937 102 939 112 934 120C929 127 918 131 910 128C906 125 903 119 906 113Z" fill="url(#hornIvory)"/>
+      <path d="M909 116C920 119 931 113 930 102" stroke="#fff0d4" stroke-width="2.3"/>
+      <path d="M912 126C923 127 930 122 933 117" stroke="#ae8b72" stroke-width="1.5"/>
+      <path id="bull-ear" d="M912 136C920 129 930 128 940 135C934 145 926 151 919 146Z" fill="#302b2e"/>
+      <path d="M917 137C922 134 931 134 935 137C930 143 924 144 920 142Z" fill="#a45d59" stroke="#542f31" stroke-width="1.4"/>
+      <path d="M921 137L929 137" stroke="#cd8577" stroke-width="1.3"/>
+      <path d="M882 136C886 136 891 133 895 130C896 139 893 145 887 145C883 144 880 140 882 136Z" fill="#dfaa29" stroke-width="1.5"/>
+      <path d="M890 135L889 140" stroke="#111416" stroke-width="3"/>
+      <path d="M880 135C887 136 892 131 896 128" stroke="#19191b" stroke-width="2.5"/>
+      <path id="bull-muzzle" d="M866 144C873 143 881 147 881 155C881 162 876 167 869 168C861 169 854 163 854 156C853 150 859 144 866 144Z" fill="#69524c"/>
+      <path d="M859 150C862 147 866 147 870 148M859 161C864 166 872 164 875 162" stroke="#8f7062" stroke-width="1.6"/>
+      <ellipse cx="863" cy="153" rx="2.2" ry="3.5" transform="rotate(-23 863 153)" fill="#2b2120" stroke-width="1"/>
+      <path d="M876 150C879 154 879 157 877 160M884 167L891 168" stroke="#352827" stroke-width="1.5"/>
+      <path d="M901 172C904 180 910 185 914 188" stroke="#494045" stroke-width="1.6"/>
+    </g>
+  </g>
+</svg>

@@ -3,10 +3,10 @@ import fs from 'node:fs';
 const out = process.argv[2] || '/workspace/art/old';
 const b = await chromium.launch({ args: ['--no-sandbox'] });
 const p = await b.newPage();
-await p.goto('http://localhost:5173/');
+await p.goto('http://localhost:5173/?oldart');
 await p.waitForFunction(() => window.hawari?.scene.getScene('alley')?.hero);
 const re =
-  /^(boss[0-9]?-|bat|rooster|pigeon|rat|buffalo|goose|crow|crab|gull|saw|plane|thief|skua|jelly|brolly|ball|scarab|mummy|cobra|devil|croc)[0-9]?/;
+  /^(boss[0-9]?-|bat|rooster|pigeon|rat|buffalo|goose|crow|crab|gull|saw|plane|thief|skua|jelly|brolly|ball|scarab|mummy|cobra|devil|croc|cat|bug|basket)[0-9]?/;
 const data = await p.evaluate((src) => {
   const re = new RegExp(src);
   const tm = window.hawari.textures;

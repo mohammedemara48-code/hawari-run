@@ -30,6 +30,20 @@ for (const f of job.frames) {
         for (const id of m.ids)
           g.appendChild(svg.querySelector('#' + CSS.escape(id)));
       }
+      // One creature out of a sheet: hide its siblings (and theirs, up the tree).
+      if (f.only) {
+        let el = svg.querySelector('#' + CSS.escape(f.only));
+        while (el && el !== svg) {
+          for (const sib of el.parentNode.children)
+            if (
+              sib !== el &&
+              sib.tagName !== 'defs' &&
+              !sib.querySelector?.('#' + CSS.escape(f.only))
+            )
+              sib.setAttribute('display', 'none');
+          el = el.parentNode;
+        }
+      }
       // Fit box comes from the rest pose, so poses never change the scale.
       const bb0 = svg.getBBox();
       const ref = f.refBox || [bb0.x, bb0.y, bb0.width, bb0.height];
