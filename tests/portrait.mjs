@@ -14,7 +14,9 @@ p.on('pageerror', (e) => errors.push(e.message));
 await p.goto(process.env.GAME_URL || 'http://localhost:5173');
 await p.waitForFunction(() => window.hawari?.scene.getScene('alley')?.hero);
 assert.ok(
-  await p.evaluate(() => document.documentElement.classList.contains('rotated')),
+  await p.evaluate(() =>
+    document.documentElement.classList.contains('rotated'),
+  ),
   'portrait phone gets the quarter turn',
 );
 const size = await p.evaluate(() => ({
@@ -40,7 +42,13 @@ const cdp = await p.context().newCDPSession(p);
 const touch = (type, pts) =>
   cdp.send('Input.dispatchTouchEvent', {
     type,
-    touchPoints: pts.map(([x, y], id) => ({ id, x, y, radiusX: 8, radiusY: 8 })),
+    touchPoints: pts.map(([x, y], id) => ({
+      id,
+      x,
+      y,
+      radiusX: 8,
+      radiusY: 8,
+    })),
   });
 // The stick sits bottom-left of the game, which is top-left of the screen
 // once turned; "right" in the game is "down" on the screen.
@@ -55,7 +63,9 @@ await touch('touchEnd', []);
 const x1 = await p.evaluate(() => window.hawari.scene.getScene('alley').hero.x);
 assert.ok(x1 > x0 + 30, `stick drag moves the hero right (${x0} → ${x1})`);
 const jump = await p.locator('[data-touch="jump"]').boundingBox();
-await touch('touchStart', [[jump.x + jump.width / 2, jump.y + jump.height / 2]]);
+await touch('touchStart', [
+  [jump.x + jump.width / 2, jump.y + jump.height / 2],
+]);
 await p.waitForTimeout(120);
 const vy = await p.evaluate(
   () => window.hawari.scene.getScene('alley').hero.body.velocity.y,
