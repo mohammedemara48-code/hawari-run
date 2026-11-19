@@ -9,7 +9,8 @@ import {
 const PLAYER_KEY = 'hawari-player';
 export interface Player {
   name: string;
-  pin: string;
+  /** Kept on this device; absent when restored from the server session. */
+  pin?: string;
 }
 export function normalizeName(name: string) {
   return name.normalize('NFKC').trim().replace(/\s+/g, ' ').slice(0, 24);
@@ -54,9 +55,10 @@ export function getPlayer(): Player | null {
         }
     }
     const p = JSON.parse(raw || 'null');
-    if (!p || typeof p.name !== 'string' || !validPin(p.pin)) return null;
+    if (!p || typeof p.name !== 'string') return null;
     const name = normalizeName(p.name);
-    return name.length >= 2 ? { name, pin: p.pin } : null;
+    if (name.length < 2) return null;
+    return validPin(p.pin) ? { name, pin: p.pin } : { name };
   } catch {
     return null;
   }
@@ -64,6 +66,7 @@ export function getPlayer(): Player | null {
 export function setPlayer(p: Player) {
   const v = JSON.stringify({ name: normalizeName(p.name), pin: p.pin });
   writeCookie(v);
+  void idbSet(v);
   try {
     localStorage.setItem(PLAYER_KEY, v);
   } catch {
@@ -72,11 +75,103 @@ export function setPlayer(p: Player) {
 }
 export function clearPlayer() {
   writeCookie(null);
+  void idbSet(null);
+  void fetch('/api/me', { method: 'DELETE' }).catch(() => {});
   try {
     localStorage.removeItem(PLAYER_KEY);
   } catch {
     /* ignore */
   }
+}
+// IndexedDB: one more copy of the player, for browsers that clear
+// localStorage and cookies but keep IndexedDB.
+function idb(): Promise<IDBDatabase | null> {
+  return new Promise((resolve) => {
+    try {
+      const r = indexedDB.open('hawari', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => resolve(r.result);
+      r.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+async function idbSet(v: string | null) {
+  const db = await idb();
+  if (!db) return;
+  try {
+    const st = db.transaction('kv', 'readwrite').objectStore('kv');
+    if (v) st.put(v, 'player');
+    else st.delete('player');
+  } catch {
+    /* ignore */
+  }
+}
+async function idbGet(): Promise<string | null> {
+  const db = await idb();
+  if (!db) return null;
+  return new Promise((resolve) => {
+    try {
+      const r = db.transaction('kv').objectStore('kv').get('player');
+      r.onsuccess = () =>
+        resolve(typeof r.result === 'string' ? r.result : null);
+      r.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+const withTimeout = <T>(p: Promise<T>, ms: number, fallback: T) =>
+  Promise.race([p, new Promise<T>((r) => setTimeout(() => r(fallback), ms))]);
+/** On start: bring the player back from IndexedDB or the server session
+ * (httpOnly cookie) when page storage was wiped, and make sure a device
+ * that only ever logged in locally gets a server session. */
+export async function restoreSession(): Promise<boolean> {
+  if (!getPlayer()) {
+    const raw = await withTimeout(idbGet(), 800, null);
+    if (raw) {
+      try {
+        const p = JSON.parse(raw) as Player;
+        if (p && typeof p.name === 'string') setPlayer(p);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  const local = getPlayer();
+  try {
+    const res = await withTimeout(
+      fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' }),
+      3500,
+      null,
+    );
+    if (res && res.ok) {
+      const data = (await res.json()) as {
+        name?: string;
+        progress?: Progress;
+      };
+      if (typeof data.name === 'string') {
+        const same =
+          local && normalizeName(local.name) === normalizeName(data.name);
+        if (!local || same) {
+          setPlayer({ name: data.name, pin: same ? local?.pin : undefined });
+          if (data.progress && typeof data.progress === 'object') {
+            saveProgress(mergeProgress(loadProgress(), data.progress), false);
+            void pushProgress();
+          }
+          return true;
+        }
+      }
+    } else if (res && res.status === 401 && local?.pin) {
+      // Logged in on this device but never got a server session (offline
+      // at the time, or an older build): log in quietly now.
+      await login(local.name, local.pin);
+    }
+  } catch {
+    /* Offline: play on the local copy. */
+  }
+  return !!getPlayer();
 }
 /** First visit asks for a name; Playwright runs skip this unless ?login=1. */
 export function needsLogin() {
@@ -95,6 +190,7 @@ async function post(url: string, body: unknown) {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
     body: JSON.stringify(body),
   });
   let data: Record<string, unknown>;
@@ -179,6 +275,7 @@ async function pushProgress() {
     await fetch('/api/progress', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({
         name: p.name,
         pin: p.pin,

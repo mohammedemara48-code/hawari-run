@@ -7,6 +7,7 @@ import {
   pinMatches,
   rateLimit,
   readBody,
+  sessionId,
   validPin,
 } from './_db.js';
 
@@ -29,6 +30,12 @@ async function findPlayer(sql, name, pin) {
   return { row };
 }
 
+async function sessionPlayer(sql, id) {
+  const rows =
+    await sql`SELECT id, name, progress FROM players WHERE id = ${id}`;
+  return rows[0] ? { row: rows[0] } : { error: 401, message: 'سجّل تاني' };
+}
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST' && req.method !== 'PUT')
@@ -40,7 +47,11 @@ export default async function handler(req, res) {
   if (!sql) return json(res, 503, { error: 'السيرفر مش جاهز' });
   const body = readBody(req);
   try {
-    const found = await findPlayer(sql, body.name, body.pin);
+    // A remembered session (httpOnly cookie) stands in for the PIN.
+    const sid = body.pin ? null : sessionId(req);
+    const found = sid
+      ? await sessionPlayer(sql, sid)
+      : await findPlayer(sql, body.name, body.pin);
     if (found.error) return json(res, found.error, { error: found.message });
     if (req.method === 'POST' && !isProgress(body.progress)) {
       await sql`UPDATE players SET failed_attempts = 0, locked_until = NULL WHERE id = ${found.row.id}`;

@@ -2041,3 +2041,26 @@ footer {
   font-size: 11px;
   direction: rtl;
 }
+/* Phone held upright: turn the whole game a quarter so it plays in
+ * landscape without rotating the phone (main.ts sets html.rotated). */
+html.rotated .game-wrap,
+html.rotated .game-wrap:fullscreen {
+  position: fixed;
+  top: 0;
+  left: 100vw;
+  width: 100vh;
+  width: 100dvh;
+  height: 100vw;
+  height: 100dvw;
+  max-width: none;
+  transform-origin: 0 0;
+  transform: rotate(90deg);
+}
+html.rotated .rotate-hint {
+  display: none !important;
+}
+/* Phaser centres from the on-screen (turned) box; the canvas already fills
+ * the turned wrap exactly, so no centring margins. */
+html.rotated #game canvas {
+  margin: 0 !important;
+}

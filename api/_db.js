@@ -1,5 +1,10 @@
 // Shared helpers for /api/login and /api/progress. Never log secrets.
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from 'node:crypto';
 import { neon } from '@neondatabase/serverless';
 
 const buckets = new Map();
@@ -78,4 +83,46 @@ export function getSql() {
   const url = process.env.DATABASE_URL;
   if (!url) return null;
   return neon(url);
+}
+
+/* ── Session cookie: a signed, httpOnly token that remembers the player even
+ * when the page's own storage is wiped (in-app browsers, PWA containers). */
+const COOKIE = 'hawari_session';
+const YEAR = 31536000;
+function sessionKey() {
+  const base = process.env.SESSION_SECRET || process.env.DATABASE_URL || '';
+  return createHash('sha256')
+    .update('hawari-session-v1:' + base)
+    .digest();
+}
+function sign(payload) {
+  return createHmac('sha256', sessionKey()).update(payload).digest('base64url');
+}
+export function setSession(res, playerId) {
+  const payload = `${playerId}.${Math.floor(Date.now() / 1000)}`;
+  res.setHeader(
+    'Set-Cookie',
+    `${COOKIE}=${payload}.${sign(payload)}; Max-Age=${YEAR}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+  );
+}
+export function clearSession(res) {
+  res.setHeader(
+    'Set-Cookie',
+    `${COOKIE}=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Lax`,
+  );
+}
+/** The player id from a valid session cookie, or null. */
+export function sessionId(req) {
+  const raw = String(req.headers.cookie || '');
+  const m = raw.match(/(?:^|;\s*)hawari_session=([^;]+)/);
+  if (!m) return null;
+  const parts = decodeURIComponent(m[1]).split('.');
+  if (parts.length !== 3) return null;
+  const [id, iat, sig] = parts;
+  const want = Buffer.from(sign(`${id}.${iat}`));
+  const got = Buffer.from(sig);
+  if (want.length !== got.length || !timingSafeEqual(want, got)) return null;
+  const age = Date.now() / 1000 - Number(iat);
+  if (!(age >= 0 && age < YEAR)) return null;
+  return /^[0-9a-f-]{36}$/i.test(id) ? id : null;
 }

@@ -10,6 +10,7 @@ import {
   pinMatches,
   rateLimit,
   readBody,
+  setSession,
   validPin,
 } from './_db.js';
 
@@ -68,8 +69,10 @@ export default async function handler(req, res) {
         secrets: {},
         cleared: {},
       };
-      await sql`INSERT INTO players (name, name_key, pin_salt, pin_hash, progress)
-        VALUES (${name}, ${key}, ${salt}, ${hashPin(pin, salt)}, ${JSON.stringify(progress)}::jsonb)`;
+      const made =
+        await sql`INSERT INTO players (name, name_key, pin_salt, pin_hash, progress)
+        VALUES (${name}, ${key}, ${salt}, ${hashPin(pin, salt)}, ${JSON.stringify(progress)}::jsonb) RETURNING id`;
+      setSession(res, made[0].id);
       return json(res, 200, { name, created: true, progress });
     }
     if (row.locked_until && new Date(row.locked_until).getTime() > Date.now())
@@ -83,6 +86,7 @@ export default async function handler(req, res) {
     }
     const progress = merge(row.progress || {}, incoming || {});
     await sql`UPDATE players SET failed_attempts = 0, locked_until = NULL, progress = ${JSON.stringify(progress)}::jsonb, updated_at = now() WHERE id = ${row.id}`;
+    setSession(res, row.id);
     return json(res, 200, { name: row.name, created: false, progress });
   } catch (err) {
     console.error('login failed', err?.message || err);

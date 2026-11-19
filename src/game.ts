@@ -96,7 +96,7 @@ import {
   recordSecret,
   saveResume,
 } from './progress';
-import { getPlayer, needsLogin, pullProgress } from './account';
+import { getPlayer, needsLogin, pullProgress, restoreSession } from './account';
 
 type Sprite = Phaser.Physics.Arcade.Sprite;
 type Img = Phaser.Physics.Arcade.Image;
@@ -129,7 +129,9 @@ export function enterFullscreen() {
     const root = document.documentElement as HTMLElement & {
       webkitRequestFullscreen?: () => void;
     };
-    const el = wrap || root;
+    // Phones: the whole page, so the portrait quarter turn (a transform on
+    // the wrap, which browsers strip from a fullscreen element) still works.
+    const el = coarse() ? root : wrap || root;
     const go = (
       node: HTMLElement & { webkitRequestFullscreen?: () => void },
     ) => {
@@ -390,12 +392,6 @@ export class Alley extends Phaser.Scene {
     if (needsLogin()) screen('login');
     else screen('title');
     void this.bootSession();
-    const portrait = window.matchMedia(
-      '(orientation: portrait) and (pointer: coarse) and (max-width: 700px)',
-    );
-    portrait.addEventListener?.('change', (e) => {
-      if (e.matches && this.mode === 'play') this.action('pause');
-    });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && this.mode === 'play') {
         this.stashRun();
@@ -499,7 +495,18 @@ export class Alley extends Phaser.Scene {
     bossBar(false);
   }
   async bootSession() {
+    // Storage may have been wiped (in-app browsers, PWA containers): ask
+    // IndexedDB and the server session before showing the login screen.
+    const hadLocal = !!getPlayer();
+    await restoreSession();
     if (needsLogin()) return;
+    if (!hadLocal) {
+      const login = document.querySelector<HTMLElement>(
+        '[data-screen="login"]',
+      );
+      if ((login && !login.hidden) || this.mode === 'title') this.showTitle();
+      return;
+    }
     await pullProgress();
     if (this.mode === 'title') this.showTitle();
   }

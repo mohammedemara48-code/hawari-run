@@ -76,6 +76,12 @@ function bindStick(zone: HTMLElement) {
   let id: number | null = null,
     cx = 0,
     cy = 0;
+  // Under the CSS quarter turn (phone held upright) screen deltas are
+  // turned back into the game's frame.
+  const pt = (e: PointerEvent) =>
+    document.documentElement.classList.contains('rotated')
+      ? { x: e.clientY, y: -e.clientX }
+      : { x: e.clientX, y: e.clientY };
   const radius = () => Math.max(24, base.offsetWidth * 0.4);
   const place = (dx: number, dy: number) => {
     knob.style.transform = `translate(${dx}px, ${dy}px)`;
@@ -86,8 +92,8 @@ function bindStick(zone: HTMLElement) {
     place(0, 0);
   };
   const move = (e: PointerEvent) => {
-    let dx = e.clientX - cx,
-      dy = e.clientY - cy;
+    let dx = pt(e).x - cx,
+      dy = pt(e).y - cy;
     const r = radius(),
       d = Math.hypot(dx, dy);
     // The input origin trails a thumb that drifts far past the rim.
@@ -95,8 +101,8 @@ function bindStick(zone: HTMLElement) {
       const k = (d - r * 1.6) / d;
       cx += dx * k;
       cy += dy * k;
-      dx = e.clientX - cx;
-      dy = e.clientY - cy;
+      dx = pt(e).x - cx;
+      dy = pt(e).y - cy;
     }
     const len = Math.hypot(dx, dy),
       clamp = len > r ? r / len : 1;
@@ -112,8 +118,8 @@ function bindStick(zone: HTMLElement) {
     e.preventDefault();
     id = e.pointerId;
     zone.setPointerCapture(id);
-    cx = e.clientX;
-    cy = e.clientY;
+    cx = pt(e).x;
+    cy = pt(e).y;
     zone.classList.add('active');
     move(e);
   });
