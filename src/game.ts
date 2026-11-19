@@ -10,6 +10,7 @@ import { makeAlexProps } from './world4-art';
 import { makeLuxorCreatures } from './creatures-luxor';
 import { isW5, makeLuxorProps } from './world5-art';
 import { isW6, makeAswanProps } from './world6-art';
+import { buildSail, sailIdle, sailStep, type Sail } from './sail';
 import {
   crocContact,
   crocPhase,
@@ -314,6 +315,8 @@ export class Alley extends Phaser.Scene {
   zipCooldown = 0;
   /** Standing on a swinging lamp or a bobbing boat this frame. */
   riding = false;
+  /** Aswan's felucca voyage (the cataract level). */
+  sail?: Sail;
   dropUntil = 0;
   downSince = 0;
   keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -592,6 +595,7 @@ export class Alley extends Phaser.Scene {
     this.canals = [];
     this.w3 = undefined;
     this.w5 = undefined;
+    this.sail = undefined;
     this.darkBoost = 0;
     this.wheels = [];
     this.swimming = false;
@@ -1061,6 +1065,7 @@ export class Alley extends Phaser.Scene {
     this.w3 = buildDamietta(this);
     this.w4 = buildAlexandria(this);
     this.w5 = buildLuxor(this);
+    this.sail = buildSail(this);
     for (const e of L.enemies) this.enemy(e.x, e.y, e.kind);
     if (L.boss) this.makeBoss(L.boss.x, (L.boss.row + 1) * TILE);
     if (L.checkpoint)
@@ -3602,6 +3607,7 @@ export class Alley extends Phaser.Scene {
     updateDamiettaWorld(this, time, dt);
     updateAlexWorld(this, time, dt);
     updateLuxorWorld(this, time, dt);
+    if (this.sail && !this.sail.on) sailIdle(this, this.sail);
     if (this.water) {
       this.water.top.tilePositionX = this.clock * 20;
       this.water.top.y = this.water.y;
@@ -3646,158 +3652,177 @@ export class Alley extends Phaser.Scene {
     const grounded = b.blocked.down || b.touching.down || this.riding;
     if (grounded) this.lastGround = time;
     if (jump && !this.jumpWas) this.lastPress = time;
-    // Wind gusts: the level's strength and rhythm (Cairo: 2.6 s on, 1.6
-    // off), easing in and out so you feel each one build.
-    const G = this.L.meta.gust ?? GUST,
-      gt = time % (G.on + G.off);
-    const gust = this.L.wind.length > 0 && gt < G.on;
-    const env = gust ? Math.min(1, gt / 350, (G.on - gt) / 250) : 0;
-    if (gust !== this.windOn) {
-      this.windOn = gust;
-      this.windEmitters.forEach((e) => (gust ? e.start() : e.stop()));
-      if (
-        gust &&
-        this.L.wind.some((w) => Math.abs(this.hero.y - (w.y0 + w.y1) / 2) < 300)
-      )
-        sound.fx('wind');
-    }
-    let windPush = 0;
-    if (gust)
-      for (const w of this.L.wind)
+    // Sailing the felucca replaces walking: the hero rides the deck.
+    move: {
+      if (this.sail?.on) {
+        sailStep(this, this.sail, time, dt, {
+          dir: Number(right) - Number(left),
+          tack: jump && !this.jumpWas,
+        });
+        this.lastPress = -1000;
+        this.animateHero(time, true, 0, false);
+        break move;
+      }
+      // Wind gusts: the level's strength and rhythm (Cairo: 2.6 s on, 1.6
+      // off), easing in and out so you feel each one build.
+      const G = this.L.meta.gust ?? GUST,
+        gt = time % (G.on + G.off);
+      const gust = this.L.wind.length > 0 && gt < G.on;
+      const env = gust ? Math.min(1, gt / 350, (G.on - gt) / 250) : 0;
+      if (gust !== this.windOn) {
+        this.windOn = gust;
+        this.windEmitters.forEach((e) => (gust ? e.start() : e.stop()));
         if (
-          this.hero.x > w.x0 &&
-          this.hero.x < w.x1 &&
-          this.hero.y > w.y0 &&
-          this.hero.y < w.y1
+          gust &&
+          this.L.wind.some(
+            (w) => Math.abs(this.hero.y - (w.y0 + w.y1) / 2) < 300,
+          )
         )
-          windPush = w.dir * G.push * env;
-    windPush += bossGustPush(this, time);
-    const dir = Number(right) - Number(left);
-    // Countryside ground: mud bogs you down, canals float you and drag you.
-    const under = this.L.at(
-      Math.floor(b.center.x / TILE),
-      Math.floor((b.bottom + 2) / TILE),
-    );
-    this.onMud = grounded && under === 'u';
-    if (this.onMud) {
-      this.hint('mud', 'الطين بيمسك في رجلك… والنطّة من فوقه ضعيفة');
-      if (dir && Math.floor(time / 110) % 2 === 0)
-        this.burst(this.hero.x, b.bottom, 0x4a3020, 1);
-    }
-    const canal = this.zip ? undefined : this.canalAt(b.center.x, b.bottom);
-    if (canal && !this.swimming) {
-      sound.fx('splash');
-      this.burst(this.hero.x, canal.top, 0x8ad0b8, 8);
-      if (canal.sea)
-        this.hint(
-          'sea',
-          'البحر بيعلى وينزل مع المدّ… اعوم واضغط نطّ عشان تطلع',
-        );
-      else
-        this.hint(
-          'canal',
-          canal.dir < 0
-            ? 'التيار ضدّك! اعوم واضغط نطّ عشان تطلع'
-            : 'التيار شايلك… اضغط نطّ عشان تطلع من الترعة',
-        );
-    }
-    this.swimming = !!canal;
-    if (canal) {
-      const depth = b.center.y - canal.top;
-      if (depth > -2)
-        b.velocity.y -= (1100 + Math.min(1, (depth + 2) / 14) * 900) * dt;
-      b.velocity.y *= Math.pow(0.9, dt * 60);
-      b.velocity.y = Phaser.Math.Clamp(b.velocity.y, -CANAL.swimJump, 150);
-      windPush += canal.dir * CANAL.current;
-      const stroke =
-        depth < 16 &&
-        ((jump && !this.jumpWas) ||
-          (touch.stickJump && time - this.lastStroke >= CANAL.stroke));
-      if (stroke) {
-        this.hero.setVelocityY(-CANAL.swimJump);
-        this.lastStroke = time;
-        this.lastPress = -1000;
-        sound.fx('swim');
-        this.burst(this.hero.x, canal.top, 0x8ad0b8, 6);
+          sound.fx('wind');
       }
-      if (Math.floor(time / 300) % 4 === 0 && Math.abs(b.velocity.x) > 20)
-        this.burst(this.hero.x - this.facing * 10, canal.top + 2, 0xc8fff0, 1);
-    }
-    windPush += beltPush(under, grounded);
-    const alex = alexMove(this, grounded, under, jump, dt);
-    const sand = luxorMove(this, grounded, under);
-    windPush += sand.push;
-    if (alex.glide) windPush *= GLIDE.wind;
-    if (beltPush(under, grounded))
-      this.hint('belt', 'السير شغّال! بيزقّك… امشي عكسه أو استغلّه');
-    const hanging =
-      !this.zip &&
-      updateNet(
-        this,
-        time,
-        { dir, jump, jumpPressed: jump && !this.jumpWas, down },
-        grounded,
+      let windPush = 0;
+      if (gust)
+        for (const w of this.L.wind)
+          if (
+            this.hero.x > w.x0 &&
+            this.hero.x < w.x1 &&
+            this.hero.y > w.y0 &&
+            this.hero.y < w.y1
+          )
+            windPush = w.dir * G.push * env;
+      windPush += bossGustPush(this, time);
+      const dir = Number(right) - Number(left);
+      // Countryside ground: mud bogs you down, canals float you and drag you.
+      const under = this.L.at(
+        Math.floor(b.center.x / TILE),
+        Math.floor((b.bottom + 2) / TILE),
       );
-    if (this.zip) this.updateZip(time, jump);
-    else if (hanging) {
-      this.lastPress = -1000;
-    } else {
-      if (!grounded && time > this.zipCooldown) this.tryGrab();
-      if (
+      this.onMud = grounded && under === 'u';
+      if (this.onMud) {
+        this.hint('mud', 'الطين بيمسك في رجلك… والنطّة من فوقه ضعيفة');
+        if (dir && Math.floor(time / 110) % 2 === 0)
+          this.burst(this.hero.x, b.bottom, 0x4a3020, 1);
+      }
+      const canal = this.zip ? undefined : this.canalAt(b.center.x, b.bottom);
+      if (canal && !this.swimming) {
+        sound.fx('splash');
+        this.burst(this.hero.x, canal.top, 0x8ad0b8, 8);
+        if (canal.sea)
+          this.hint(
+            'sea',
+            'البحر بيعلى وينزل مع المدّ… اعوم واضغط نطّ عشان تطلع',
+          );
+        else
+          this.hint(
+            'canal',
+            canal.dir < 0
+              ? 'التيار ضدّك! اعوم واضغط نطّ عشان تطلع'
+              : 'التيار شايلك… اضغط نطّ عشان تطلع من الترعة',
+          );
+      }
+      this.swimming = !!canal;
+      if (canal) {
+        const depth = b.center.y - canal.top;
+        if (depth > -2)
+          b.velocity.y -= (1100 + Math.min(1, (depth + 2) / 14) * 900) * dt;
+        b.velocity.y *= Math.pow(0.9, dt * 60);
+        b.velocity.y = Phaser.Math.Clamp(b.velocity.y, -CANAL.swimJump, 150);
+        windPush += canal.dir * CANAL.current;
+        const stroke =
+          depth < 16 &&
+          ((jump && !this.jumpWas) ||
+            (touch.stickJump && time - this.lastStroke >= CANAL.stroke));
+        if (stroke) {
+          this.hero.setVelocityY(-CANAL.swimJump);
+          this.lastStroke = time;
+          this.lastPress = -1000;
+          sound.fx('swim');
+          this.burst(this.hero.x, canal.top, 0x8ad0b8, 6);
+        }
+        if (Math.floor(time / 300) % 4 === 0 && Math.abs(b.velocity.x) > 20)
+          this.burst(
+            this.hero.x - this.facing * 10,
+            canal.top + 2,
+            0xc8fff0,
+            1,
+          );
+      }
+      windPush += beltPush(under, grounded);
+      const alex = alexMove(this, grounded, under, jump, dt);
+      const sand = luxorMove(this, grounded, under);
+      windPush += sand.push;
+      if (alex.glide) windPush *= GLIDE.wind;
+      if (beltPush(under, grounded))
+        this.hint('belt', 'السير شغّال! بيزقّك… امشي عكسه أو استغلّه');
+      const hanging =
         !this.zip &&
-        jumpAllowed(time - this.lastGround, time - this.lastPress)
-      ) {
-        this.hero.setVelocityY(
-          (action ? -PHYSICS.runJump : -PHYSICS.jump) *
-            (this.onMud ? MUD.jump : 1),
+        updateNet(
+          this,
+          time,
+          { dir, jump, jumpPressed: jump && !this.jumpWas, down },
+          grounded,
         );
-        this.lastGround = -1000;
+      if (this.zip) this.updateZip(time, jump);
+      else if (hanging) {
         this.lastPress = -1000;
-        sound.fx('jump');
-        this.burst(this.hero.x, this.hero.y + 17, 0xdcb08a, 5);
-      }
-      if (
-        !jump &&
-        this.jumpWas &&
-        b.velocity.y < -180 &&
-        b.velocity.y > -PHYSICS.runJump - 5
-      )
-        this.hero.setVelocityY(b.velocity.y * 0.48);
-      const speed =
-        (action ? 245 : 157) *
-        (this.onMud ? MUD.speed : 1) *
-        (this.swimming ? CANAL.swim : 1);
-      b.velocity.x = approach(
-        b.velocity.x,
-        dir * speed + windPush,
-        (dir
-          ? sand.sand
-            ? SAND.accel
-            : alex.wet
-              ? WET.accel
-              : 1000
-          : grounded
+      } else {
+        if (!grounded && time > this.zipCooldown) this.tryGrab();
+        if (
+          !this.zip &&
+          jumpAllowed(time - this.lastGround, time - this.lastPress)
+        ) {
+          this.hero.setVelocityY(
+            (action ? -PHYSICS.runJump : -PHYSICS.jump) *
+              (this.onMud ? MUD.jump : 1),
+          );
+          this.lastGround = -1000;
+          this.lastPress = -1000;
+          sound.fx('jump');
+          this.burst(this.hero.x, this.hero.y + 17, 0xdcb08a, 5);
+        }
+        if (
+          !jump &&
+          this.jumpWas &&
+          b.velocity.y < -180 &&
+          b.velocity.y > -PHYSICS.runJump - 5
+        )
+          this.hero.setVelocityY(b.velocity.y * 0.48);
+        const speed =
+          (action ? 245 : 157) *
+          (this.onMud ? MUD.speed : 1) *
+          (this.swimming ? CANAL.swim : 1);
+        b.velocity.x = approach(
+          b.velocity.x,
+          dir * speed + windPush,
+          (dir
             ? sand.sand
-              ? SAND.carry
+              ? SAND.accel
               : alex.wet
-                ? WET.decel
-                : 1400
-            : 450) * dt,
-      );
-      const skid =
-        dir && Math.sign(b.velocity.x) !== dir && Math.abs(b.velocity.x) > 50;
-      if (dir && !skid) this.facing = dir;
-      // Hold down on a one-way ledge to drop through it.
-      if (down && grounded) {
-        if (!this.downWas) this.downSince = time;
-        if (time - this.downSince > 280 && this.onOneWay()) {
-          this.dropUntil = time + 240;
-          this.downSince = time + 10000;
+                ? WET.accel
+                : 1000
+            : grounded
+              ? sand.sand
+                ? SAND.carry
+                : alex.wet
+                  ? WET.decel
+                  : 1400
+              : 450) * dt,
+        );
+        const skid =
+          dir && Math.sign(b.velocity.x) !== dir && Math.abs(b.velocity.x) > 50;
+        if (dir && !skid) this.facing = dir;
+        // Hold down on a one-way ledge to drop through it.
+        if (down && grounded) {
+          if (!this.downWas) this.downSince = time;
+          if (time - this.downSince > 280 && this.onOneWay()) {
+            this.dropUntil = time + 240;
+            this.downSince = time + 10000;
+          }
         }
       }
+      this.hero.setFlipX(this.facing < 0);
+      this.animateHero(time, grounded && !this.zip, dir, down);
     }
-    this.hero.setFlipX(this.facing < 0);
-    this.animateHero(time, grounded && !this.zip, dir, down);
     if (time < this.invincible) {
       this.hero.setTint(
         [0xffcc79, 0x8ee9cb, 0xffffff][Math.floor(time / 100) % 3],

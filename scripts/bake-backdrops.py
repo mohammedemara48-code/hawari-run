@@ -45,12 +45,15 @@ JOBS = {
     'l19': ('bg-w5-luxor', 1.0, 0.72, 0.88, 'tomb'),
     'l20': ('bg-w5-luxor', 0.74, 0.7, 0.92, 'moon'),
     # World 6 (Aswan): the Nubian village in bright morning sun, feluccas at
-    # sunset, the dam at noon and the crocodile island at dusk — all kept
+    # sunset and the dam at noon — all kept
     # bright and readable.
     'l21': ('bg-w6-aswan', 0.9, 0.86, 0.88, 'morning'),
     'l22': ('bg-w6-aswan', 0.86, 0.86, 0.86, 'sunset'),
     'l23': ('bg-w6-aswan', 0.94, 0.84, 0.88, 'noon'),
-    'l24': ('bg-w6-aswan', 0.82, 0.84, 0.88, 'dusk'),
+    # The cataract voyage (sailing the felucca) in warm afternoon light,
+    # then the crocodile island at dusk.
+    'l24': ('bg-w6-aswan', 0.92, 0.86, 0.88, 'afternoon'),
+    'l25': ('bg-w6-aswan', 0.82, 0.84, 0.88, 'dusk'),
 }
 # Per-channel multipliers and a lift towards a sky tint for each grade.
 GRADES = {

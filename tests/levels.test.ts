@@ -5,8 +5,8 @@ import { heroBody } from '../src/hero-state';
 import { fitsThrough, onSurface, reach, standable } from './level-graph';
 
 describe('authored levels', () => {
-  it('has six playable worlds of four distinct levels each', () => {
-    expect(LEVELS.length).toBe(24);
+  it('has six playable worlds; Aswan adds a fifth, sailing level', () => {
+    expect(LEVELS.length).toBe(25);
     const cairo = LEVELS.filter((l) => l.world === 0),
       rif = LEVELS.filter((l) => l.world === 1);
     expect(cairo.length).toBe(4);
@@ -25,19 +25,20 @@ describe('authored levels', () => {
     expect(new Set(luxor.map((l) => l.timeOfDay)).size).toBe(4);
     expect(luxor.some((l) => l.timeOfDay === 'tomb' && l.dark)).toBe(true);
     const aswan = LEVELS.filter((l) => l.world === 5);
-    expect(aswan.length).toBe(4);
-    expect(new Set(aswan.map((l) => l.timeOfDay)).size).toBe(4);
+    expect(aswan.length).toBe(5);
+    expect(new Set(aswan.map((l) => l.timeOfDay)).size).toBe(5);
+    expect(aswan.filter((l) => l.sail).map((l) => l.id)).toEqual(['cataract']);
     expect(aswan.every((l) => !l.dark)).toBe(true);
-    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(24);
-    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(24);
+    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(25);
+    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(25);
     // Levels are grouped by world in order, and each world ends with a boss.
     expect(LEVELS.map((l) => l.world)).toEqual([
-      0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,
+      0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5,
     ]);
-    expect([3, 7, 11, 15, 19, 23].every((i) => LEVELS[i].boss)).toBe(true);
+    expect([3, 7, 11, 15, 19, 24].every((i) => LEVELS[i].boss)).toBe(true);
     expect(LEVELS.filter((l) => l.boss).length).toBe(6);
     expect(LEVELS[19].bossKind).toBe('ram');
-    expect(LEVELS[23].bossKind).toBe('croc');
+    expect(LEVELS[24].bossKind).toBe('croc');
     expect(WORLDS.filter((w) => w.playable).length).toBe(6);
     expect(WORLDS.map((w) => w.name)).toEqual([
       'القاهرة',

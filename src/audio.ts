@@ -799,6 +799,21 @@ export const TRACKS: Track[] = [
       7 . 5 4 5 4 2 .   4 5 4 2 1 . 2 .   4 2 1 0 1 2 1 .   0 . 0 . 0 . . .`),
     bass: seq('0 0 . 0 2 . 0 .   0 0 . 0 -1 . -1 .'),
   },
+  // The cataract voyage: a rowing song (هيلا هوب) for the felucca crew.
+  {
+    name: 'شلال أسوان (عجم خماسي · ربابة · بحري)',
+    maqam: 'ajam',
+    root: 62,
+    bpm: 108,
+    rhythm: 'bahari',
+    lead: 'triangle',
+    timbre: 'rababa',
+    sea: true,
+    melody: seq(`
+      0 . 0 2 4 . 2 .   5 . 4 2 4 . . .   7 . 5 4 2 . 4 .   2 1 0 . . . . .
+      4 . 4 5 7 . 5 .   4 2 4 5 4 . . .   2 . 4 . 2 1 2 .   0 . . . 0 . . .`),
+    bass: seq('0 . . 0 4 . . .   2 . . 2 4 . 0 .'),
+  },
 ];
 const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
 export function degreeToSemis(maqam: MaqamName, degree: number) {

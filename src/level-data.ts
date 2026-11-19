@@ -191,6 +191,20 @@ export interface LevelMeta {
   gust?: { push: number; on: number; off: number };
   /** Winter storm (نوة): rain, lightning and wet everything. */
   storm?: boolean;
+  /** Aswan's felucca voyage: you sail the boat instead of walking. The
+   * river runs from jetty `fromCol` to jetty `toCol` with its surface on
+   * `row`; winds are [dir (+1 behind you, -1 against), strength, seconds]
+   * in a loop; rocks and crocodiles sit on a side of the channel (lane 0
+   * near, 1 far); coins are [col, lane, count]. */
+  sail?: {
+    row: number;
+    fromCol: number;
+    toCol: number;
+    winds: [number, number, number][];
+    rocks: [number, number][];
+    crocs: [number, number][];
+    coins: [number, number, number][];
+  };
   /** Sea levels: the tide lifts the water `amp` rows over `period` seconds. */
   tide?: { amp: number; period: number };
   /** Music track for the level and for its boss fight (indices into TRACKS). */
@@ -1913,6 +1927,68 @@ function crocIsland() {
   return g.rows();
 }
 
+/* Aswan: up the first cataract by felucca — the river is the level. */
+function cataract() {
+  const g = new Grid(240, 15);
+  g.ground(0, 11, G6);
+  g.set(3, 11, 'P');
+  g.text(5, 11, 'o o');
+  g.text(4, 8, 'BFB');
+  g.set(8, 11, '@');
+  g.sea(12, 225, G6);
+  g.ground(226, 239, G6);
+  g.text(228, 11, 'o o o');
+  g.run(229, 231, 9, '-');
+  g.set(230, 8, 'G');
+  g.set(236, 11, 'E');
+  return g.rows();
+}
+export const CATARACT: NonNullable<LevelMeta['sail']> = {
+  row: G6,
+  fromCol: 12,
+  toCol: 226,
+  winds: [
+    [1, 1, 8],
+    [-1, 0.9, 12],
+    [1, 1.1, 7],
+    [-1, 1, 12],
+    [1, 0.8, 6],
+    [-1, 1.2, 10],
+  ],
+  rocks: [
+    [30, 0],
+    [42, 1],
+    [60, 0],
+    [72, 0],
+    [86, 1],
+    [102, 1],
+    [114, 0],
+    [130, 1],
+    [146, 0],
+    [160, 1],
+    [178, 0],
+    [192, 1],
+    [208, 0],
+  ],
+  crocs: [
+    [51, 1],
+    [94, 0],
+    [122, 0],
+    [153, 1],
+    [169, 0],
+    [200, 0],
+    [216, 1],
+  ],
+  coins: [
+    [22, 1, 3],
+    [64, 1, 3],
+    [96, 1, 3],
+    [136, 0, 4],
+    [184, 0, 3],
+    [218, 0, 3],
+  ],
+};
+
 export const LEVELS: LevelMeta[] = [
   {
     world: 0,
@@ -2272,6 +2348,22 @@ export const LEVELS: LevelMeta[] = [
     mechanic: 'بوابات السد بروافع ومية بتندفع على ميعاد',
     enemy: 'التمساح + الكوبرا',
     rows: damGates(),
+  },
+  {
+    world: 5,
+    id: 'cataract',
+    track: 30,
+    name: 'شلال أسوان',
+    subtitle: 'إنت الريّس: شدّ الشراع ولِف مع الريح بين الصخر والتماسيح',
+    theme: 'nubia',
+    timeOfDay: 'nubia-afternoon',
+    time: 200,
+    dark: 0,
+    current: -40,
+    sail: CATARACT,
+    mechanic: 'تسوق الفلوكة بنفسك: الريح بتلف وانت بتلف الشراع من شط لشط',
+    enemy: 'تماسيح طالعة من المية + صخور الشلال',
+    rows: cataract(),
   },
   {
     world: 5,

@@ -139,7 +139,8 @@ const levels = [
   [20, 'nubia', 64],
   [21, 'feluccas', 60],
   [22, 'dam', 58],
-  [23, 'crocisland', 60],
+  [23, 'cataract', 6],
+  [24, 'crocisland', 60],
 ];
 for (const [i, id, col] of levels) {
   await ev((i) => window.T.go(i, true), i);
@@ -231,7 +232,7 @@ assert.equal(await ev(() => window.T.s.w5.doors[0].open), true, 'gate up');
 log('dam: lever lifts the gate, spillways on a beat');
 
 /* Crocodile island: a frond crate, then the boss. */
-await ev(() => window.T.go(23));
+await ev(() => window.T.go(24));
 await wait(300);
 assert.equal(await ev(() => window.T.s.L.armories.length), 1, 'frond crate');
 await ev(() => {
