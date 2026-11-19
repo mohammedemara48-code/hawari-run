@@ -379,8 +379,16 @@ export class Alley extends Phaser.Scene {
     for (const l of LEVELS) makeParallax(this, l.theme);
     this.keys = this.input.keyboard!.addKeys(
       'LEFT,RIGHT,UP,DOWN,A,D,W,S,Z,X,SPACE,SHIFT,ESC,ENTER,M',
+      false,
     ) as Record<string, Phaser.Input.Keyboard.Key>;
     this.input.keyboard!.addCapture(['SPACE', 'UP', 'DOWN', 'LEFT', 'RIGHT']);
+    // Let letters and spaces reach the name field while typing.
+    const kb = this.input.keyboard!;
+    document.addEventListener('focusin', (e) => {
+      if ((e.target as HTMLElement).matches?.('input, textarea'))
+        kb.disableGlobalCapture();
+    });
+    document.addEventListener('focusout', () => kb.enableGlobalCapture());
     bindUI((a) => this.action(a));
     this.input.keyboard!.on('keydown-ESC', () => this.action('pause'));
     this.input.keyboard!.on('keydown-ENTER', () => {

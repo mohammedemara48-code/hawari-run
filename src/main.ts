@@ -17,17 +17,48 @@ const phoneFill = () =>
 // A phone held upright: the whole game is turned 90° with CSS so it still
 // plays in landscape without rotating the phone (touch controls are DOM and
 // follow the rotation; the stick maps its drag back into the turned frame).
-const portraitPhone = window.matchMedia?.(
-  '(orientation: portrait) and (pointer: coarse) and (max-width: 900px)',
+// Typing is never done sideways: while the login form is up or a text field
+// has focus the page stays upright (html.form-upright) instead.
+// Portrait comes from the screen, not the viewport: an open keyboard shrinks
+// the viewport's height and must not read as the phone being turned.
+const coarse = window.matchMedia?.('(pointer: coarse)');
+const portraitMq = window.matchMedia?.('(orientation: portrait)');
+const loginScreen = document.querySelector<HTMLElement>(
+  '[data-screen="login"]',
 );
+function screenPortrait() {
+  const t = screen.orientation?.type;
+  if (t) return t.startsWith('portrait');
+  return !!portraitMq?.matches;
+}
+function isPhone() {
+  return !!coarse?.matches && Math.min(screen.width, screen.height) <= 900;
+}
+const TEXT_TYPES = /^(text|password|number|tel|email|search|url)$/;
+export function typing() {
+  const el = document.activeElement as HTMLElement | null;
+  if (!el || el.closest('[hidden]')) return false;
+  if (el instanceof HTMLTextAreaElement || el.isContentEditable) return true;
+  return el instanceof HTMLInputElement && TEXT_TYPES.test(el.type || 'text');
+}
 function applyRotation() {
-  document.documentElement.classList.toggle(
-    'rotated',
-    !!portraitPhone?.matches,
-  );
+  const upright = isPhone() && screenPortrait();
+  const form = upright && (!!(loginScreen && !loginScreen.hidden) || typing());
+  const root = document.documentElement.classList;
+  root.toggle('rotated', upright && !form);
+  root.toggle('form-upright', form);
 }
 applyRotation();
-portraitPhone?.addEventListener?.('change', applyRotation);
+portraitMq?.addEventListener?.('change', applyRotation);
+screen.orientation?.addEventListener?.('change', applyRotation);
+document.addEventListener('focusin', applyRotation);
+document.addEventListener('focusout', () => setTimeout(applyRotation, 0));
+if (loginScreen)
+  new MutationObserver(() => {
+    if (loginScreen.hidden && typing())
+      (document.activeElement as HTMLElement).blur();
+    applyRotation();
+  }).observe(loginScreen, { attributes: true, attributeFilter: ['hidden'] });
 function measure() {
   if (phoneFill() || document.documentElement.classList.contains('rotated')) {
     const vv = window.visualViewport;
@@ -74,14 +105,21 @@ function boot() {
     sm.parentSize.setSize(w, h);
     return true;
   };
+  // The keyboard opening or closing is not a new screen shape: skip it and
+  // refit once typing ends.
   const fit = () => {
+    if (typing()) return;
     const w = measure();
     if (game.scale.gameSize.width !== w) game.scale.setGameSize(w, VIEW_HEIGHT);
     else game.scale.refresh();
   };
   new ResizeObserver(fit).observe(wrap);
   window.addEventListener('orientationchange', () => setTimeout(fit, 250));
-  portraitPhone?.addEventListener?.('change', () => setTimeout(fit, 60));
+  new MutationObserver(() => setTimeout(fit, 60)).observe(
+    document.documentElement,
+    { attributes: true, attributeFilter: ['class'] },
+  );
+  document.addEventListener('focusout', () => setTimeout(fit, 120));
   document.addEventListener('fullscreenchange', () => setTimeout(fit, 50));
   window.visualViewport?.addEventListener('resize', () => setTimeout(fit, 50));
   // Public engine handle makes state inspectable for debugging; no service credentials.

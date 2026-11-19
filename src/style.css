@@ -2061,11 +2061,47 @@ html.rotated .game-wrap:fullscreen {
   transform-origin: 0 0;
   transform: rotate(90deg);
 }
-html.rotated .rotate-hint {
+html.rotated .rotate-hint,
+html.form-upright .rotate-hint {
   display: none !important;
 }
 /* Phaser centres from the on-screen (turned) box; the canvas already fills
  * the turned wrap exactly, so no centring margins. */
 html.rotated #game canvas {
   margin: 0 !important;
+}
+/* Typing on an upright phone: the login form stands upright over the whole
+ * screen, pinned to the top so the fields stay above the keyboard. */
+html.form-upright .login-screen {
+  position: fixed;
+  inset: 0;
+  transform: none;
+  width: auto;
+  z-index: 70;
+  overflow-y: auto;
+  padding: 18px 22px 24px;
+  border: 0;
+  text-align: center;
+}
+html.form-upright .login-screen h2 {
+  font-size: 20px;
+  margin: 4px 0 6px;
+}
+html.form-upright .login-screen p {
+  font-size: 13px;
+  margin: 0 0 6px;
+}
+html.form-upright .login-screen .overline {
+  font-size: 12px;
+}
+html.form-upright .login-form label {
+  font-size: 14px;
+}
+html.form-upright .login-form input {
+  font-size: 18px;
+  padding: 10px 12px;
+}
+html.form-upright .login-form .primary {
+  font-size: 16px;
+  padding: 12px;
 }
