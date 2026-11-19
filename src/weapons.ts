@@ -145,6 +145,26 @@ export const WEAPONS: Record<number, WorldWeapon> = {
     bounce: false,
     hidden: true,
   },
+  // سيوة: a sharp salt crystal (ملح سيوة). A short, bright arc that
+  // shatters mirages, stuns scorpions, opens a spring the Qibli buried,
+  // and interrupts his slam — it does not beat him on its own.
+  7: {
+    id: 'salt',
+    item: 'salt',
+    projectile: 'saltshot',
+    sfx: 'sling',
+    short: 'ملح',
+    armedLabel: 'ملح سيوة',
+    readyLabel: 'ارمي الملح',
+    lockedLabel: 'الملح مقفول: لمّ بلورة الملح من أول المرحلة',
+    toast: 'ملح سيوة! دوس X أو زرار الملح وارمي… السراب بينفضح والعين بتتفتح',
+    vx: 310,
+    vy: -200,
+    gravityY: -520,
+    bounce: false,
+    spin: 540,
+    splat: 0xe8f0f4,
+  },
 };
 
 export function worldWeapon(world: number): WorldWeapon {

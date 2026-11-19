@@ -7,7 +7,7 @@
 // (stomps bounce), he drops at most one container at a time, swats at you
 // from phase 2 when you hang close, and three containers dropped from the
 // gantry hook beat him; the crocodile leads on to Port Said and the captain
-// to the ending. Screenshots: /workspace/hawari-shots/27-portsaid-*.png.
+// on to Siwa. Screenshots: /workspace/hawari-shots/27-portsaid-*.png.
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 const browser = await chromium.launch({
@@ -453,7 +453,7 @@ for (let k = 0; k < 30 && !swat; k++) {
 assert.ok(swat, 'the boom swats at a hero hanging close');
 log('boss: from phase 2 the boom swats when you hang close');
 
-/* Captain beaten → the ending. */
+/* Captain beaten → the road goes on to Siwa (not the ending). */
 await ev(() => {
   const s = window.T.s;
   s.bossState.invuln = 0;
@@ -465,8 +465,13 @@ await ev(() => {
   window.T.place(s.spec.exit.x, s.spec.exit.y - 1);
 });
 await wait(900);
-assert.equal(await ev(() => window.T.s.mode), 'win', 'the journey ends here');
-log('captain boss → the ending');
+assert.equal(await ev(() => window.T.s.mode), 'clear', 'world 7 done');
+assert.match(
+  await page.locator('#clear-title').textContent(),
+  /سيوة/,
+  'the road opens to Siwa',
+);
+log('captain boss → on to Siwa');
 
 /* Crocodile island won → the road goes on to Port Said (not the ending). */
 await ev(() => window.T.go(24));

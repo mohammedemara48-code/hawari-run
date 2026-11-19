@@ -20,6 +20,19 @@ import {
   type Crane,
 } from './crane';
 import { isW7, makePortSaidProps } from './world7-art';
+import { isW8, makeSiwaProps } from './world8-art';
+import {
+  boardStep,
+  buildSiwa,
+  maybeStartBoard,
+  qibliContact,
+  qibliPhase,
+  qibliSalt,
+  updateQibliBoss,
+  updateSiwaEnemy,
+  updateSiwaWorld,
+  type W8,
+} from './world8';
 import {
   captainContact,
   captainPhase,
@@ -109,6 +122,7 @@ import {
   hud,
   renderMap,
   screen,
+  setThirst,
   toast,
   touch,
 } from './ui';
@@ -334,6 +348,8 @@ export class Alley extends Phaser.Scene {
   riding = false;
   /** Aswan's felucca voyage (the cataract level). */
   sail?: Sail;
+  /** World 8 (سيوة): thirst, dunes, camels, board, storm. */
+  siwa?: W8;
   dropUntil = 0;
   downSince = 0;
   keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -402,6 +418,7 @@ export class Alley extends Phaser.Scene {
     makeLuxorProps(this);
     makeAswanProps(this);
     makePortSaidProps(this);
+    makeSiwaProps(this);
     makeSkins(this);
     for (const l of LEVELS) makeParallax(this, l.theme);
     this.keys = this.input.keyboard!.addKeys(
@@ -615,6 +632,7 @@ export class Alley extends Phaser.Scene {
     this.w5 = undefined;
     this.sail = undefined;
     this.crane = undefined;
+    this.siwa = undefined;
     this.darkBoost = 0;
     this.wheels = [];
     this.swimming = false;
@@ -854,7 +872,7 @@ export class Alley extends Phaser.Scene {
       this.terrain.add(
         this.add.zone(rc.centerX, rc.centerY, rc.width, rc.height),
       );
-    for (const ch of ['N', 'u', ',', '/', ';', '_'])
+    for (const ch of ['N', 'u', ',', '/', ';', '_', 'س', 'ل'])
       for (const [r, a, b] of this.runs(ch))
         this.terrain.add(
           this.add.zone(
@@ -995,11 +1013,13 @@ export class Alley extends Phaser.Scene {
       const s = this.crates.create(
         x.x,
         x.y,
-        isW5(theme)
-          ? theme === 'tomb'
-            ? 'tomb-slab-crack'
-            : 'slab-crack'
-          : 'ccrate',
+        isW8(theme)
+          ? 'shali-crack'
+          : isW5(theme)
+            ? theme === 'tomb'
+              ? 'tomb-slab-crack'
+              : 'slab-crack'
+            : 'ccrate',
       ) as Sprite;
       s.setDepth(3).setData('home', { x: x.x, y: x.y });
     }
@@ -1086,6 +1106,8 @@ export class Alley extends Phaser.Scene {
     this.w5 = buildLuxor(this);
     this.sail = buildSail(this);
     this.crane = buildCrane(this);
+    this.siwa = buildSiwa(this);
+    if (!this.siwa) setThirst(false);
     for (const e of L.enemies) this.enemy(e.x, e.y, e.kind);
     if (L.boss) this.makeBoss(L.boss.x, (L.boss.row + 1) * TILE);
     if (L.checkpoint)
@@ -1213,7 +1235,7 @@ export class Alley extends Phaser.Scene {
         this.moverList.push(m);
       }
     }
-    for (const d of L.donkeys) {
+    for (const d of isW8(L.meta.theme) ? [] : L.donkeys) {
       const img = this.movers.create(0, 0, 'donkey0') as Img;
       img.setOrigin(0, 0).setDepth(3);
       const x = d.a.col * TILE,
@@ -1450,6 +1472,17 @@ export class Alley extends Phaser.Scene {
         frequency: 120,
         emitZone: zone(1000, 380),
       },
+      siwa: {
+        // Hot desert dust drifting across the oasis.
+        lifespan: 4200,
+        speedX: { min: 16, max: 44 },
+        speedY: { min: -8, max: 8 },
+        scale: { min: 0.6, max: 1.4 },
+        alpha: { start: 0.55, end: 0 },
+        tint: 0xffe0a0,
+        frequency: 130,
+        emitZone: zone(1000, 380),
+      },
       portsaid: {
         // Bright sea air: a few warm motes blowing in off the canal.
         lifespan: 4400,
@@ -1489,6 +1522,7 @@ export class Alley extends Phaser.Scene {
       tomb: 'sand-grain',
       nubia: 'mote',
       portsaid: 'mote',
+      siwa: 'sand-grain',
     }[meta.theme];
     this.ambient = this.add
       .particles(0, 0, key, conf[meta.theme])
@@ -1725,6 +1759,7 @@ export class Alley extends Phaser.Scene {
       croc: [34, 11, 5, 9],
       pelican: [20, 22, 7, 8],
       barrel: [22, 22, 4, 6],
+      scorpion: [40, 20, 16, 20],
     };
     const [w, h, ox, oy] = sizes[type];
     const b = body(e);
@@ -1767,6 +1802,7 @@ export class Alley extends Phaser.Scene {
           croc: 22,
           pelican: 30,
           barrel: 0,
+          scorpion: 32,
         } as Record<string, number>
       )[type] ?? 40
     );
@@ -1787,6 +1823,7 @@ export class Alley extends Phaser.Scene {
         ram: 'boss5-',
         croc: 'boss6-',
         captain: 'boss7-',
+        qibli: 'boss8-',
         buffalo: 'boss2-',
         crab: 'boss3-',
         gull: 'boss4-',
@@ -1816,6 +1853,9 @@ export class Alley extends Phaser.Scene {
     } else if (this.bossKind === 'captain') {
       body(boss).setSize(64, 60).setOffset(48, 50);
       boss.y = bottom - 54;
+    } else if (this.bossKind === 'qibli') {
+      body(boss).setSize(80, 80).setOffset(40, 40).setAllowGravity(false);
+      boss.y = bottom - 96;
     } else if (crab) body(boss).setSize(92, 40).setOffset(16, 30);
     else if (buffalo) body(boss).setSize(76, 50).setOffset(12, 14);
     else body(boss).setSize(52, 54).setOffset(13, 10);
@@ -1845,11 +1885,13 @@ export class Alley extends Phaser.Scene {
                   ? 'جمبري مشوي من الكورنيش… بقيت أقوى!'
                   : isW5(this.L.meta.theme)
                     ? 'عيش شمسي سخن من فرن الأقصر… بقيت أقوى!'
-                    : isW7(this.L.meta.theme)
-                      ? 'سمك بلطي مشوي من الكورنيش… بقيت أقوى!'
-                      : isW6(this.L.meta.theme)
-                        ? 'عيش شمسي من فرن النجع… بقيت أقوى!'
-                        : 'سندوتش فول… بقيت أقوى!',
+                    : isW8(this.L.meta.theme)
+                      ? 'بلح سيوة… بقيت أقوى!'
+                      : isW7(this.L.meta.theme)
+                        ? 'سمك بلطي مشوي من الكورنيش… بقيت أقوى!'
+                        : isW6(this.L.meta.theme)
+                          ? 'عيش شمسي من فرن النجع… بقيت أقوى!'
+                          : 'سندوتش فول… بقيت أقوى!',
       );
       this.burst(this.hero.x, this.hero.y, 0xffc879, 16);
     }
@@ -2305,7 +2347,8 @@ export class Alley extends Phaser.Scene {
     const w5 =
       isW5(this.L.meta.theme) ||
       isW6(this.L.meta.theme) ||
-      isW7(this.L.meta.theme);
+      isW7(this.L.meta.theme) ||
+      isW8(this.L.meta.theme);
     this.tweens.add({
       targets: c,
       x: home.x + 2,
@@ -2702,6 +2745,10 @@ export class Alley extends Phaser.Scene {
       captainContact(this, fromAbove);
       return;
     }
+    if (this.bossKind === 'qibli') {
+      qibliContact(this, fromAbove);
+      return;
+    }
     if (this.bossKind === 'buffalo' && s.state !== 'dazed') {
       // The buffalo's back is only open while it's dazed from a crash.
       if (fromAbove) {
@@ -2762,6 +2809,10 @@ export class Alley extends Phaser.Scene {
       );
       return;
     }
+    if (this.bossKind === 'qibli') {
+      qibliSalt(this);
+      return;
+    }
     if (this.bossKind === 'croc' && s.state !== 'stuck') {
       // The frond slaps off his hide unless his jaws are dug in.
       this.burst(this.boss!.x, this.boss!.y - 10, 0x5aa040, 4);
@@ -2808,6 +2859,7 @@ export class Alley extends Phaser.Scene {
       if (this.bossKind === 'ram') ramPhase(this, this.bossPhase());
       else if (this.bossKind === 'croc') crocPhase(this.bossPhase());
       else if (this.bossKind === 'captain') captainPhase(this.bossPhase());
+      else if (this.bossKind === 'qibli') qibliPhase(this.bossPhase());
       else if (this.bossKind === 'crab')
         toast(
           this.bossPhase() === 2
@@ -2884,7 +2936,8 @@ export class Alley extends Phaser.Scene {
       {
         ram: 'الكبش الحارس رجع حجر! باب الكرنك اتفتح… وأسوان مستنياك',
         croc: 'التمساح الكبير رجع النيل! الجزيرة بقت بتاعتك… وبورسعيد مستنياك',
-        captain: 'ريّس الميناء نزل من الونش! الميناء بقى بتاعك… والمشوار خلص',
+        captain: 'ريّس الميناء نزل من الونش! الميناء بقى بتاعك… وسيوة مستنياك',
+        qibli: 'القِبْلي اتشتت على العين! الواحة بقت بتاعتك… والمشوار خلص',
         buffalo: 'أبو قرون قعد في الطين! باب الجرن اتفتح',
         crab: 'أبو مقص رجع البحر! رأس البر بقت بتاعتك',
         gull: 'ريّس النوة طار مع الريح! النوة هديت والقلعة بقت بتاعتك',
@@ -2966,6 +3019,7 @@ export class Alley extends Phaser.Scene {
             ram: 'rumble',
             croc: 'roar',
             captain: 'rumble',
+            qibli: 'roar',
             buffalo: 'moo',
             crab: 'clack',
             gull: 'screech',
@@ -2978,6 +3032,8 @@ export class Alley extends Phaser.Scene {
             croc: 'تمساح النيل الكبير: «الجزيرة دي بتاعتي!» — لما يهجم ويغرز بقه في الرملة اتنطّ على راسه، ونطّ فوق موجة ديله',
             captain:
               'ريّس الميناء: «محدّش يرسى في ميناي!» — ابعد عن علامة الحاوية، اتشعبط في خطّاف الونش الكبير اللي فوق ونزّل الحاوية على كابينته',
+            qibli:
+              'القِبْلي: «الواحة دي في ريحي!» — نطّ فوق موجة الرمل، افتح العين بالملح، وجرّه يضرب فوقها',
             ram: 'الكبش الحارس: «محدّش يعدّي الكرنك!» — لما يخبط الأرض ويوطّي راسه اتنطّ على الجوهرة، وحجر واحد بينزل وظلّه بيبان قبله',
             buffalo:
               'أبو قرون: «مين داس على جرني؟!» — خلّيه يخبط ويدوخ واتنطّ على ضهره',
@@ -3018,6 +3074,11 @@ export class Alley extends Phaser.Scene {
     }
     if (this.bossKind === 'captain') {
       updateCaptainBoss(this, time);
+      this.updateHazards(time);
+      return;
+    }
+    if (this.bossKind === 'qibli') {
+      updateQibliBoss(this, time);
       this.updateHazards(time);
       return;
     }
@@ -3693,6 +3754,7 @@ export class Alley extends Phaser.Scene {
     updateDamiettaWorld(this, time, dt);
     updateAlexWorld(this, time, dt);
     updateLuxorWorld(this, time, dt);
+    updateSiwaWorld(this, time, dt);
     if (this.sail && !this.sail.on) sailIdle(this, this.sail);
     if (this.crane) craneIdle(this, this.crane, time, dt);
     if (this.water) {
@@ -3748,6 +3810,15 @@ export class Alley extends Phaser.Scene {
         });
         this.lastPress = -1000;
         this.animateHero(time, time >= this.sail.hopUntil, 0, false);
+        break move;
+      }
+      if (this.siwa) maybeStartBoard(this, this.siwa);
+      if (this.siwa?.boarding) {
+        boardStep(this, this.siwa, time, dt, {
+          dir: Number(right) - Number(left),
+          jump: jump && !this.jumpWas,
+        });
+        this.animateHero(time, grounded, 1, false);
         break move;
       }
       if (this.crane?.hang) {
@@ -3896,13 +3967,13 @@ export class Alley extends Phaser.Scene {
           (dir
             ? sand.sand
               ? SAND.accel
-              : alex.wet
+              : alex.wet || under === 'ل'
                 ? WET.accel
                 : 1000
             : grounded
               ? sand.sand
                 ? SAND.carry
-                : alex.wet
+                : alex.wet || under === 'ل'
                   ? WET.decel
                   : 1400
               : 450) * dt,
@@ -4172,6 +4243,7 @@ export class Alley extends Phaser.Scene {
   updateEnemy(e: Sprite, time: number) {
     if (updateLuxorEnemy(this, e, time)) return;
     if (updateAswanEnemy(this, e, time)) return;
+    if (updateSiwaEnemy(this, e, time)) return;
     if (updatePortSaidEnemy(this, e, time)) return;
     if (updateAlexEnemy(this, e, time)) return;
     const eb = body(e),

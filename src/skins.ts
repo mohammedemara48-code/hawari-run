@@ -198,6 +198,16 @@ export const SKINS: Record<string, Skin> = {
     collectible: 'fish',
     bond: 'tile',
   },
+  // Siwa: ochre karshif salt-mud, a date from the grove.
+  siwa: {
+    brick: ['#c48a4a', '#e0b868', '#8a5a30', '#5a3a20'],
+    box: ['#e8c878', '#fff4c8', '#a07030', '#2a6a58', '#8ad0c8', '#8a3a18'],
+    emblem: 'pot',
+    used: ['#8a6a44', '#a8885a', '#5a4028'],
+    coin: ['#5a2a10', '#c86a28', '#f0c060', '#ffffff'],
+    collectible: 'dates',
+    bond: 'mud',
+  },
   // The tomb: painted plaster, a canopic jar glinting in torchlight.
   tomb: {
     brick: ['#8a6a44', '#a8845a', '#5a4028', '#2e1e12'],

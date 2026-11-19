@@ -872,6 +872,76 @@ export const TRACKS: Track[] = [
       7 . 6 5 4 5 6 .   7 8 7 6 5 . 4 .   4 3 2 0 2 3 2 .   0 . 0 . 0 . . .`),
     bass: seq('0 0 . 0 3 . 0 .   0 0 . 0 -2 . -1 .'),
   },
+  // سيوة: hot desert air, a nay over a slow sa'idi pulse, then the
+  // Qibli's storm in a tense hijaz.
+  {
+    name: 'بستان سيوة (عجم خماسي · ناي · صعيدي)',
+    maqam: 'ajam',
+    root: 64,
+    bpm: 108,
+    rhythm: 'saidi',
+    lead: 'triangle',
+    timbre: 'ney',
+    melody: seq(`
+      0 . 2 . 4 . 5 .   4 2 0 . 2 . . .   5 . 4 . 2 0 2 .   4 2 0 . . . . .
+      4 . 5 . 7 . 5 .   4 2 4 . 2 . . .   0 2 4 . 2 0 2 .   0 . . . 0 . . .`),
+    bass: seq('0 . . . 4 . . .   2 . . . 0 . 4 .'),
+  },
+  {
+    name: 'سراب الملح (صبا · ناي · مقسوم)',
+    maqam: 'saba',
+    root: 65,
+    bpm: 112,
+    rhythm: 'maqsum',
+    lead: 'triangle',
+    timbre: 'ney',
+    melody: seq(`
+      0 . 1 . 3 . 4 .   3 1 0 . 1 . . .   4 . 5 . 4 3 1 .   3 1 0 . . . . .
+      5 . 4 . 3 . 1 .   4 3 1 . 0 . . .   1 3 4 . 3 1 0 .   0 . . . . . . .`),
+    bass: seq('0 . . 0 3 . . .   1 . . 1 0 . . .'),
+  },
+  {
+    name: 'قلعة شالي (حجاز · ناي · طبل)',
+    maqam: 'hijaz',
+    root: 62,
+    bpm: 104,
+    rhythm: 'tabl',
+    lead: 'triangle',
+    timbre: 'ney',
+    drone: true,
+    melody: seq(`
+      0 . . 1 4 . 5 .   4 . 1 . 0 . . .   5 . 7 . 5 4 1 .   4 . . . 0 . . .
+      7 . 5 . 4 1 4 .   5 . 4 . 1 . . .   4 1 0 . 1 . 4 .   0 . . . . . . .`),
+    bass: seq('0 . . . 4 . . .   -1 . . . 0 . 4 .'),
+  },
+  {
+    name: 'كثبان القِبْلي (حجاز · ناي · صعيدي)',
+    maqam: 'hijaz',
+    root: 60,
+    bpm: 126,
+    rhythm: 'saidi',
+    lead: 'triangle',
+    timbre: 'ney',
+    melody: seq(`
+      0 0 1 . 4 . 5 .   4 1 0 . 1 . . .   5 . 7 . 5 4 1 .   4 1 0 . 0 . . .
+      7 . 5 4 5 4 1 .   4 5 4 1 0 . 1 .   4 1 0 . 1 4 1 .   0 . . . 0 . . .`),
+    bass: seq('0 . 0 . 4 . . .   1 . 1 . 0 . 4 .'),
+  },
+  {
+    name: 'القِبْلي (حجاز · ناي · طبل حربي)',
+    maqam: 'hijaz',
+    root: 58,
+    bpm: 148,
+    rhythm: 'harbi',
+    lead: 'triangle',
+    timbre: 'ney',
+    drone: true,
+    boss: true,
+    melody: seq(`
+      0 1 4 . 1 0 -1 0  5 7 5 . 4 . 1 .   7 8 7 5 4 . 5 7   5 4 1 . 0 . . .
+      8 . 7 5 7 5 4 .   5 7 5 4 1 . 4 .   5 4 1 0 1 4 1 .   0 . 0 . 0 . . .`),
+    bass: seq('0 0 . 0 4 . 0 .   0 0 . 0 -1 . -1 .'),
+  },
 ];
 const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
 export function degreeToSemis(maqam: MaqamName, degree: number) {

@@ -20,8 +20,10 @@ export const SOLID = new Set([
   '/',
   ';',
   '_',
+  'س',
+  'ل',
 ]);
-export const LEDGE = new Set(['-', '~', 'A']);
+export const LEDGE = new Set(['-', '~', 'A', 'غ']);
 export const BOXES: Record<string, string> = {
   '?': 'coin',
   F: 'food',
@@ -56,6 +58,7 @@ export const ENEMY: Record<string, string> = {
   ت: 'croc',
   ب: 'pelican',
   ر: 'barrel',
+  ق: 'scorpion',
 };
 /** Flying enemies ignore gravity and floors (jellyfish swim). */
 export const FLYING = new Set([

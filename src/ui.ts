@@ -147,6 +147,7 @@ export function setThrowReady(
   b.classList.toggle('sling-touch', weapon.id === 'sling');
   b.classList.toggle('stick-touch', weapon.id === 'stick');
   b.classList.toggle('frond-touch', weapon.id === 'frond');
+  b.classList.toggle('salt-touch', weapon.id === 'salt');
   b.dataset.weapon = weapon.id;
   b.setAttribute('aria-disabled', String(!ready));
   b.setAttribute('aria-label', ready ? weapon.readyLabel : weapon.lockedLabel);
@@ -267,7 +268,16 @@ export function hud(
   document.getElementById('secret-icon')?.classList.toggle('found', secret);
   setThrowReady(power === 2, weapon);
 }
-/** The boss health bar under the HUD. */
+/** Siwa thirst meter, under the HUD. Hidden outside Siwa. */
+export function setThirst(visible: boolean, fraction = 1, shade = false) {
+  const el = document.getElementById('thirst-bar');
+  if (!el) return;
+  el.hidden = !visible;
+  el.classList.toggle('shade', shade);
+  el.classList.toggle('warn', fraction <= 0.25);
+  (el.querySelector('.thirst-fill') as HTMLElement).style.width =
+    `${Math.round(Math.max(0, Math.min(1, fraction)) * 100)}%`;
+}
 export function bossBar(
   visible: boolean,
   fraction = 1,
@@ -283,6 +293,7 @@ export function bossBar(
     `${Math.round(fraction * 100)}%`;
 }
 const THEME_ICON: Record<string, string> = {
+  siwa: '<path d="M11 2h2v14h-2z" fill="#6a4a22"/><path d="M4 6c5-2 7-6 8-6 1 0 3 4 8 6l-2 2c-2-1-4-3-6-3s-4 2-6 3z" fill="#2a6a28"/><path d="M6 20h12v2H6z" fill="#d2a050"/><path d="M8 18h8c0 2-2 3-4 3s-4-1-4-3z" fill="#2aa0b0"/>',
   portsaid:
     '<path d="M10 4h4v15h-4z" fill="#fbf6ea"/><path d="M10 8h4v2h-4zm0 5h4v2h-4z" fill="#d83a3a"/><path d="M9 2h6v2H9z" fill="#2a2a30"/><path d="M11 1h2v1h-2z" fill="#ffd84a"/><path d="M15 3l7-2v2zM9 3L2 1v2z" fill="#fff2a8"/><path d="M0 19h24v2H0z" fill="#d8ccb0"/><path d="M0 21h24v2H0z" fill="#3a9ae0"/>',
   nubia:

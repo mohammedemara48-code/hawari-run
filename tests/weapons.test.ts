@@ -51,6 +51,19 @@ describe('per-world weapons', () => {
     expect(worldWeapon(6).id).toBe('none');
     expect(worldWeapon(5).hidden).toBeFalsy();
   });
+  it('gives each later city its own weapon id (Aswan frond, Siwa salt)', () => {
+    expect(worldWeapon(4).id).toBe('stick');
+    expect(worldWeapon(5).id).toBe('frond');
+    expect(worldWeapon(5).short).toBe('سعفة');
+    expect(worldWeapon(7).id).toBe('salt');
+    expect(worldWeapon(7).short).toBe('ملح');
+    expect(worldWeapon(7).item).toBe('salt');
+    expect(worldWeapon(7).hidden).toBeFalsy();
+    expect(powerLabel(2, worldWeapon(7))).toBe('ملح سيوة');
+    // Damietta still uses chili (no layout change); Alexandria lobs the same chili.
+    expect(worldWeapon(2).id).toBe('chili');
+    expect(worldWeapon(3).id).toBe('chili');
+  });
 });
 
 describe('canal swimming', () => {

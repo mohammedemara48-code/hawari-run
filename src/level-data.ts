@@ -71,6 +71,17 @@
 //          and sinks in place, 3 wide
 //   ب a pelican (waddles, then darts its beak forward)
 //   ر a harbour barrel (rolls along and bounces off walls)
+// World 8 (سيوة) is built on thirst and shifting dunes, with a distinct
+// hook in every level (not a desert reskin of the same walk-and-throw):
+//   س  sink-sand (solid; standing still swallows you)
+//   ل  salt crust (solid, slippery like wet tiles)
+//   ع  a spring (عين) that refills the thirst meter
+//   غ  a mirage platform (shimmers; fakes vanish, salt reveals the real ones)
+//   ن  a date; collect every one in the level to open the ف shortcut
+//   ف  a palm-log shortcut, solid only after the dates are in
+//   ش  a date palm (shade; thirst drains slower underneath)
+//   ق  a scorpion (tells with a raised tail, then stings forward)
+//   Y / y  a camel's stroll (ride its back over the sink-sand)
 export const TILE = 24;
 export type Theme =
   | 'night'
@@ -86,7 +97,8 @@ export type Theme =
   | 'nile'
   | 'tomb'
   | 'nubia'
-  | 'portsaid';
+  | 'portsaid'
+  | 'siwa';
 /** One region of the journey across Egypt. */
 export interface WorldMeta {
   id: string;
@@ -164,6 +176,15 @@ export const WORLDS: WorldMeta[] = [
     side: 'right',
     playable: true,
   },
+  {
+    id: 'siwa',
+    name: 'سيوة',
+    subtitle: 'واحة وعيون وكثبان وقلعة شالي',
+    x: 0.08,
+    y: 0.32,
+    side: 'left',
+    playable: true,
+  },
 ];
 /** Each world's boss, by kind (map, HUD bar and the ending recap). */
 export const BOSS_NAMES: Record<NonNullable<LevelMeta['bossKind']>, string> = {
@@ -174,6 +195,7 @@ export const BOSS_NAMES: Record<NonNullable<LevelMeta['bossKind']>, string> = {
   ram: 'الكبش الحارس',
   croc: 'تمساح النيل الكبير',
   captain: 'ريّس الميناء',
+  qibli: 'القِبْلي',
 };
 export interface LevelMeta {
   /** Index into WORLDS. */
@@ -200,7 +222,15 @@ export interface LevelMeta {
   boss?: boolean;
   /** Which boss: the Cairo tough, the countryside buffalo, the giant crab,
    * the Alexandrian storm gull, the ram guardian of Karnak. */
-  bossKind?: 'fatwa' | 'buffalo' | 'crab' | 'gull' | 'ram' | 'croc' | 'captain';
+  bossKind?:
+    | 'fatwa'
+    | 'buffalo'
+    | 'crab'
+    | 'gull'
+    | 'ram'
+    | 'croc'
+    | 'captain'
+    | 'qibli';
   /** World 5: torches burn out after this many seconds. */
   torchBurn?: number;
   /** World 5: the Nile current (px/s, negative = flowing left). */
@@ -211,6 +241,10 @@ export interface LevelMeta {
   gust?: { push: number; on: number; off: number };
   /** Winter storm (نوة): rain, lightning and wet everything. */
   storm?: boolean;
+  /** Siwa: auto-forward sandboard run down a dune. */
+  board?: { fromCol: number; toCol: number; row: number };
+  /** Siwa: column where the sandstorm veil begins. */
+  stormFrom?: number;
   /** Aswan's felucca voyage: the boat runs forward on its own. The river
    * runs from jetty `fromCol` to jetty `toCol` with its surface on `row`;
    * gusts are [start second, duration seconds, speed boost px/s]; rocks
@@ -2159,6 +2193,212 @@ function harbourQuay() {
   return g.rows();
 }
 
+/* ─────────────── World 8: سيوة ─────────────── */
+/* بستان سيوة: thirst tutorial, palm shade, springs, a camel ride,
+ * dates that open a palm-log shortcut over the sun, sink-sand between groves. */
+function siwaGrove() {
+  const g = new Grid(200, 15);
+  g.ground(0, 32);
+  g.set(3, 12, 'P');
+  g.set(7, 12, '@');
+  g.set(12, 12, 'ع');
+  g.set(12, 10, 'ش');
+  g.text(16, 9, 'BFB');
+  g.text(18, 12, 'o o');
+  g.set(22, 10, 'ش');
+  g.set(26, 12, 'ق');
+  // First sink stretch: keep moving, a spring waits in the shade beyond.
+  g.rect(33, 13, 52, 14, 'س');
+  g.set(42, 12, 'ق');
+  g.text(36, 12, 'o o o');
+  g.ground(53, 88);
+  g.set(55, 12, 'ع');
+  g.set(55, 10, 'ش');
+  g.set(60, 10, 'ش');
+  g.set(66, 10, 'ش');
+  g.set(72, 10, 'ش');
+  // Dates hang off a terrace — a short stair from the ground, then the ledge.
+  g.run(58, 63, 11, '-');
+  g.run(62, 76, 8, '-');
+  g.set(64, 7, 'ن');
+  g.set(69, 7, 'ن');
+  g.set(74, 7, 'ن');
+  g.text(64, 6, 'o o o o');
+  g.set(80, 12, 'ق');
+  g.text(83, 9, 'B?B');
+  // Camel ride over a sink pit.
+  g.set(86, 12, 'Y');
+  g.rect(90, 13, 112, 14, 'س');
+  g.ground(113, 132);
+  g.set(114, 12, 'y');
+  g.set(116, 12, 'c');
+  g.set(120, 12, 'ع');
+  g.set(120, 10, 'ش');
+  // Long sun pit: the camel is the main path; dates open a high palm-log.
+  g.set(128, 12, 'Y');
+  g.ground(154, 199);
+  g.set(155, 12, 'y');
+  g.run(134, 150, 8, 'ف');
+  g.text(136, 7, 'o o o o o');
+  g.set(160, 12, 'ع');
+  g.set(160, 10, 'ش');
+  g.set(168, 12, 'ق');
+  g.text(172, 9, 'B?B');
+  // Secret up a short stair of ledges, in the last grove.
+  g.run(176, 179, 10, '-');
+  g.run(180, 184, 7, '-');
+  g.run(185, 190, 5, '-');
+  g.set(188, 4, 'G');
+  g.text(185, 4, 'ooo');
+  g.set(194, 12, 'E');
+  return g.rows();
+}
+
+/* سراب الملح: slippery salt crust, floating pans, glare, and mirages
+ * (fakes vanish underfoot; salt reveals the real ones). */
+function siwaSalt() {
+  const g = new Grid(210, 15);
+  g.rect(0, 13, 28, 14, 'ل');
+  g.set(3, 12, 'P');
+  g.set(7, 12, '@');
+  g.set(12, 12, 'ع');
+  g.text(16, 9, 'BFB');
+  g.set(24, 12, 'ق');
+  // A pit crossed by a floating salt pan, with shimmering mirages above.
+  g.rect(29, 13, 29, 14, 'ل');
+  g.set(32, 12, 'M');
+  g.run(36, 42, 9, 'غ');
+  g.text(36, 8, 'oooo');
+  g.rect(44, 13, 70, 14, 'ل');
+  g.set(48, 12, 'ع');
+  g.set(56, 12, 'ق');
+  g.text(60, 9, 'B?B');
+  // Glare stretch: little shade, a fake-looking spring mid-path, a real one in a dip.
+  g.rect(71, 13, 78, 14, 'ل');
+  g.run(80, 86, 12, 'غ'); // mirage stepping stones over a gap
+  g.rect(88, 13, 120, 14, 'ل');
+  g.set(92, 12, 'ع');
+  g.set(100, 12, 'c');
+  g.set(108, 12, 'ق');
+  g.set(114, 10, 'ش'); // rare shade
+  g.set(114, 12, 'ع');
+  // Floating pans and an upper mirage path to the secret.
+  g.set(122, 10, 'M');
+  g.run(130, 148, 7, 'غ');
+  g.run(150, 156, 5, '-');
+  g.set(154, 4, 'G');
+  g.text(150, 4, 'ooo');
+  g.rect(124, 13, 168, 14, 'ل');
+  g.set(128, 12, 'ق');
+  g.text(140, 9, 'B?B');
+  g.set(150, 12, 'ع');
+  g.set(160, 12, 'M');
+  g.rect(172, 13, 209, 14, 'ل');
+  g.set(176, 12, 'ع');
+  g.set(184, 12, 'ق');
+  g.set(200, 12, 'E');
+  return g.rows();
+}
+
+/* قلعة شالي: crumbling salt-mud, a vertical climb through the ruins,
+ * shade under the walls, sand in the courtyards. */
+function siwaShali() {
+  const g = new Grid(190, 15);
+  g.ground(0, 24);
+  g.set(3, 12, 'P');
+  g.set(7, 12, '@');
+  g.set(12, 12, 'ع');
+  g.text(16, 9, 'BFB');
+  g.set(20, 12, 'ق');
+  // Courtyard of sink-sand, then the fortress rise.
+  g.rect(25, 13, 36, 14, 'س');
+  g.ground(37, 60);
+  g.set(40, 12, 'ع');
+  // Climb: crumbling floors and solid ledges, shade under roofs.
+  g.run(46, 58, 10, 'X');
+  g.rect(59, 5, 64, 8, '#');
+  g.run(50, 56, 7, '-');
+  g.run(50, 54, 4, '-');
+  g.text(50, 3, 'ooo');
+  g.set(56, 12, 'ق');
+  g.run(62, 70, 10, '-');
+  g.run(72, 82, 8, 'X');
+  g.run(74, 82, 5, '-');
+  g.rect(84, 3, 88, 6, '#');
+  g.run(76, 82, 2, '-');
+  g.text(76, 1, 'oooo');
+  g.set(88, 12, 'c');
+  g.set(92, 12, 'ع');
+  g.ground(61, 100);
+  g.set(96, 10, 'V');
+  g.run(100, 108, 7, '-');
+  g.run(110, 120, 5, 'X');
+  g.rect(112, 1, 124, 3, '#');
+  g.set(114, 8, 'ع');
+  g.set(118, 12, 'ق');
+  g.ground(101, 128);
+  // Crumbling bridge over a sink courtyard; a spring waits in the shade.
+  g.run(129, 148, 9, 'X');
+  g.rect(130, 13, 150, 14, 'س');
+  g.set(140, 11, 'ع');
+  g.rect(142, 5, 150, 7, '#');
+  g.ground(151, 189);
+  g.set(154, 12, 'ع');
+  g.text(158, 9, 'B?B');
+  g.set(166, 12, 'ق');
+  // Secret in a high attic of the last tower.
+  g.rect(170, 5, 182, 8, '#');
+  g.run(166, 170, 10, '-');
+  g.run(168, 174, 7, '-');
+  g.run(172, 180, 4, '-');
+  g.set(178, 3, 'G');
+  g.text(172, 3, 'ooo');
+  g.set(184, 12, 'E');
+  return g.rows();
+}
+
+/* كثبان القِبْلي: a brisk sandboard down the dune, then a sandstorm you
+ * navigate by a sound/light pulse, then the boss «القِبْلي». */
+function siwaQibli() {
+  const g = new Grid(220, 15);
+  g.ground(0, 219);
+  g.set(3, 12, 'P');
+  g.set(6, 12, '@');
+  g.text(10, 9, 'BFB');
+  g.text(16, 9, 'ooo o oo');
+  // Sandboard run: solid ground the whole way (the board is the hook,
+  // not a missing floor). Coins in the air for jump tricks.
+  g.rect(8, 13, 110, 14, 'س');
+  for (const x of [18, 28, 40, 52, 64, 76, 88, 100]) {
+    g.text(x, 9, 'ooo');
+    if (x % 40 === 18) g.set(x + 8, 8, 'o');
+  }
+  g.set(48, 10, 'ش');
+  g.set(80, 12, 'ع');
+  // Storm approach, lanterns punch holes in the veil.
+  g.set(112, 12, 'L');
+  g.set(120, 12, 'c');
+  g.set(124, 12, 'ع');
+  g.set(128, 9, '!');
+  g.set(132, 12, 'L');
+  // Arena lock wall, two springs the boss buries, sink patches, the Qibli.
+  g.rect(136, 0, 136, 8, '#');
+  g.rect(148, 13, 170, 14, 'س');
+  g.set(152, 12, 'ع');
+  g.set(166, 12, 'ع');
+  g.set(158, 12, 'L');
+  g.set(180, 12, 'Z');
+  g.rect(200, 0, 200, 8, '#');
+  g.set(208, 12, 'E');
+  // Secret off a high ledge early in the board run.
+  g.run(22, 26, 10, '-');
+  g.run(26, 30, 8, '-');
+  g.run(30, 38, 6, '-');
+  g.set(36, 5, 'G');
+  g.text(30, 5, 'ooo');
+  return g.rows();
+}
+
 export const LEVELS: LevelMeta[] = [
   {
     world: 0,
@@ -2597,5 +2837,67 @@ export const LEVELS: LevelMeta[] = [
     mechanic: 'خطاف الونش الكبير شايل حاوية: نزّلها على كابينة الريّس',
     enemy: 'ريّس الميناء',
     rows: harbourQuay(),
+  },
+  {
+    world: 7,
+    id: 'grove',
+    track: 35,
+    name: 'بستان سيوة',
+    subtitle: 'العطش بيأكل… امشي في ظل النخل، واشرب من العين، واركب الجمل',
+    theme: 'siwa',
+    timeOfDay: 'siwa-noon',
+    time: 200,
+    dark: 0,
+    mechanic: 'عطش وظل نخل وعيون، جمل تركبه، وبلح بيفتح اختصار فوق الرمل',
+    enemy: 'العقرب',
+    rows: siwaGrove(),
+  },
+  {
+    world: 7,
+    id: 'saltlake',
+    track: 36,
+    name: 'سراب الملح',
+    subtitle: 'السراب بيبرق… في منصّة بتختفي وفي عين حقيقية، والملح بيبينلك',
+    theme: 'siwa',
+    timeOfDay: 'siwa-glare',
+    time: 210,
+    dark: 0,
+    mechanic: 'سراب وهمي وحقيقي، قشرة ملح زلقة، وأحواض ملحية طايرة',
+    enemy: 'العقرب + السراب',
+    rows: siwaSalt(),
+  },
+  {
+    world: 7,
+    id: 'shali',
+    track: 37,
+    name: 'قلعة شالي',
+    subtitle: 'حيطان الكارشيف بتوقع من تحتك… والظل جوه الخرابة بيهدّي العطش',
+    theme: 'siwa',
+    timeOfDay: 'siwa-dusk',
+    time: 220,
+    dark: 0,
+    mechanic: 'قلعة كارشيف: بلاط بيفور، طلوع عمودي، وظل الحيطان ضد العطش',
+    enemy: 'العقرب + الأرض اللي بتقع',
+    rows: siwaShali(),
+  },
+  {
+    world: 7,
+    id: 'qibli',
+    track: 38,
+    bossTrack: 39,
+    bossKind: 'qibli',
+    name: 'كثبان القِبْلي',
+    subtitle: 'اللوح بيجري على الكثيب… وبعد العاصفة، القِبْلي مستنيك',
+    theme: 'siwa',
+    timeOfDay: 'siwa-khamsin',
+    time: 220,
+    dark: 0,
+    boss: true,
+    board: { fromCol: 8, toCol: 110, row: 12 },
+    stormFrom: 100,
+    mechanic:
+      'لوح رمل بيجري لوحده، عاصفة بتخفي الشاشة ورا النبضة، والقِبْلي على العين',
+    enemy: 'القِبْلي',
+    rows: siwaQibli(),
   },
 ];

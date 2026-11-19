@@ -59,6 +59,13 @@ JOBS = {
     'l26': ('bg-w7-portsaid', 0.96, 0.9, 0.88, 'noon'),
     'l27': ('bg-w7-portsaid', 0.94, 0.88, 0.88, 'morning'),
     'l28': ('bg-w7-portsaid', 0.86, 0.86, 0.88, 'dusk'),
+    # World 8 (Siwa): oasis grove at noon, the salt lakes' glare, Shali
+    # fortress at late afternoon, and the qibli dunes under a khamsin sky.
+    # No time-of-day grade: the paintings already carry their own light.
+    'l29': ('bg-w8-siwa-oasis', 0.92, 0.88, 0.9),
+    'l30': ('bg-w8-siwa-salt', 0.96, 0.86, 0.88),
+    'l31': ('bg-w8-siwa-shali', 0.9, 0.88, 0.88),
+    'l32': ('bg-w8-siwa-dunes', 0.9, 0.9, 0.9),
 }
 # Per-channel multipliers and a lift towards a sky tint for each grade.
 GRADES = {

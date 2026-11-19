@@ -767,6 +767,11 @@ footer {
   border-color: #f4e08a99;
   color: #f4ffe0;
 }
+.touch-controls .chili-touch.salt-touch {
+  background: radial-gradient(circle at 40% 30%, #6a9ab8dd, #2a4058dd);
+  border-color: #e8f4ff99;
+  color: #f4fbff;
+}
 .touch-controls button.held {
   transform: translateY(2px) scale(0.94);
   border-bottom-width: 2px;
@@ -1238,6 +1243,47 @@ footer {
 }
 .boss-bar[data-phase='3'] .boss-phase::before {
   content: 'الجولة ٣';
+}
+.thirst-bar {
+  position: absolute;
+  z-index: 15;
+  top: clamp(38px, 4.4vw, 52px);
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: #1a1208d9;
+  border: 1px solid #e0b86899;
+  color: #ffe2ad;
+  font-family: Changa, Tahoma, sans-serif;
+  font-size: clamp(11px, 1.1vw, 14px);
+}
+.thirst-bar[hidden] {
+  display: none;
+}
+.thirst-bar.shade {
+  border-color: #8ad0a099;
+}
+.thirst-bar.warn {
+  border-color: #ff6a4a;
+  animation: hurry 0.5s steps(2) infinite;
+}
+.thirst-track {
+  width: clamp(72px, 14vw, 140px);
+  height: 8px;
+  background: #3a2418;
+  border: 1px solid #000;
+}
+.thirst-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(#4ec8e0, #2a7aa0);
+  transition: width 0.2s linear;
+}
+.thirst-bar.warn .thirst-fill {
+  background: linear-gradient(#ffb04a, #e04020);
 }
 .modal-actions {
   display: flex;
