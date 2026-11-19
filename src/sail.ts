@@ -1,15 +1,9 @@
-// Aswan's signature level: sail a felucca up the Nile through the first
-// cataract. The hero stays on deck; you sail it instead of walking:
-//   → (hold) haul the sheet and drive the boat; ← spill the wind / brake.
-//   jump: tack — swing the yard over, and the boat heads for the other bank.
-// With the wind behind you the boat runs fast and drifts slowly across the
-// river. With the wind against you it only makes headway while it is
-// reaching across the river, so you zig-zag from bank to bank; run into
-// the reeds without tacking and it runs aground until you do. The wind
-// turns every few seconds (the vane and the arrow flash first). Granite
-// rocks sit on the near or far side of the channel and stop the boat;
-// crocodiles surface on one side (bubbles first) and bite a boat passing
-// on their side; a thrown frond sends one back under.
+// Aswan's signature level: a brisk felucca ride up the first cataract.
+// The boat runs forward on its own the moment you step aboard (auto-scroll
+// feel). Left and right only trim the speed a little; jump hops you to the
+// other side of the channel to dodge granite rocks and surfacing crocodiles.
+// Occasional wind gusts show an arrow and give an automatic speed burst.
+// Hitting a rock bumps you and you slide past — you never sit aground.
 import Phaser from 'phaser';
 import type { Alley } from './game';
 import { TILE, type LevelMeta } from './level-data';
@@ -20,18 +14,18 @@ import { disc, poly, tex } from './art-kit';
 type Img = Phaser.GameObjects.Image;
 type Body = Phaser.Physics.Arcade.Body;
 export type SailCourse = NonNullable<LevelMeta['sail']>;
-/** Tuning (px/s, lanes/s, ms). */
+/** Tuning (px/s, ms). Cruise covers the cataract in about a minute. */
 export const SAIL = {
-  tail: 175,
-  head: 112,
-  backwind: 48,
-  accel: 120,
-  driftTail: 0.28,
-  driftHead: 0.55,
-  tackCost: 0.75,
-  tackCooldown: 320,
+  cruise: 80,
+  boost: 36,
+  slow: 28,
+  min: 44,
+  accel: 320,
+  hopMs: 180,
   laneRise: 34,
-  warn: 2200,
+  warn: 700,
+  bump: 0.5,
+  knock: 40,
   bubbles: 1100,
   up: 1700,
   rest: 2600,
@@ -51,6 +45,11 @@ interface Coin {
   lane: number;
   img: Phaser.Physics.Arcade.Sprite;
 }
+interface Gust {
+  at: number;
+  ms: number;
+  boost: number;
+}
 export interface Sail {
   on: boolean;
   done: boolean;
@@ -69,11 +68,13 @@ export interface Sail {
   vane: Phaser.GameObjects.Container;
   vaneArrow: Phaser.GameObjects.Graphics;
   vaneText: Phaser.GameObjects.Text;
-  winds: { dir: number; str: number; ms: number }[];
+  gusts: Gust[];
   t0: number;
-  wind: { dir: number; str: number };
-  aground: boolean;
-  lastTack: number;
+  hopUntil: number;
+  hopFrom: number;
+  hopTo: number;
+  bumped: number;
+  gustPlayed: number;
   rocks: { x: number; lane: number; img: Img }[];
   crocs: Croc[];
   coins: Coin[];
@@ -210,15 +211,17 @@ export function buildSail(s: Alley): Sail | undefined {
     vane,
     vaneArrow,
     vaneText,
-    winds: course.winds.map(([dir, str, sec]) => ({
-      dir,
-      str,
+    gusts: (course.gusts ?? []).map(([at, sec, boost]) => ({
+      at: at * 1000,
       ms: sec * 1000,
+      boost,
     })),
     t0: 0,
-    wind: { dir: course.winds[0][0], str: course.winds[0][1] },
-    aground: false,
-    lastTack: 0,
+    hopUntil: 0,
+    hopFrom: 0,
+    hopTo: 0,
+    bumped: 0,
+    gustPlayed: -1,
     rocks: course.rocks.map(([col, lane]) => ({
       x: col * TILE,
       lane,
@@ -272,7 +275,7 @@ function drawBoat(s: Alley, sl: Sail) {
     .setPosition(sl.x, y - 10 * k + bob)
     .setScale(k * (sl.tack > 0 ? 1 : 0.86), k)
     .setFlipX(sl.tack < 0)
-    .setAngle(sl.wind.dir * 3 + Math.sin(s.clock * 1.3) * 1.5)
+    .setAngle(Math.sin(s.clock * 1.3) * 1.5)
     .setDepth(8.4 - sl.lane * 4);
   sl.wake
     .setPosition(sl.x - 40 * k, y + 4)
@@ -280,58 +283,46 @@ function drawBoat(s: Alley, sl: Sail) {
     .setAlpha(sl.v > 20 ? 0.8 : 0)
     .setDepth(8.5 - sl.lane * 4);
 }
-/** Wind at this moment of the voyage, and the next one coming. */
-function windAt(sl: Sail, t: number) {
-  const total = sl.winds.reduce((a, w) => a + w.ms, 0);
-  let m = t % total;
-  for (let i = 0; i < sl.winds.length; i++) {
-    if (m < sl.winds[i].ms)
-      return {
-        now: sl.winds[i],
-        next: sl.winds[(i + 1) % sl.winds.length],
-        left: sl.winds[i].ms - m,
-      };
-    m -= sl.winds[i].ms;
+/** The gust active at this moment of the voyage, and the next one coming. */
+function gustAt(sl: Sail, t: number) {
+  let next: Gust | undefined;
+  for (const g of sl.gusts) {
+    if (t >= g.at && t < g.at + g.ms)
+      return { now: g, next, left: g.at + g.ms - t, warn: 0 };
+    if (t < g.at) {
+      next = g;
+      break;
+    }
   }
-  return { now: sl.winds[0], next: sl.winds[1], left: 1e9 };
+  return {
+    now: undefined as Gust | undefined,
+    next,
+    left: 0,
+    warn: next ? next.at - t : 1e9,
+  };
 }
 function drawVane(
   s: Alley,
   sl: Sail,
   time: number,
-  left: number,
-  nextDir: number,
+  g: ReturnType<typeof gustAt>,
 ) {
   const cam = s.cameras.main;
-  sl.vane.setPosition(cam.width / 2, 58).setVisible(sl.on);
-  const g = sl.vaneArrow,
-    d = sl.wind.dir,
-    warn = left < SAIL.warn && nextDir !== d;
-  const flash = warn && Math.floor(time / 160) % 2 === 0;
-  g.clear();
-  g.fillStyle(0x1b140f, 0.6).fillRoundedRect(-92, -4, 184, 44, 8);
-  const col = flash ? 0xffd84a : d > 0 ? 0x8ae8a0 : 0xff9a7a;
-  const n = Math.round(sl.wind.str * 3);
-  for (let i = 0; i < n; i++) {
-    const x = (i - (n - 1) / 2) * 18;
-    g.fillStyle(col, 1).fillTriangle(
-      x + d * 8,
-      10,
-      x - d * 6,
-      2,
-      x - d * 6,
-      18,
-    );
-  }
-  sl.vaneText
-    .setY(20)
-    .setText(
-      warn
-        ? 'الريح هتلف! جهّز نفسك'
-        : d > 0
-          ? 'الريح ورا ضهرك: دوس يمين وشدّ الشراع'
-          : 'الريح في وشّك: لِف من شط لشط (نط)',
-    );
+  const coming = g.warn > 0 && g.warn < SAIL.warn;
+  const active = !!g.now;
+  sl.vane
+    .setPosition(cam.width / 2, 58)
+    .setVisible(sl.on && (active || coming));
+  if (!sl.vane.visible) return;
+  const flash = coming && Math.floor(time / 120) % 2 === 0;
+  const col = flash || active ? 0xffd84a : 0x8ae8a0;
+  const arrow = sl.vaneArrow;
+  arrow.clear();
+  arrow.fillStyle(0x1b140f, 0.6).fillRoundedRect(-70, -4, 140, 44, 8);
+  // A single forward gust arrow, not a "haul the sheet" lecture.
+  arrow.fillStyle(col, 1).fillTriangle(28, 12, 4, 2, 4, 22);
+  arrow.fillStyle(col, 1).fillRect(-18, 8, 24, 8);
+  sl.vaneText.setY(20).setText(active ? 'هبّة ريح!' : 'هبّة ريح جاية!');
 }
 
 /** Before boarding: the boat waits at the jetty; step aboard to sail. */
@@ -343,10 +334,9 @@ export function sailIdle(s: Alley, sl: Sail) {
   if (s.hero.x > sl.dockX - 6 && b.blocked.down) {
     sl.on = true;
     sl.t0 = s.time.now;
+    sl.v = SAIL.cruise;
     sound.fx('creak');
-    toast(
-      'إنت الريّس! يمين = شدّ الشراع · شمال = فرملة · نطّ = لِف الشراع وروح للشط التاني',
-    );
+    toast('الفلوكة جريت! نطّ تعدّي الصخر والتماسيح');
   }
 }
 
@@ -356,84 +346,55 @@ export function sailStep(
   sl: Sail,
   time: number,
   dt: number,
-  input: { dir: number; tack: boolean },
+  input: { dir: number; jump: boolean },
 ) {
-  const w = windAt(sl, time - sl.t0);
-  if (w.now.dir !== sl.wind.dir || w.now.str !== sl.wind.str) {
-    if (w.now.dir !== sl.wind.dir) {
-      sound.fx('wind');
-      toast(
-        w.now.dir > 0
-          ? 'الريح لفّت ورا ضهرك! جري'
-          : 'الريح لفّت في وشّك! لِف من شط لشط',
-      );
-    }
-    sl.wind = { dir: w.now.dir, str: w.now.str };
+  const age = time - sl.t0;
+  const g = gustAt(sl, age);
+  if (g.now && sl.gustPlayed !== g.now.at) {
+    sl.gustPlayed = g.now.at;
+    sound.fx('wind');
   }
-  const head = sl.wind.dir < 0;
-  if (input.tack && time - sl.lastTack > SAIL.tackCooldown) {
-    sl.lastTack = time;
-    sl.tack = -sl.tack;
-    sl.v *= SAIL.tackCost;
-    if (sl.aground) {
-      sl.aground = false;
-      sl.v = Math.max(sl.v, 30);
-    }
-    sound.fx('creak');
+  // Hop to the other side of the channel — a dodge, not a tack.
+  if (input.jump && time > sl.hopUntil) {
+    sl.hopFrom = sl.lane;
+    sl.hopTo = sl.lane < 0.5 ? 1 : 0;
+    sl.hopUntil = time + SAIL.hopMs;
+    sl.tack = sl.hopTo > sl.hopFrom ? 1 : -1;
+    sound.fx('jump');
     s.burst(sl.x, laneY(sl, sl.lane) - 40, 0xf4ece0, 3);
   }
-  let target: number;
-  const haul = input.dir > 0,
-    brake = input.dir < 0;
-  if (sl.aground) target = 0;
-  else if (head)
-    target = haul
-      ? SAIL.head * sl.wind.str
-      : brake
-        ? -60
-        : -SAIL.backwind * sl.wind.str;
-  else target = haul ? SAIL.tail * sl.wind.str : brake ? 10 : 70 * sl.wind.str;
-  const acc = brake ? SAIL.accel * 1.8 : SAIL.accel;
-  sl.v += Phaser.Math.Clamp(target - sl.v, -acc * dt, acc * dt);
-  // Across the river: hauled close to a headwind it reaches fast.
-  if (!sl.aground) {
-    const drift = head && haul ? SAIL.driftHead : SAIL.driftTail;
-    sl.lane += sl.tack * drift * dt;
-    if (sl.lane >= 1 || sl.lane <= 0) {
-      sl.lane = Phaser.Math.Clamp(sl.lane, 0, 1);
-      if (head && haul) {
-        sl.aground = true;
-        sl.v = 0;
-        sound.fx('bump');
-        s.burst(sl.x + 30, laneY(sl, sl.lane), 0x8ab060, 6);
-        s.hint(
-          'aground',
-          'الفلوكة شحطت في البوص! نطّ عشان تلفّ الشراع وتروح للشط التاني',
-        );
-      }
-    }
-  }
+  if (time < sl.hopUntil) {
+    const t = 1 - (sl.hopUntil - time) / SAIL.hopMs;
+    const e = t * t * (3 - 2 * t);
+    sl.lane = sl.hopFrom + (sl.hopTo - sl.hopFrom) * e;
+  } else sl.lane = sl.hopTo;
+  sl.lane = Phaser.Math.Clamp(sl.lane, 0, 1);
+  let target = SAIL.cruise;
+  if (input.dir > 0) target += SAIL.boost;
+  if (input.dir < 0) target -= SAIL.slow;
+  if (g.now) target += g.now.boost;
+  sl.v += Phaser.Math.Clamp(target - sl.v, -SAIL.accel * dt, SAIL.accel * dt);
+  sl.v = Math.max(SAIL.min, sl.v);
   sl.x += sl.v * dt;
   if (sl.x < sl.startX) {
     sl.x = sl.startX;
-    sl.v = Math.max(0, sl.v);
+    sl.v = Math.max(SAIL.cruise, sl.v);
   }
-  // Granite rocks own one side of the channel.
+  // Granite rocks: bump and slide past, never sit still.
   for (const r of sl.rocks)
-    if (Math.abs(sl.x - r.x) < 38 && near(sl.lane, r.lane)) {
-      sl.x = r.x - 38 * Math.sign(r.x - sl.x || 1);
-      sl.v = -40;
+    if (
+      time > sl.bumped &&
+      Math.abs(sl.x - r.x) < 38 &&
+      near(sl.lane, r.lane)
+    ) {
+      sl.x = r.x + SAIL.knock;
+      sl.v = Math.max(SAIL.min, sl.v * SAIL.bump);
+      sl.bumped = time + 280;
       sound.fx('bump');
       s.cameras.main.shake(100, 0.004);
       s.burst(r.x, laneY(sl, r.lane) - 8, 0xf4fbff, 6);
-      s.hint(
-        'rock',
-        r.lane < 0.5
-          ? 'صخرة على الشط القريب! نطّ عشان تلف وتعدّي من فوق'
-          : 'صخرة على الشط البعيد! عدّي من تحت ناحيتك',
-      );
+      s.hint('rock', 'صخرة! نطّ للناحية التانية المرة الجاية');
     }
-  // Crocodiles: bubbles, then up and snapping, then back under.
   for (const c of sl.crocs) stepCroc(s, sl, c, time);
   for (const c of sl.coins)
     if (c.img.active && Math.abs(c.x - sl.x) < 26 && near(sl.lane, c.lane)) {
@@ -442,8 +403,7 @@ export function sailStep(
       c.img.destroy();
     }
   drawBoat(s, sl);
-  drawVane(s, sl, time, w.left, w.next.dir);
-  // The hero rides the deck, a little aft of the mast.
+  drawVane(s, sl, time, g);
   const b = body(s.hero);
   const k = laneScale(sl.lane);
   b.setAllowGravity(false);

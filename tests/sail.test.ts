@@ -8,8 +8,13 @@ describe('the cataract voyage (Aswan felucca level)', () => {
     expect(LEVELS[i].world).toBe(5);
     expect(LEVELS[i + 1].bossKind).toBe('croc');
   });
-  it('the wind turns both ways, and every rock and croc is on the river', () => {
-    expect(new Set(c.winds.map((w) => w[0]))).toEqual(new Set([1, -1]));
+  it('the boat runs on its own, and every rock and croc is on the river', () => {
+    expect(c.gusts.length).toBeGreaterThan(0);
+    for (const [at, sec, boost] of c.gusts) {
+      expect(sec).toBeGreaterThan(0);
+      expect(boost).toBeGreaterThan(0);
+      expect(at).toBeGreaterThan(0);
+    }
     for (const [col] of [...c.rocks, ...c.crocs, ...c.coins])
       expect(col > c.fromCol + 6 && col < c.toCol - 2).toBe(true);
   });
@@ -18,5 +23,12 @@ describe('the cataract voyage (Aswan felucca level)', () => {
     for (const [a, la] of things)
       for (const [b, lb] of things)
         if (la !== lb) expect(Math.abs(a - b)).toBeGreaterThanOrEqual(4);
+  });
+  it('a clean cruise finishes in about a minute', () => {
+    const dist = (c.toCol - c.fromCol) * 24 - 88;
+    const cruise = 80; // SAIL.cruise — keep in sync with src/sail.ts
+    const sec = dist / cruise;
+    expect(sec).toBeGreaterThanOrEqual(55);
+    expect(sec).toBeLessThanOrEqual(90);
   });
 });

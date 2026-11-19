@@ -211,16 +211,16 @@ export interface LevelMeta {
   gust?: { push: number; on: number; off: number };
   /** Winter storm (نوة): rain, lightning and wet everything. */
   storm?: boolean;
-  /** Aswan's felucca voyage: you sail the boat instead of walking. The
-   * river runs from jetty `fromCol` to jetty `toCol` with its surface on
-   * `row`; winds are [dir (+1 behind you, -1 against), strength, seconds]
-   * in a loop; rocks and crocodiles sit on a side of the channel (lane 0
-   * near, 1 far); coins are [col, lane, count]. */
+  /** Aswan's felucca voyage: the boat runs forward on its own. The river
+   * runs from jetty `fromCol` to jetty `toCol` with its surface on `row`;
+   * gusts are [start second, duration seconds, speed boost px/s]; rocks
+   * and crocodiles sit on a side of the channel (lane 0 near, 1 far);
+   * coins are [col, lane, count]. */
   sail?: {
     row: number;
     fromCol: number;
     toCol: number;
-    winds: [number, number, number][];
+    gusts: [number, number, number][];
     rocks: [number, number][];
     crocs: [number, number][];
     coins: [number, number, number][];
@@ -1970,13 +1970,11 @@ export const CATARACT: NonNullable<LevelMeta['sail']> = {
   row: G6,
   fromCol: 12,
   toCol: 226,
-  winds: [
-    [1, 1, 8],
-    [-1, 0.9, 12],
-    [1, 1.1, 7],
-    [-1, 1, 12],
-    [1, 0.8, 6],
-    [-1, 1.2, 10],
+  gusts: [
+    [8, 0.9, 55],
+    [22, 0.9, 55],
+    [38, 1.0, 55],
+    [52, 0.9, 55],
   ],
   rocks: [
     [30, 0],
@@ -2526,14 +2524,14 @@ export const LEVELS: LevelMeta[] = [
     id: 'cataract',
     track: 30,
     name: 'شلال أسوان',
-    subtitle: 'إنت الريّس: شدّ الشراع ولِف مع الريح بين الصخر والتماسيح',
+    subtitle: 'الفلوكة بتجري لوحدها… نطّ تعدّي الصخر والتماسيح',
     theme: 'nubia',
     timeOfDay: 'nubia-afternoon',
     time: 200,
     dark: 0,
     current: -40,
     sail: CATARACT,
-    mechanic: 'تسوق الفلوكة بنفسك: الريح بتلف وانت بتلف الشراع من شط لشط',
+    mechanic: 'الفلوكة بتجري لوحدها: نطّ بين الشطّين، وهبّات ريح بتسرعك',
     enemy: 'تماسيح طالعة من المية + صخور الشلال',
     rows: cataract(),
   },

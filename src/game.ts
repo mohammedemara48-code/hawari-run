@@ -3744,10 +3744,10 @@ export class Alley extends Phaser.Scene {
       if (this.sail?.on) {
         sailStep(this, this.sail, time, dt, {
           dir: Number(right) - Number(left),
-          tack: jump && !this.jumpWas,
+          jump: jump && !this.jumpWas,
         });
         this.lastPress = -1000;
-        this.animateHero(time, true, 0, false);
+        this.animateHero(time, time >= this.sail.hopUntil, 0, false);
         break move;
       }
       if (this.crane?.hang) {
