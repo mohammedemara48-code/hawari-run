@@ -40,6 +40,7 @@ export default defineConfig({
           '/fonts/changa.ttf',
           '/fonts/noto-sans-arabic.ttf',
           ...readdirSync('dist/bg').map((f) => '/bg/' + f),
+          ...readdirSync('dist/sprites').map((f) => '/sprites/' + f),
           ...readdirSync('dist/assets').map((f) => '/assets/' + f),
         ];
         // The cache version is a hash of every precached file's content, so

@@ -122,6 +122,25 @@ export function make(
     t.context.drawImage(copy, -w, 0);
     t.context.restore();
   }
+  // Drawn art baked offline (public/sprites) wins over the procedural frame.
+  const cell = (
+    scene.cache.json.get('sprites-map') as Record<string, number[]> | undefined
+  )?.[key];
+  if (cell && scene.textures.exists('sprites')) {
+    const [sx, sy] = cell;
+    t.context.clearRect(0, 0, w, h);
+    t.context.drawImage(
+      scene.textures.get('sprites').getSourceImage() as CanvasImageSource,
+      sx,
+      sy,
+      w,
+      h,
+      0,
+      0,
+      w,
+      h,
+    );
+  }
   t.refresh();
 }
 function heroBrush(raw: Pixels): Pick<Pixels, 'r' | 'box' | 'poly' | 'line'> {

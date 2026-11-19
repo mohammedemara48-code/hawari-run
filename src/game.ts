@@ -361,6 +361,12 @@ export class Alley extends Phaser.Scene {
     LEVELS.forEach((_, i) =>
       this.load.image(`backdrop-${i}`, `bg/l${i + 1}.webp`),
     );
+    // Drawn creature art (bosses, enemies): replaces the procedural frames
+    // with the same keys and sizes; see scripts/art.
+    if (!location.search.includes('oldart')) {
+      this.load.image('sprites', 'sprites/creatures.png');
+      this.load.json('sprites-map', 'sprites/creatures.json');
+    }
   }
   create() {
     makeArt(this);
