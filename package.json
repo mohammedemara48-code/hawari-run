@@ -38,7 +38,7 @@
   "type": "module",
   "dependencies": {
     "@neondatabase/serverless": "^1.2.1",
-    "phaser": "^3.90.0"
+    "phaser": "^4.2.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
