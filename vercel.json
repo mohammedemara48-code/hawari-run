@@ -2,6 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "ignoreCommand": "[ \"${VERCEL_GIT_COMMIT_REF#dependabot/}\" != \"$VERCEL_GIT_COMMIT_REF\" ]",
   "headers": [
     {
       "source": "/sw.js",
