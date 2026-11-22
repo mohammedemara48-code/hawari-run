@@ -60,15 +60,9 @@ import {
 } from './world4';
 import { beltPush, updateDamiettaWorld, updateNet, type W3 } from './world3';
 import { hash, makeFarmProps, makeParallax, makeProps } from './world-art';
-import { HERO_FRAME, heroBody, heroPose } from './hero-state';
+
 import { approach, jumpAllowed, stomped, tally } from './rules';
-import {
-  hitIsFatal,
-  INVULN_MS,
-  powerAfterHit,
-  SPAWN_CLEAR,
-  worldWeapon,
-} from './weapons';
+import { hitIsFatal, INVULN_MS, powerAfterHit, SPAWN_CLEAR } from './weapons';
 import { PHYSICS } from './levels';
 import { LEVELS, TILE, WORLDS } from './level-data';
 import {
@@ -89,16 +83,7 @@ import {
   type Parsed,
 } from './level-parse';
 import { sound } from './audio';
-import {
-  bindUI,
-  bossBar,
-  ending,
-  hud,
-  renderMap,
-  screen,
-  toast,
-  touch,
-} from './ui';
+import { bindUI, bossBar, ending, renderMap, screen, toast, touch } from './ui';
 import {
   clearResume,
   loadProgress,
@@ -127,6 +112,16 @@ import {
   makeBoss as makeBossImpl,
 } from './enemies-build';
 import { loadLevel as loadLevelImpl } from './level-build';
+import {
+  fitHeroBody as fitHeroBodyImpl,
+  solidsNear as solidsNearImpl,
+  animateHero as animateHeroImpl,
+  updateHud as updateHudImpl,
+  weapon as weaponImpl,
+  grantIframes as grantIframesImpl,
+  unstickHero as unstickHeroImpl,
+  spawnX as spawnXImpl,
+} from './hero';
 import {
   body,
   coarse,
@@ -687,20 +682,10 @@ export class Alley extends Phaser.Scene {
     this.updateHud();
   }
   fitHeroBody(crouch: boolean) {
-    const m = heroBody(this.power > 0, crouch),
-      b = body(this.hero);
-    if (b.width !== m.width || b.height !== m.height || b.offset.y !== m.y)
-      b.setSize(m.width, m.height, false).setOffset(m.x, m.y);
-    this.heroCrouched = crouch;
+    fitHeroBodyImpl(this, crouch);
   }
   solidsNear(): SBody[] {
-    const out: SBody[] = [];
-    for (const g of [this.terrain, this.blocks, this.crates])
-      for (const s of g.getChildren()) {
-        const b = (s as Sprite).body as SBody;
-        if (b && b.enable && s.active) out.push(b);
-      }
-    return out;
+    return solidsNearImpl(this);
   }
   animateHero(
     now: number,
@@ -708,86 +693,23 @@ export class Alley extends Phaser.Scene {
     direction: number,
     down: boolean,
   ) {
-    let crouch = grounded && down;
-    if (this.heroCrouched && !crouch) {
-      const m = heroBody(this.power > 0, false),
-        left = this.hero.x - HERO_FRAME.width / 2 + m.x,
-        top = this.hero.y - HERO_FRAME.height / 2 + m.y;
-      crouch = this.solidsNear().some(
-        (b) =>
-          left < b.right &&
-          left + m.width > b.left &&
-          top < b.bottom &&
-          top + m.height > b.top + 0.5,
-      );
-    }
-    this.fitHeroBody(crouch);
-    let pose = heroPose({
-      now,
-      grounded,
-      vx: body(this.hero).velocity.x,
-      vy: body(this.hero).velocity.y,
-      direction,
-      down: crouch,
-      growUntil: this.growUntil,
-      throwUntil: this.throwUntil,
-      hurtUntil: this.hurtPoseUntil,
-      dead: this.mode === 'dead',
-    });
-    if ((this.zip || this.crane?.hang) && this.mode === 'play') pose = 'throw1';
-    const form = pose === 'grow0' ? 'small' : this.power > 0 ? 'big' : 'small';
-    this.hero.setTexture(`hero-${form}-${pose}`).setData('pose', pose);
-    this.heroShadow
-      .setPosition(this.hero.x, body(this.hero).bottom + 1)
-      .setAlpha(grounded ? 0.24 : 0)
-      .setVisible(this.mode !== 'dead');
+    animateHeroImpl(this, now, grounded, direction, down);
   }
   updateHud() {
-    hud(
-      this.score,
-      this.coinCount,
-      this.lives,
-      Math.max(0, Math.ceil(this.remaining)),
-      `${this.level + 1} · ${LEVELS[this.level].name}`,
-      this.power,
-      this.secretFound,
-      this.weapon(),
-    );
+    updateHudImpl(this);
   }
   weapon() {
-    return worldWeapon(this.L?.meta.world ?? 0);
+    return weaponImpl(this);
   }
   grantIframes() {
-    this.hurtUntil = this.time.now + INVULN_MS;
-    this.hurtPoseUntil = this.time.now + 280;
-    this.hero.setAlpha(0.45);
-    this.updateHud();
+    grantIframesImpl(this);
   }
-  /** Lift the hero out of any solid he was pushed into (crow/dive clips). */
   unstickHero() {
-    if (!this.hero?.body) return;
-    const b = body(this.hero);
-    for (let i = 0; i < 16; i++) {
-      const stuck = this.solidsNear().some(
-        (s) =>
-          b.right > s.left &&
-          b.left < s.right &&
-          b.bottom > s.top + 1 &&
-          b.top < s.bottom,
-      );
-      if (!stuck) break;
-      this.hero.y -= 2;
-      b.reset(this.hero.x, this.hero.y);
-    }
+    unstickHeroImpl(this);
   }
   spawnX() {
-    const cp = this.spec.checkpoint;
-    return this.checkpoint && cp.x >= 0 ? cp.x : this.spec.start.x;
+    return spawnXImpl(this);
   }
-  /** A diving bird warns first: it stops, shakes and flashes with a "!"
-   * over its head for BIRD_TELL_MS, then dives in a straight line at the
-   * spot where بلبل was when the warning started (no homing), so walking
-   * away during the warning is always enough. */
   birdTell(e: Sprite, time: number, fx: string) {
     e.setData('state', 'tell')
       .setData('until', time + BIRD_TELL_MS)
