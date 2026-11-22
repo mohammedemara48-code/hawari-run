@@ -77,7 +77,7 @@ import {
   worldWeapon,
 } from './weapons';
 import { PHYSICS } from './levels';
-import { BOSS_NAMES, LEVELS, TILE, WORLDS } from './level-data';
+import { LEVELS, TILE, WORLDS } from './level-data';
 import {
   BIRD_REST_MS,
   BIRD_TELL_MS,
@@ -125,6 +125,15 @@ import {
   buildAtmosphere as buildAtmosphereImpl,
   buildColliders as buildCollidersImpl,
 } from './world-build';
+import {
+  enemy as enemyImpl,
+  walkSpeed as walkSpeedImpl,
+  bossKind as bossKindImpl,
+  bossMax as bossMaxImpl,
+  bossName as bossNameImpl,
+  bossTex as bossTexImpl,
+  makeBoss as makeBossImpl,
+} from './enemies-build';
 import {
   body,
   coarse,
@@ -829,137 +838,25 @@ export class Alley extends Phaser.Scene {
     return s;
   }
   enemy(x: number, y: number, type: string) {
-    const flying = FLYING.has(type);
-    const e = this.enemies.create(x, y, type + '0') as Sprite;
-    const sizes: Record<string, [number, number, number, number]> = {
-      cat: [24, 22, 4, 5],
-      bug: [22, 12, 5, 9],
-      basket: [24, 22, 4, 5],
-      bat: [20, 16, 6, 4],
-      rooster: [22, 26, 6, 5],
-      pigeon: [20, 14, 5, 4],
-      rat: [22, 12, 5, 5],
-      buffalo: [40, 28, 6, 8],
-      goose: [20, 22, 5, 4],
-      crow: [20, 14, 5, 4],
-      crab: [26, 16, 4, 7],
-      gull: [24, 14, 5, 4],
-      saw: [20, 20, 2, 2],
-      plane: [26, 14, 3, 5],
-      thief: [26, 20, 4, 6],
-      skua: [24, 14, 5, 4],
-      jelly: [16, 18, 4, 4],
-      brolly: [26, 18, 5, 4],
-      ball: [18, 18, 2, 2],
-      scarab: [18, 12, 3, 6],
-      mummy: [18, 32, 7, 6],
-      cobra: [14, 24, 8, 8],
-      devil: [22, 40, 6, 6],
-      croc: [34, 11, 5, 9],
-      pelican: [20, 22, 7, 8],
-      barrel: [22, 22, 4, 6],
-      scorpion: [40, 20, 16, 20],
-    };
-    const [w, h, ox, oy] = sizes[type];
-    const b = body(e);
-    b.setSize(w, h).setOffset(ox, oy);
-    if (flying) b.setAllowGravity(false);
-    // Feet on the tile floor: body bottom = bottom of the tile cell.
-    else e.y = y + TILE / 2 - (oy + h) + e.height / 2 - 1;
-    b.reset(e.x, e.y);
-    e.setDepth(8)
-      .setData('kind', type)
-      .setData('home', { x, y: e.y })
-      .setData('state', type === 'bat' ? 'perch' : 'walk')
-      .setData('until', 0)
-      .setData('sleep', false)
-      .setData('rolling', false)
-      .setData('seed', hash(x, y) * 10)
-      .setData('hp', type === 'buffalo' ? 2 : 1);
-    if (!flying) e.setVelocityX(-this.walkSpeed(type));
-    return e;
+    return enemyImpl(this, x, y, type);
   }
   walkSpeed(type: string) {
-    return (
-      (
-        {
-          cat: 38,
-          bug: 55,
-          basket: 38,
-          rooster: 34,
-          rat: 92,
-          buffalo: 28,
-          goose: 46,
-          crab: 50,
-          saw: 128,
-          plane: 44,
-          thief: 56,
-          ball: 78,
-          scarab: 58,
-          mummy: 30,
-          cobra: 0,
-          croc: 22,
-          pelican: 30,
-          barrel: 0,
-          scorpion: 32,
-        } as Record<string, number>
-      )[type] ?? 40
-    );
+    return walkSpeedImpl(this, type);
   }
   get bossKind() {
-    return this.L.meta.bossKind ?? 'fatwa';
+    return bossKindImpl(this);
   }
-  /** Hearts: the final boss has four phases of two. */
   get bossMax() {
-    return this.L?.meta.bossKind === 'ram' ? 8 : 6;
+    return bossMaxImpl(this);
   }
   get bossName() {
-    return BOSS_NAMES[this.bossKind];
+    return bossNameImpl(this);
   }
   bossTex(pose: string) {
-    return (
-      {
-        ram: 'boss5-',
-        croc: 'boss6-',
-        captain: 'boss7-',
-        qibli: 'boss8-',
-        buffalo: 'boss2-',
-        crab: 'boss3-',
-        gull: 'boss4-',
-        fatwa: 'boss-',
-      }[this.bossKind] + pose
-    );
+    return bossTexImpl(this, pose);
   }
   makeBoss(x: number, bottom: number) {
-    const buffalo = this.bossKind === 'buffalo',
-      crab = this.bossKind === 'crab';
-    const boss = this.physics.add
-      .sprite(
-        x,
-        bottom - (crab ? 36 : buffalo ? 33 : 32),
-        this.bossTex('idle0'),
-      )
-      .setDepth(9);
-    if (this.bossKind === 'gull') {
-      body(boss).setSize(72, 40).setOffset(28, 39).setAllowGravity(false);
-      boss.y = bottom - 60;
-    } else if (this.bossKind === 'ram') {
-      body(boss).setSize(116, 56).setOffset(26, 52);
-      boss.y = bottom - 52;
-    } else if (this.bossKind === 'croc') {
-      body(boss).setSize(120, 40).setOffset(14, 30);
-      boss.y = bottom - 26;
-    } else if (this.bossKind === 'captain') {
-      body(boss).setSize(64, 60).setOffset(48, 50);
-      boss.y = bottom - 54;
-    } else if (this.bossKind === 'qibli') {
-      body(boss).setSize(80, 80).setOffset(40, 40).setAllowGravity(false);
-      boss.y = bottom - 96;
-    } else if (crab) body(boss).setSize(92, 40).setOffset(16, 30);
-    else if (buffalo) body(boss).setSize(76, 50).setOffset(12, 14);
-    else body(boss).setSize(52, 54).setOffset(13, 10);
-    boss.setFlipX(true);
-    this.boss = boss;
+    makeBossImpl(this, x, bottom);
   }
   setPower(power: number, announce = true) {
     const previous = this.power;
