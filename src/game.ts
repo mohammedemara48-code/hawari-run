@@ -11,7 +11,7 @@ import { makeLuxorCreatures } from './creatures-luxor';
 import { isW5, makeLuxorProps } from './world5-art';
 import { isW6, makeAswanProps } from './world6-art';
 import { sailIdle, sailStep, type Sail } from './sail';
-import { craneIdle, hangStep, letGo, tryHook, type Crane } from './crane';
+import { craneIdle, hangStep, tryHook, type Crane } from './crane';
 import { isW7, makePortSaidProps } from './world7-art';
 import { isW8, makeSiwaProps } from './world8-art';
 import {
@@ -24,17 +24,14 @@ import {
 import { updatePortSaidEnemy } from './world7';
 import { updateAswanEnemy } from './world6';
 import {
-  luxorContact,
   luxorMove,
   updateLuxorEnemy,
   updateLuxorWorld,
   type W5,
 } from './world5';
 import {
-  alexContact,
   alexMove,
   bossGustPush,
-  dropUmbrella,
   updateAlexEnemy,
   updateAlexWorld,
   type W4,
@@ -42,8 +39,8 @@ import {
 import { beltPush, updateDamiettaWorld, updateNet, type W3 } from './world3';
 import { hash, makeFarmProps, makeParallax, makeProps } from './world-art';
 
-import { approach, jumpAllowed, stomped, tally } from './rules';
-import { hitIsFatal, INVULN_MS, powerAfterHit, SPAWN_CLEAR } from './weapons';
+import { approach, jumpAllowed, tally } from './rules';
+import { INVULN_MS, SPAWN_CLEAR } from './weapons';
 import { PHYSICS } from './levels';
 import { LEVELS, TILE, WORLDS } from './level-data';
 import {
@@ -127,6 +124,11 @@ import {
   bumpAbove as bumpAboveImpl,
   spawnItem as spawnItemImpl,
 } from './blocks';
+import {
+  contact as contactImpl,
+  die as dieImpl,
+  hurt as hurtImpl,
+} from './damage';
 import {
   body,
   coarse,
@@ -1023,171 +1025,15 @@ export class Alley extends Phaser.Scene {
     this.updateHud();
   }
   contact(e: Sprite) {
-    if (this.mode !== 'play' || !e.active) return;
-    const b = body(this.hero),
-      eb = body(e);
-    if (this.time.now < this.invincible) {
-      this.killEnemy(e);
-      return;
-    }
-    const kind = e.getData('kind');
-    const fromTop = stomped(
-      b.touching.down ? Math.max(1, b.velocity.y) : b.velocity.y,
-      b.prev.y + b.height,
-      eb.top,
-    );
-    if (luxorContact(this, e, fromTop)) return;
-    if (alexContact(this, e, fromTop)) return;
-    if (
-      fromTop &&
-      (kind === 'saw' || (kind === 'crab' && e.getData('state') === 'guard'))
-    ) {
-      // Spinning blades and raised claws can't be stomped.
-      this.hero.setVelocityY(-360);
-      this.hint(
-        kind === 'saw' ? 'saw' : 'claws',
-        kind === 'saw'
-          ? 'المنشار ما ينداسش! نطّ من فوقه أو ارميه بالشطة'
-          : 'الكابوريا رافعة مقصّها! استنى لما تنزّله',
-      );
-      this.hurt();
-      return;
-    }
-    if (!fromTop && kind === 'thief' && e.getData('state') === 'flee') {
-      // A cat running off with your fish isn't looking for a fight.
-      this.hero.setVelocityX(this.hero.x < e.x ? -120 : 120);
-      return;
-    }
-    if (!fromTop && kind === 'thief' && this.coinCount > 0) {
-      // The fish thief grabs your takings instead of hurting you.
-      const n = Math.min(5, this.coinCount);
-      this.coinCount -= n;
-      this.levelCoins = Math.max(0, this.levelCoins - n);
-      e.setData('stolen', (e.getData('stolen') || 0) + n);
-      e.setData('state', 'flee')
-        .setData('until', this.time.now + 4000)
-        .setData('dir', this.hero.x < e.x ? 1 : -1);
-      this.hurtUntil = this.time.now + 700;
-      this.popText(e.x, e.y - 20, `-${n}`, '#ffb0a0');
-      this.hint('thief', 'القطة سرقت الفكة! اتنطّ عليها ترجّعها');
-      sound.fx('steal');
-      this.updateHud();
-      return;
-    }
-    if (
-      stomped(
-        b.touching.down ? Math.max(1, b.velocity.y) : b.velocity.y,
-        b.prev.y + b.height,
-        eb.top,
-      )
-    ) {
-      if (e.getData('kind') === 'basket') {
-        if (e.getData('sleep')) {
-          e.setData('sleep', false).setData('rolling', true);
-          e.setVelocityX(this.hero.x < e.x ? 290 : -290);
-          e.setTint(0xffd18a);
-        } else {
-          e.setData('sleep', true).setData('rolling', false);
-          e.setVelocityX(0);
-          e.setScale(1, 0.7);
-        }
-        sound.fx('stomp');
-      } else this.damageEnemy(e);
-      this.hero.setVelocityY(this.jumpWas ? -420 : -300);
-      this.burst(this.hero.x, this.hero.y + 14, 0xeed9a4, 5);
-    } else if (e.getData('sleep')) {
-      e.setData('sleep', false).setData('rolling', true);
-      e.setVelocityX(this.hero.x < e.x ? 290 : -290);
-      this.hurtUntil = this.time.now + 250;
-    } else this.hurt(kind);
+    contactImpl(this, e);
   }
   /** `soft`: a wave or a lightning bolt. These knock small بلبل back
    * instead of killing him (and still cost a big one his growth). */
   hurt(source = 'hit', soft = false) {
-    if (
-      this.time.now < this.hurtUntil ||
-      this.time.now < this.invincible ||
-      this.mode !== 'play'
-    )
-      return;
-    if (soft && hitIsFatal(this.power)) {
-      this.lastHurtBy = source;
-      this.unstickHero();
-      this.cameras.main.shake(120, 0.005);
-      this.hero.setVelocity(-this.facing * 160, -260);
-      this.hero.setTintFill(0xffffff);
-      this.time.delayedCall(
-        90,
-        () => this.hero?.active && this.hero.clearTint(),
-      );
-      this.grantIframes();
-      sound.fx('powerdown');
-      return;
-    }
-    this.lastHurtBy = source;
-    if (this.crane) letGo(this, this.crane, this.time.now);
-    dropUmbrella(this);
-    this.cameras.main.shake(160, 0.007);
-    this.unstickHero();
-    this.hero.setVelocity(-this.facing * 90, -220);
-    this.hero.setTintFill(0xffffff);
-    this.time.delayedCall(90, () => this.hero?.active && this.hero.clearTint());
-    if (hitIsFatal(this.power)) {
-      sound.fx('hurt');
-      this.die();
-      return;
-    }
-    this.setPower(powerAfterHit(this.power), false);
-    this.grantIframes();
-    sound.fx('powerdown');
-    this.burst(this.hero.x, this.hero.y, 0xe6b17a, 16);
-    this.burst(this.hero.x, this.hero.y, 0xffffff, 8);
+    hurtImpl(this, source, soft);
   }
   die() {
-    if (this.mode !== 'play') return;
-    this.mode = 'dead';
-    this.lives--;
-    this.zip = null;
-    if (this.crane) this.crane.hang = null;
-    this.unstickHero();
-    body(this.hero).setAllowGravity(true);
-    this.hero
-      .setTexture(`hero-${this.power > 0 ? 'big' : 'small'}-dead`)
-      .setData('pose', 'dead')
-      .clearTint()
-      .setAlpha(1);
-    this.heroShadow.setVisible(false);
-    body(this.hero).checkCollision.none = true;
-    this.hero.setVelocity(-this.facing * 40, -280);
-    this.hero.setDepth(30);
-    sound.fx('hurt');
-    sound.setIntensity(0);
-    this.updateHud();
-    const overScore = this.score,
-      overCoins = this.coinCount;
-    this.time.delayedCall(1100, () => {
-      if (this.lives <= 0) {
-        this.mode = 'over';
-        this.physics.pause();
-        clearResume();
-        this.updateHud();
-        const row = (a: string, b: string) =>
-          `<div class="tally-row"><span>${a}</span><strong>${b}</strong></div>`;
-        screen(
-          'over',
-          row('المجموع', String(overScore).padStart(6, '0')) +
-            row('الفكة', String(overCoins).padStart(2, '0')),
-        );
-      } else {
-        this.power = 0;
-        this.loadLevel();
-        this.mode = 'play';
-        this.physics.resume();
-        toast(
-          this.checkpoint ? 'راجع من علم الأمان' : 'لسه فيك نفس… جرّب تاني',
-        );
-      }
-    });
+    dieImpl(this);
   }
   complete() {
     if (this.mode !== 'play') return;
