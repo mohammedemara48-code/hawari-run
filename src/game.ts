@@ -17,34 +17,17 @@ import { isW8, makeSiwaProps } from './world8-art';
 import {
   boardStep,
   maybeStartBoard,
-  qibliContact,
-  qibliPhase,
-  qibliSalt,
-  updateQibliBoss,
   updateSiwaEnemy,
   updateSiwaWorld,
   type W8,
 } from './world8';
-import {
-  captainContact,
-  captainPhase,
-  updateCaptainBoss,
-  updatePortSaidEnemy,
-} from './world7';
-import {
-  crocContact,
-  crocPhase,
-  updateAswanEnemy,
-  updateCrocBoss,
-} from './world6';
+import { updatePortSaidEnemy } from './world7';
+import { updateAswanEnemy } from './world6';
 import {
   luxorContact,
   luxorMove,
-  ramContact,
-  ramPhase,
   updateLuxorEnemy,
   updateLuxorWorld,
-  updateRamBoss,
   type W5,
 } from './world5';
 import {
@@ -52,10 +35,8 @@ import {
   alexMove,
   bossGustPush,
   dropUmbrella,
-  stormContact,
   updateAlexEnemy,
   updateAlexWorld,
-  updateStormBoss,
   type W4,
 } from './world4';
 import { beltPush, updateDamiettaWorld, updateNet, type W3 } from './world3';
@@ -123,9 +104,24 @@ import {
   spawnX as spawnXImpl,
 } from './hero';
 import {
+  bossPhase as bossPhaseImpl,
+  bossSet as bossSetImpl,
+  bossContact as bossContactImpl,
+  bossChili as bossChiliImpl,
+  bossDamage as bossDamageImpl,
+  bossDefeat as bossDefeatImpl,
+  updateBoss as updateBossImpl,
+  crabContact as crabContactImpl,
+  updateCrab as updateCrabImpl,
+  spitBubbles as spitBubblesImpl,
+  crabWave as crabWaveImpl,
+  bossRange as bossRangeImpl,
+  clampBoss as clampBossImpl,
+  frameBossFight as frameBossFightImpl,
+} from './boss';
+import {
   body,
   coarse,
-  EDGE,
   enterFullscreen,
   lockLandscape,
   oneWay,
@@ -1420,674 +1416,46 @@ export class Alley extends Phaser.Scene {
   }
   /* ───────────────────────── Boss ───────────────────────── */
   bossPhase() {
-    const hp = this.bossState.hp;
-    if (this.bossKind === 'ram')
-      return hp > 6 ? 1 : hp > 4 ? 2 : hp > 2 ? 3 : 4;
-    return hp > 4 ? 1 : hp > 2 ? 2 : 3;
+    return bossPhaseImpl(this);
   }
   bossSet(state: string, ms: number) {
-    this.bossState.state = state;
-    this.bossState.until = this.time.now + ms;
+    bossSetImpl(this, state, ms);
   }
   bossContact() {
-    const boss = this.boss!,
-      s = this.bossState;
-    if (this.mode !== 'play' || s.defeated || !s.active) return;
-    const b = body(this.hero),
-      bb = body(boss);
-    const fromAbove = b.velocity.y > 0 && b.prev.y + b.height <= bb.top + 16;
-    if (this.bossKind === 'crab') {
-      this.crabContact(fromAbove);
-      return;
-    }
-    if (this.bossKind === 'gull') {
-      stormContact(this, fromAbove);
-      return;
-    }
-    if (this.bossKind === 'ram') {
-      ramContact(this, fromAbove);
-      return;
-    }
-    if (this.bossKind === 'croc') {
-      crocContact(this, fromAbove);
-      return;
-    }
-    if (this.bossKind === 'captain') {
-      captainContact(this, fromAbove);
-      return;
-    }
-    if (this.bossKind === 'qibli') {
-      qibliContact(this, fromAbove);
-      return;
-    }
-    if (this.bossKind === 'buffalo' && s.state !== 'dazed') {
-      // The buffalo's back is only open while it's dazed from a crash.
-      if (fromAbove) {
-        this.hero.setVelocity(this.hero.x < boss.x ? -200 : 200, -430);
-        this.hint('horns', 'ضهره ناشف دلوقتي! خلّيه يخبط في الحيطة ويدوخ');
-        return;
-      }
-      if (this.time.now < this.invincible)
-        this.hero.setVelocityX(this.hero.x < boss.x ? -260 : 260);
-      else if (s.state !== 'hurt') {
-        this.hurt();
-        if (this.mode === 'play')
-          this.hero.setVelocity(this.hero.x < boss.x ? -280 : 280, -300);
-      }
-      return;
-    }
-    if (fromAbove) {
-      this.hero.setVelocityY(-430);
-      if (this.time.now >= s.invuln) this.bossDamage(1);
-    } else if (this.bossKind === 'buffalo') {
-      // Dazed: brushing past is harmless.
-      this.hero.setVelocityX(this.hero.x < boss.x ? -120 : 120);
-    } else if (this.time.now < this.invincible) {
-      this.hero.setVelocityX(this.hero.x < boss.x ? -260 : 260);
-    } else if (s.state !== 'hurt') {
-      this.hurt();
-      if (this.mode === 'play')
-        this.hero.setVelocity(this.hero.x < boss.x ? -240 : 240, -260);
-    }
+    bossContactImpl(this);
   }
   bossChili() {
-    const s = this.bossState;
-    if (s.defeated || !s.active || this.time.now < s.invuln) return;
-    if (
-      this.bossKind === 'crab' &&
-      (s.state === 'guard' || s.state === 'snap')
-    ) {
-      // Raised claws swat the chili away.
-      sound.fx('clack');
-      this.burst(this.boss!.x, this.boss!.y - 20, 0xf5a34d, 4);
-      return;
-    }
-    if (this.bossKind === 'ram' && s.state !== 'bowed') {
-      // Shots just glance off the stone; only the bowed brow feels them.
-      this.burst(this.boss!.x, this.boss!.y - 20, 0xf5a34d, 4);
-      this.hint(
-        'ram-chili',
-        'العصاية مش بتأثر في الحجر… غير لما يوطّي راسه، أو اتنطّ على جوهرته',
-      );
-      return;
-    }
-    if (this.bossKind === 'captain') {
-      // Steel cab: only a container from the gantry hook dents it.
-      this.burst(this.boss!.x, this.boss!.y - 20, 0xf4c040, 4);
-      this.hint(
-        'captain-shot',
-        'الكابينة حديد… نزّل عليها الحاوية من خطّاف الونش الكبير',
-      );
-      return;
-    }
-    if (this.bossKind === 'qibli') {
-      qibliSalt(this);
-      return;
-    }
-    if (this.bossKind === 'croc' && s.state !== 'stuck') {
-      // The frond slaps off his hide unless his jaws are dug in.
-      this.burst(this.boss!.x, this.boss!.y - 10, 0x5aa040, 4);
-      this.hint(
-        'croc-frond',
-        'السعفة مش بتأثر في جلده… غير لما يغرز بقه في الرملة',
-      );
-      return;
-    }
-    s.chili++;
-    this.boss!.setTintFill(0xffa040);
-    this.time.delayedCall(60, () => this.boss?.active && this.boss.clearTint());
-    // Chili is weaker than a stomp: two hits per heart.
-    if (s.chili % 2 === 0) this.bossDamage(1);
-    else sound.fx('fire');
+    bossChiliImpl(this);
   }
   bossDamage(n: number) {
-    const s = this.bossState,
-      boss = this.boss!;
-    const before = this.bossPhase();
-    s.hp = Math.max(0, s.hp - n);
-    s.invuln = this.time.now + 1000;
-    this.score += 500;
-    sound.fx('boss-hit');
-    this.cameras.main.shake(180, 0.01);
-    boss.setTintFill(0xffffff);
-    this.time.delayedCall(80, () => boss.active && boss.clearTint());
-    // Hit-stop.
-    this.physics.pause();
-    this.time.delayedCall(
-      70,
-      () => this.mode === 'play' && this.physics.resume(),
-    );
-    this.popText(boss.x, boss.y - 40, '+٥٠٠', '#ffe08a');
-    bossBar(true, s.hp / this.bossMax, this.bossPhase(), this.bossName);
-    if (s.hp <= 0) {
-      this.bossDefeat();
-      return;
-    }
-    if (this.bossPhase() !== before) {
-      sound.bossPhase = this.bossPhase() - 1;
-      sound.fx('roar');
-      const buffalo = this.bossKind === 'buffalo';
-      if (this.bossKind === 'ram') ramPhase(this, this.bossPhase());
-      else if (this.bossKind === 'croc') crocPhase(this.bossPhase());
-      else if (this.bossKind === 'captain') captainPhase(this.bossPhase());
-      else if (this.bossKind === 'qibli') qibliPhase(this.bossPhase());
-      else if (this.bossKind === 'crab')
-        toast(
-          this.bossPhase() === 2
-            ? 'أبو مقص اتعصّب! بيتف فقاقيع وهو مغروز'
-            : 'آخر نَفَس! الموج جاي والنوارس فوقك',
-        );
-      else if (this.bossKind === 'gull')
-        toast(
-          this.bossPhase() === 2
-            ? 'ريّس النوة اتعصّب! بيرمي صدف ويرفرف يطيّرك'
-            : 'آخر نَفَس! بينادي البرق… والنوارس جاية',
-        );
-      else
-        toast(
-          this.bossPhase() === 2
-            ? buffalo
-              ? 'أبو قرون اتجنن! لما يخبط الطين بيقع من فوق'
-              : 'الفتوة برعي اتعصّب! بيرمي عضم سمك'
-            : buffalo
-              ? 'آخر نَفَس! بينطّ ويرجّ الأرض… خلي بالك من الطين'
-              : 'آخر نَفَس! نطّ فوق الرجّة',
-        );
-      if (
-        (this.bossKind === 'crab' || this.bossKind === 'gull') &&
-        this.bossPhase() === 3
-      )
-        // The storm gull calls in no gulls: his lightning is enough.
-        for (const dx of this.bossKind === 'gull' ? [] : [-140, 140]) {
-          const e = this.enemy(
-            Phaser.Math.Clamp(boss.x + dx, s.arenaX + 60, this.L.width - 60),
-            3 * TILE,
-            this.bossKind === 'gull' ? 'skua' : 'gull',
-          );
-          // Storm gulls called in wheel about first instead of diving at
-          // بلبل while he is still bouncing off the boss.
-          if (this.bossKind === 'gull')
-            e.setData('until', this.time.now + 1800);
-        }
-    }
-    this.bossSet('hurt', 450);
-    if (this.bossKind === 'crab')
-      boss.setVelocity(boss.x < this.hero.x ? -160 : 160, -240);
-    else if (this.bossKind === 'buffalo')
-      boss.setVelocity(boss.x < this.hero.x ? -150 : 150, -260);
-    else if (this.bossKind === 'gull')
-      boss.setVelocity(boss.x < this.hero.x ? -180 : 180, -200);
-    else if (this.bossKind === 'captain')
-      boss.setVelocity(boss.x < this.hero.x ? -60 : 60, -120);
-    else if (this.bossKind === 'ram' || this.bossKind === 'croc')
-      boss.setVelocity(boss.x < this.hero.x ? -120 : 120, -220);
-    else boss.setVelocity(boss.x < this.hero.x ? -200 : 200, -380);
+    bossDamageImpl(this, n);
   }
   bossDefeat() {
-    const s = this.bossState,
-      boss = this.boss!;
-    s.defeated = true;
-    this.bossSet('dead', 99999);
-    boss.setTexture(this.bossTex('dead')).setFlipY(true);
-    body(boss).checkCollision.none = true;
-    body(boss).setAllowGravity(true);
-    if (this.w4) {
-      for (const b of this.w4.bolts.splice(0)) b.img.destroy();
-      this.w4.bossGustUntil = 0;
-    }
-    if (this.w5) this.w5.darkTarget = 0;
-    boss.setVelocity(0, -300);
-    this.hazards.clear(true, true);
-    this.burst(boss.x, boss.y, 0xffd474, 40);
-    sound.fx('clear');
-    sound.setTrack(this.L.meta.track);
-    sound.setIntensity(0);
-    bossBar(false);
-    toast(
-      {
-        ram: 'الكبش الحارس رجع حجر! باب الكرنك اتفتح… وأسوان مستنياك',
-        croc: 'التمساح الكبير رجع النيل! الجزيرة بقت بتاعتك… وبورسعيد مستنياك',
-        captain: 'ريّس الميناء نزل من الونش! الميناء بقى بتاعك… وسيوة مستنياك',
-        qibli: 'القِبْلي اتشتت على العين! الواحة بقت بتاعتك… والمشوار خلص',
-        buffalo: 'أبو قرون قعد في الطين! باب الجرن اتفتح',
-        crab: 'أبو مقص رجع البحر! رأس البر بقت بتاعتك',
-        gull: 'ريّس النوة طار مع الريح! النوة هديت والقلعة بقت بتاعتك',
-        fatwa: 'الفتوة برعي اتهزم! باب الخروج اتفتح',
-      }[this.bossKind],
-    );
-    this.kills++;
-    this.score += 3000;
-    this.cameras.main.setBounds(0, 0, this.L.width + EDGE, this.L.height);
-    this.cameras.main
-      .startFollow(
-        this.hero,
-        true,
-        0.12,
-        0.2,
-        0,
-        this.cameras.main.followOffset.y,
-      )
-      .setDeadzone(90, 70);
-    this.camFocus?.destroy();
-    this.camFocus = undefined;
-    this.exitDoor!.setVisible(true).setAlpha(0).setScale(1, 0.2);
-    (
-      this.children.getByName('exit-glow') as Phaser.GameObjects.Image | null
-    )?.setVisible(true);
-    this.tweens.add({
-      targets: this.exitDoor,
-      alpha: 1,
-      scaleY: 1,
-      duration: 600,
-      ease: 'Back.out',
-      delay: 500,
-    });
+    bossDefeatImpl(this);
   }
   updateBoss(time: number) {
-    const boss = this.boss!,
-      s = this.bossState,
-      bb = body(boss);
-    if (s.defeated) {
-      if (boss.y > this.L.height + 200) boss.destroy();
-      return;
-    }
-    if (!s.active) {
-      boss.setTexture(
-        this.bossTex(
-          'idle' +
-            (Math.floor(time / (this.bossKind === 'gull' ? 160 : 400)) % 2),
-        ),
-      );
-      if (this.bossKind === 'gull')
-        body(boss).setVelocityY(Math.sin(time / 300) * 20);
-      if (this.hero.x > s.arenaX + TILE * 3) {
-        s.active = true;
-        this.camFocus = this.add.zone(
-          this.cameras.main.midPoint.x,
-          this.hero.y,
-          1,
-          1,
-        );
-        this.cameras.main
-          .startFollow(
-            this.camFocus,
-            true,
-            1,
-            0.2,
-            0,
-            this.cameras.main.followOffset.y,
-          )
-          .setDeadzone(0, 70);
-        this.cameras.main.setBounds(
-          s.arenaX,
-          0,
-          this.L.width - s.arenaX,
-          this.L.height,
-        );
-        sound.setTrack(this.L.meta.bossTrack ?? 4);
-        sound.fx(
-          {
-            ram: 'rumble',
-            croc: 'roar',
-            captain: 'rumble',
-            qibli: 'roar',
-            buffalo: 'moo',
-            crab: 'clack',
-            gull: 'screech',
-            fatwa: 'roar',
-          }[this.bossKind],
-        );
-        bossBar(true, 1, 1, this.bossName);
-        toast(
-          {
-            croc: 'تمساح النيل الكبير: «الجزيرة دي بتاعتي!» — لما يهجم ويغرز بقه في الرملة اتنطّ على راسه، ونطّ فوق موجة ديله',
-            captain:
-              'ريّس الميناء: «محدّش يرسى في ميناي!» — ابعد عن علامة الحاوية، اتشعبط في خطّاف الونش الكبير اللي فوق ونزّل الحاوية على كابينته',
-            qibli:
-              'القِبْلي: «الواحة دي في ريحي!» — نطّ فوق موجة الرمل، افتح العين بالملح، وجرّه يضرب فوقها',
-            ram: 'الكبش الحارس: «محدّش يعدّي الكرنك!» — لما يخبط الأرض ويوطّي راسه اتنطّ على الجوهرة، وحجر واحد بينزل وظلّه بيبان قبله',
-            buffalo:
-              'أبو قرون: «مين داس على جرني؟!» — خلّيه يخبط ويدوخ واتنطّ على ضهره',
-            crab: 'أبو مقص: «مين داخل شطّي؟!» — استنى مقصّه يتغرز في الرملة واتنطّ عليه',
-            gull: 'ريّس النوة: «القلعة دي بتاعتي!» — استنى لما يغطس ويغرز منقاره واتنطّ عليه',
-            fatwa: 'الفتوة برعي: «مين اللي داخل حارتي؟!» — اتنطّ على راسه',
-          }[this.bossKind],
-        );
-        this.bossSet('walk', 1600);
-        this.cameras.main.shake(300, 0.006);
-      }
-      return;
-    }
-    if (this.bossKind === 'buffalo') {
-      this.updateBuffalo(time);
-      this.updateHazards(time);
-      return;
-    }
-    if (this.bossKind === 'crab') {
-      this.updateCrab(time);
-      this.updateHazards(time);
-      return;
-    }
-    if (this.bossKind === 'gull') {
-      updateStormBoss(this, time);
-      this.updateHazards(time);
-      return;
-    }
-    if (this.bossKind === 'ram') {
-      updateRamBoss(this, time);
-      this.updateHazards(time);
-      return;
-    }
-    if (this.bossKind === 'croc') {
-      updateCrocBoss(this, time);
-      this.updateHazards(time);
-      return;
-    }
-    if (this.bossKind === 'captain') {
-      updateCaptainBoss(this, time);
-      this.updateHazards(time);
-      return;
-    }
-    if (this.bossKind === 'qibli') {
-      updateQibliBoss(this, time);
-      this.updateHazards(time);
-      return;
-    }
-    const phase = this.bossPhase();
-    const grounded = bb.blocked.down;
-    const toHero = Math.sign(this.hero.x - boss.x) || 1;
-    if (s.state !== 'leap' && s.state !== 'hurt') boss.setFlipX(toHero < 0);
-    const over = time > s.until;
-    switch (s.state) {
-      case 'walk':
-        boss.setTexture('boss-idle' + (Math.floor(time / 180) % 2));
-        boss.setVelocityX(toHero * (phase === 3 ? 95 : 62));
-        if (over) {
-          boss.setVelocityX(0);
-          if (phase === 1) this.bossSet('telegraph', 650);
-          else if (phase === 2) {
-            s.volley = 3;
-            this.bossSet('throw', 350);
-          } else this.bossSet('slamUp', 200);
-        }
-        break;
-      case 'throw':
-        boss.setTexture('boss-throw');
-        boss.setVelocityX(0);
-        if (over) {
-          if (s.volley > 0) {
-            this.throwBone(boss, phase);
-            s.volley--;
-            this.bossSet('throw', phase === 3 ? 260 : 380);
-          } else this.bossSet('telegraph', phase === 3 ? 450 : 600);
-        }
-        break;
-      case 'slamUp':
-        boss.setTexture('boss-crouch');
-        if (grounded && over) {
-          boss.setVelocity(0, -620);
-          boss.setTexture('boss-leap');
-          this.bossSet('slam', 2000);
-        }
-        break;
-      case 'slam':
-        if (grounded && bb.velocity.y >= 0 && time > s.until - 1800) {
-          sound.fx('shock');
-          this.cameras.main.shake(220, 0.012);
-          for (const d of [-1, 1]) {
-            const w = this.hazards.create(
-              boss.x + d * 30,
-              bb.bottom - 9,
-              'shock',
-            ) as Sprite;
-            body(w).setAllowGravity(false).setSize(26, 14).setOffset(4, 4);
-            w.setVelocityX(d * 230)
-              .setData('kind', 'shock')
-              .setData('born', time)
-              .setDepth(9)
-              .setFlipX(d < 0);
-          }
-          s.volley = 4;
-          this.bossSet('throw', 500);
-        }
-        break;
-      case 'telegraph':
-        boss.setTexture('boss-crouch');
-        boss.setVelocityX(0);
-        boss.setTint(Math.floor(time / 80) % 2 ? 0xff9a7a : 0xffffff);
-        if (over) {
-          boss.clearTint();
-          const dx = Phaser.Math.Clamp(
-            (this.hero.x - boss.x) / 0.95,
-            -300,
-            300,
-          );
-          boss.setVelocity(dx, phase === 3 ? -600 : -540);
-          boss.setTexture('boss-leap');
-          sound.fx('roar');
-          this.bossSet('leap', 2000);
-        }
-        break;
-      case 'leap':
-        if (grounded && bb.velocity.y >= 0 && time > s.until - 1850) {
-          boss.setVelocityX(0);
-          this.cameras.main.shake(120, 0.006);
-          this.burst(boss.x, bb.bottom, 0xb8a888, 10);
-          this.bossSet('dazed', phase === 1 ? 1600 : phase === 2 ? 1300 : 1050);
-        }
-        break;
-      case 'dazed':
-        boss.setTexture('boss-dazed');
-        boss.setVelocityX(0);
-        if (Math.floor(time / 120) % 3 === 0) {
-          const st = this.add
-            .image(boss.x + Math.cos(time / 150) * 22, boss.y - 38, 'star')
-            .setDepth(20);
-          this.tweens.add({
-            targets: st,
-            alpha: 0,
-            y: st.y - 8,
-            duration: 300,
-            onComplete: () => st.destroy(),
-          });
-        }
-        if (over) this.bossSet('walk', phase === 3 ? 900 : 1300);
-        break;
-      case 'hurt':
-        boss.setTexture('boss-hurt');
-        if (over && grounded) {
-          boss.setVelocityX(0);
-          this.bossSet('walk', 700);
-        }
-        break;
-    }
-    this.clampBoss();
-    this.updateHazards(time);
+    updateBossImpl(this, time);
   }
-  /** «أبو مقص» contact: claws up (guard / snap) can't be stomped; while
-   * his claws are stuck in the sand he is harmless from the side. */
   crabContact(fromAbove: boolean) {
-    const boss = this.boss!,
-      s = this.bossState;
-    const armed = s.state === 'guard' || s.state === 'snap';
-    if (fromAbove && !armed) {
-      this.hero.setVelocityY(-430);
-      if (this.time.now >= s.invuln) this.bossDamage(1);
-      return;
-    }
-    if (fromAbove && armed) {
-      this.hero.setVelocity(this.hero.x < boss.x ? -220 : 220, -440);
-      this.hint('crab-guard', 'المقص مرفوع! استنى لما يتغرز في الرملة');
-      this.hurt();
-      return;
-    }
-    if (s.state === 'stuck' || s.state === 'hurt') {
-      this.hero.setVelocityX(this.hero.x < boss.x ? -140 : 140);
-      return;
-    }
-    if (this.time.now < this.invincible)
-      this.hero.setVelocityX(this.hero.x < boss.x ? -260 : 260);
-    else {
-      this.hurt();
-      if (this.mode === 'play')
-        this.hero.setVelocity(this.hero.x < boss.x ? -260 : 260, -280);
-    }
+    crabContactImpl(this, fromAbove);
   }
-  /** walk → guard (claws up) → snap (lunge) → stuck (vulnerable) → spit /
-   * waves in later phases → walk. */
   updateCrab(time: number) {
-    const boss = this.boss!,
-      s = this.bossState,
-      bb = body(boss);
-    const phase = this.bossPhase();
-    const grounded = bb.blocked.down;
-    const toHero = Math.sign(this.hero.x - boss.x) || 1;
-    const [lo, hi] = this.bossRange();
-    const over = time > s.until;
-    const tex = (pose: string) => boss.setTexture(this.bossTex(pose));
-    if (!['snap', 'hurt'].includes(s.state)) boss.setFlipX(toHero > 0);
-    switch (s.state) {
-      case 'walk':
-        tex('idle' + (Math.floor(time / 120) % 2));
-        boss.setVelocityX(toHero * [70, 90, 110][phase - 1]);
-        if (over) {
-          boss.setVelocityX(0);
-          sound.fx('clack');
-          this.bossSet('guard', [800, 650, 520][phase - 1]);
-        }
-        break;
-      case 'guard':
-        tex('guard');
-        boss.setVelocityX(Math.sin(time / 30) * 10);
-        if (over) {
-          s.volley = toHero;
-          sound.fx('clack');
-          this.bossSet('snap', 700);
-        }
-        break;
-      case 'snap': {
-        tex('snap');
-        const d = s.volley || 1;
-        boss.setFlipX(d > 0);
-        boss.setVelocityX(d * [290, 320, 350][phase - 1]);
-        if (Math.floor(time / 50) % 2 === 0)
-          this.burst(boss.x - d * 40, bb.bottom, 0xe0cca0, 2);
-        const atEdge =
-          (d < 0 && boss.x <= lo + 2) || (d > 0 && boss.x >= hi - 2);
-        if (over || atEdge || bb.blocked.left || bb.blocked.right) {
-          boss.setVelocityX(0);
-          this.cameras.main.shake(140, 0.007);
-          this.burst(boss.x + d * 46, bb.bottom, 0xe0cca0, 10);
-          sound.fx('shock');
-          this.bossSet('stuck', [1400, 1200, 1000][phase - 1]);
-        }
-        break;
-      }
-      case 'stuck':
-        tex('stuck');
-        boss.setVelocityX(0);
-        if (Math.floor(time / 140) % 3 === 0)
-          this.burst(
-            boss.x + (Math.random() - 0.5) * 80,
-            bb.bottom - 2,
-            0xe0cca0,
-            1,
-          );
-        if (over) {
-          if (phase >= 2) {
-            this.bossSet('spit', phase === 3 ? 900 : 700);
-            this.spitBubbles(boss, phase);
-          } else this.bossSet('walk', 1500);
-        }
-        break;
-      case 'spit':
-        tex('spit');
-        boss.setVelocityX(0);
-        if (over) {
-          if (phase === 3) this.crabWave(boss);
-          this.bossSet('walk', phase === 3 ? 1000 : 1300);
-        }
-        break;
-      case 'hurt':
-        tex('hurt');
-        if (over && grounded) {
-          boss.setVelocityX(0);
-          this.bossSet('walk', 800);
-        }
-        break;
-    }
-    this.clampBoss();
+    updateCrabImpl(this, time);
   }
   spitBubbles(boss: Sprite, phase: number) {
-    sound.fx('swim');
-    const n = phase === 3 ? 4 : 3;
-    for (let i = 0; i < n; i++) {
-      const b = this.hazards.create(boss.x, boss.y - 24, 'bubble') as Sprite;
-      body(b).setSize(10, 10).setGravityY(-500);
-      const spread = (i - (n - 1) / 2) * 70;
-      b.setVelocity(
-        Phaser.Math.Clamp(this.hero.x - boss.x, -260, 260) * 0.6 + spread,
-        -330 - (i % 2) * 60,
-      )
-        .setData('kind', 'bubble')
-        .setDepth(9);
-    }
+    spitBubblesImpl(this, boss, phase);
   }
   crabWave(boss: Sprite) {
-    sound.fx('splash');
-    for (const d of [-1, 1]) {
-      const w = this.hazards.create(
-        boss.x + d * 50,
-        body(boss).bottom - 11,
-        'wave',
-      ) as Sprite;
-      body(w).setAllowGravity(false).setSize(30, 16).setOffset(5, 6);
-      w.setVelocityX(d * 210)
-        .setData('kind', 'wave')
-        .setData('born', this.time.now)
-        .setDepth(9)
-        .setFlipX(d < 0);
-    }
+    crabWaveImpl(this, boss);
   }
-  /** Where the boss's centre may go: its whole sprite stays between the
-   * arena's left camera edge and the right wall, so it is never cut off. */
   bossRange(): [number, number] {
-    const half = (this.boss?.displayWidth ?? 80) / 2;
-    return [this.bossState.arenaX + half + 4, this.L.width - TILE - half + 6];
+    return bossRangeImpl(this);
   }
   clampBoss() {
-    const [lo, hi] = this.bossRange();
-    this.boss!.x = Phaser.Math.Clamp(this.boss!.x, lo, hi);
+    clampBossImpl(this);
   }
-  /** Boss-fight camera: frame hero and boss together inside the arena,
-   * always keeping the hero on screen and, whenever the gap allows, the
-   * whole boss too. */
   frameBossFight() {
-    const cam = this.cameras.main,
-      boss = this.boss!,
-      w = cam.width;
-    const half = boss.displayWidth / 2 + 6;
-    let lo = this.hero.x - w / 2 + 40,
-      hi = this.hero.x + w / 2 - 40;
-    const blo = boss.x + half - w / 2,
-      bhi = boss.x - half + w / 2;
-    if (Math.max(lo, blo) <= Math.min(hi, bhi)) {
-      lo = Math.max(lo, blo);
-      hi = Math.min(hi, bhi);
-    }
-    const left = this.bossState.arenaX,
-      right = this.L.width;
-    // Glide toward the midpoint, but never let the glide lag push hero or
-    // boss out of frame: the smoothed centre is hard-clamped to the range
-    // that keeps both in view.
-    const target = Phaser.Math.Clamp((this.hero.x + boss.x) / 2, lo, hi);
-    const cur = this.camFocus!.x;
-    let cx = Phaser.Math.Clamp(cur + (target - cur) * 0.16, lo, hi);
-    cx =
-      right - left <= w
-        ? (left + right) / 2
-        : Phaser.Math.Clamp(cx, left + w / 2, right - w / 2);
-    this.camFocus!.setPosition(cx, this.hero.y);
+    frameBossFightImpl(this);
   }
   updateHazards(time: number) {
     for (const h of this.hazards.getChildren() as Sprite[]) {
