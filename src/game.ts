@@ -59,14 +59,7 @@ import {
   type W4,
 } from './world4';
 import { beltPush, updateDamiettaWorld, updateNet, type W3 } from './world3';
-import {
-  hash,
-  makeFarmProps,
-  makeParallax,
-  makeProps,
-  paintLevel,
-  PALETTES,
-} from './world-art';
+import { hash, makeFarmProps, makeParallax, makeProps } from './world-art';
 import { HERO_FRAME, heroBody, heroPose } from './hero-state';
 import { approach, jumpAllowed, stomped, tally } from './rules';
 import {
@@ -93,7 +86,6 @@ import {
   SAQIA,
   SOLID,
   WET,
-  parseLevel,
   type Parsed,
 } from './level-parse';
 import { sound } from './audio';
@@ -134,6 +126,7 @@ import {
   bossTex as bossTexImpl,
   makeBoss as makeBossImpl,
 } from './enemies-build';
+import { loadLevel as loadLevelImpl } from './level-build';
 import {
   body,
   coarse,
@@ -499,208 +492,8 @@ export class Alley extends Phaser.Scene {
   }
   /* ───────────────────────── Building ───────────────────────── */
   loadLevel() {
-    this.tweens.killAll();
-    this.time.removeAllEvents();
-    this.physics.world.colliders.destroy();
-    this.children.removeAll(true);
-    this.layers = [];
-    this.lanterns = [];
-    this.moverList = [];
-    this.canals = [];
-    this.w3 = undefined;
-    this.w5 = undefined;
-    this.sail = undefined;
-    this.crane = undefined;
-    this.siwa = undefined;
-    this.darkBoost = 0;
-    this.wheels = [];
-    this.swimming = false;
-    this.onMud = false;
-    this.fakes = [];
-    this.fakeRect = undefined;
-    this.windEmitters = [];
-    this.water = undefined;
-    this.dark = undefined;
-    this.heldLantern = undefined;
-    this.heldLanternGlow = undefined;
-    this.boss = undefined;
-    this.camFocus = undefined;
-    this.secret = undefined;
-    this.zip = null;
-    const L = (this.L = parseLevel(this.level));
-    const meta = L.meta,
-      pal = PALETTES[meta.theme];
-    this.spec = {
-      index: this.level,
-      name: meta.name,
-      width: L.width,
-      height: L.height,
-      start: { x: L.start.x, y: (L.start.row + 1) * TILE },
-      exit: { x: L.exit.x, y: (L.exit.row + 1) * TILE },
-      checkpoint: L.checkpoint
-        ? { x: L.checkpoint.x, y: (L.checkpoint.row + 1) * TILE }
-        : { x: -1, y: -1 },
-    };
-    this.remaining = meta.time;
-    this.levelCoins = 0;
-    this.kills = 0;
-    this.elapsed = 0;
-    this.lastGround = -1000;
-    this.lastPress = -1000;
-    this.jumpWas = false;
-    this.invincible = 0;
-    this.hurtUntil = this.time.now + INVULN_MS;
-    this.bossState = {
-      active: false,
-      hp: this.bossMax,
-      chili: 0,
-      state: 'idle',
-      until: 0,
-      invuln: 0,
-      volley: 0,
-      defeated: false,
-      arenaX: L.boss ? (L.boss.col - 17) * TILE : 0,
-    };
-    const edge = EDGE;
-    this.physics.world.setBounds(0, -200, L.width, L.height + 400);
-    const cam = this.cameras.main;
-    // The street-end wall left of the start keeps the hero clear of the stick.
-    cam.setBounds(-edge, 0, L.width + edge * 2, L.height);
-    cam.setRoundPixels(true);
-    cam.setBackgroundColor(pal.sky[pal.sky.length - 1][1]);
-    // Parallax: the painted backdrop (or the procedural sky/far/mid fallback)
-    // behind the play field, plus near silhouettes in front.
-    const painted = this.textures.exists(`backdrop-${this.level}`);
-    const layerSpec: [string, number, number][] = painted
-      ? [
-          ['backdrop', 0.1, -100],
-          ['near', 1.25, 40],
-        ]
-      : [
-          ['sky', 0.03, -100],
-          ['far', 0.16, -90],
-          ['mid', 0.42, -80],
-          ['near', 1.25, 40],
-        ];
-    for (const [name, factor, depth] of layerSpec)
-      this.layers.push(
-        this.add
-          .tileSprite(
-            0,
-            0,
-            cam.width,
-            360,
-            name === 'backdrop'
-              ? `backdrop-${this.level}`
-              : `${meta.theme}-${name}`,
-          )
-          .setOrigin(0)
-          .setScrollFactor(0)
-          .setDepth(depth)
-          .setAlpha(name === 'near' ? (painted ? 0.55 : 0.9) : 1)
-          .setData('factor', factor)
-          .setData('name', name),
-      );
-    // Street ends: solid building walls beyond the map.
-    {
-      const g = this.add.graphics().setDepth(1);
-      for (const x0 of [-edge, L.width]) {
-        g.fillStyle(
-          Phaser.Display.Color.HexStringToColor(pal.stone[2]).color,
-          1,
-        );
-        g.fillRect(x0, 0, edge, L.height);
-        g.fillStyle(Phaser.Display.Color.HexStringToColor(pal.mortar).color, 1);
-        for (let y = 0; y < L.height; y += 12) g.fillRect(x0, y, edge, 1);
-        for (let y = 0; y < L.height; y += 12)
-          for (let x = x0 + ((y / 12) % 2 ? 0 : 12); x < x0 + edge; x += 24)
-            g.fillRect(x, y, 1, 12);
-      }
-    }
-    for (const c of paintLevel(this, L, this.level))
-      this.add.image(c.x, 0, c.key).setOrigin(0).setDepth(0);
-    if (L.fakes.length) {
-      for (const c of paintLevel(this, L, this.level, true))
-        this.fakes.push(
-          this.add.image(c.x, 0, c.key).setOrigin(0).setDepth(12),
-        );
-      const xs = L.fakes.map((f) => f.col),
-        ys = L.fakes.map((f) => f.row);
-      this.fakeRect = new Phaser.Geom.Rectangle(
-        Math.min(...xs) * TILE - 6,
-        Math.min(...ys) * TILE - 6,
-        (Math.max(...xs) - Math.min(...xs) + 1) * TILE + 12,
-        (Math.max(...ys) - Math.min(...ys) + 1) * TILE + 12,
-      );
-    }
-    this.terrain = this.physics.add.staticGroup();
-    this.ledges = this.physics.add.staticGroup();
-    this.ghosts = this.physics.add.staticGroup();
-    this.blocks = this.physics.add.staticGroup();
-    this.crates = this.physics.add.staticGroup();
-    this.bouncers = this.physics.add.staticGroup();
-    this.movers = this.physics.add.group({
-      allowGravity: false,
-      immovable: true,
-    });
-    this.coins = this.physics.add.group({
-      allowGravity: false,
-      immovable: true,
-    });
-    this.enemies = this.physics.add.group();
-    this.items = this.physics.add.group();
-    this.shots = this.physics.add.group({ allowGravity: false });
-    this.hazards = this.physics.add.group();
-    this.buildBodies();
-    this.buildProps();
-    const spawn =
-      this.checkpoint && L.checkpoint ? this.spec.checkpoint : this.spec.start;
-    this.hero = this.physics.add
-      .sprite(spawn.x, spawn.y - HERO_FRAME.height / 2, 'hero-small-idle0')
-      .setDepth(10);
-    body(this.hero).setMaxVelocity(300, 820);
-    this.growUntil = 0;
-    this.throwUntil = 0;
-    this.hurtPoseUntil = 0;
-    this.heroCrouched = false;
-    this.heroShadow = this.add
-      .image(spawn.x, spawn.y, 'hero-shadow')
-      .setDepth(4)
-      .setAlpha(0.24);
-    this.heroGlow = this.add
-      .image(spawn.x, spawn.y, 'glow')
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(51)
-      .setScale(0.9)
-      .setAlpha(meta.dark && meta.theme !== 'tomb' ? 0.3 : 0);
-    // وادي الملوك: a فانوس in بلبل's hand, with a warm cone ahead of him.
-    // The dark overlay stays off so the brighter tomb stays readable.
-    if (meta.theme === 'tomb') {
-      this.heldLantern = this.add
-        .image(this.hero.x + 11, this.hero.y + 8, 'tomb-hand-lantern')
-        .setDepth(11);
-      this.heldLanternGlow = this.add
-        .image(this.hero.x + 11, this.hero.y + 8, 'tomb-lantern-glow')
-        .setBlendMode(Phaser.BlendModes.ADD)
-        .setDepth(8)
-        .setOrigin(80 / 256, 0.5)
-        .setAlpha(0.9);
-    }
-    this.setPower(this.power, false);
-    this.followHero();
-    if (this.checkpoint)
-      for (const l of this.lanterns)
-        if (l.img.x < spawn.x) this.lightLantern(l, false);
-    this.buildColliders();
-    this.clearSpawnCamp();
-    this.buildAtmosphere();
-    sound.setTrack(meta.track);
-    sound.setIntensity(0);
-    bossBar(false);
-    this.fitView();
-    this.updateHud();
+    loadLevelImpl(this);
   }
-  /** The normal camera: follow the hero with a little deadzone. */
   followHero() {
     const vertical = this.L.height > 600;
     this.cameras.main
