@@ -299,7 +299,7 @@ export function setThirst(visible: boolean, fraction = 1, shade = false) {
   const el = document.getElementById('thirst-bar');
   if (!el) return;
   el.hidden = !visible;
-  el.classList.toggle('shade', shade);
+  el.classList.toggle('in-shade', shade);
   el.classList.toggle('warn', fraction <= 0.25);
   (el.querySelector('.thirst-fill') as HTMLElement).style.width =
     `${Math.round(Math.max(0, Math.min(1, fraction)) * 100)}%`;

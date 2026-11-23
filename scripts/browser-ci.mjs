@@ -52,6 +52,7 @@ try {
         'quay-playable',
         'pilot-playable',
         'pilot-diagnostics',
+        'siwa-lighting',
         'world8-runtime',
         'account-landscape',
       ]
@@ -74,6 +75,12 @@ try {
           LEVEL_FROM: String(from),
           LEVEL_TO: String(to),
         });
+    } else if (name === 'pilot-playable') {
+      await run('tests/pilot-playable.mjs', { PILOT_CAMEL_REVERSE: '1' });
+      await run('tests/pilot-playable.mjs', {
+        PILOT_LEVELS: '29',
+        PILOT_ONE_HEART: '1',
+      });
     } else await run(`tests/${name}.mjs`);
   }
   if (production && process.env.SKIP_PWA !== '1') await run('tests/pwa.mjs');

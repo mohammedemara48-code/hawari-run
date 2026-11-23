@@ -673,7 +673,16 @@ export function paintLevel(
           else if (ch === '{' || ch === '}') beltBed(c, x, y, col);
           else if (ch === '$')
             wetTile(c, x, y, col, row, pal, theme, !solid(col, row - 1));
-          else if (ch === 'س') sinkCell(c, x, y, col, row);
+          else if (ch === 'س')
+            sinkCell(
+              c,
+              x,
+              y,
+              col,
+              row,
+              L.meta.id === 'grove' &&
+                L.donkeys.some((d) => col > d.a.col + 2 && col < d.endCol),
+            );
           else if (ch === 'ل')
             saltCell(c, x, y, col, row, !solid(col, row - 1));
           else if (ch === '|')

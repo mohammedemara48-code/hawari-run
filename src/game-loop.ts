@@ -108,7 +108,12 @@ export function updateGame(scene: Alley, time: number, delta: number) {
         )
           windPush = w.dir * G.push * env;
     windPush += bossGustPush(scene, time);
-    const dir = Number(right) - Number(left);
+    const camelRide =
+      scene.riding && scene.moverList.some((m) => m.camel && m.donkey?.ridden);
+    // Direction steers the mount while seated, rather than walking off its back.
+    // A jump returns normal left/right movement for dismounting.
+    if (camelRide && (left || right)) scene.facing = left ? -1 : 1;
+    const dir = camelRide && !jump ? 0 : Number(right) - Number(left);
     // Countryside ground: mud bogs you down, canals float you and drag you.
     const under = scene.L.at(
       Math.floor(b.center.x / TILE),

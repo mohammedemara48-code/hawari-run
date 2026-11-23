@@ -220,7 +220,7 @@ button:active {
   padding: 4px;
   font-size: 18px;
 }
-.shade {
+#shade {
   position: absolute;
   inset: 0;
   background: linear-gradient(
@@ -1262,7 +1262,7 @@ footer {
 .thirst-bar[hidden] {
   display: none;
 }
-.thirst-bar.shade {
+.thirst-bar.in-shade {
   border-color: #8ad0a099;
 }
 .thirst-bar.warn {

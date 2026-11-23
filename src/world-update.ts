@@ -1,5 +1,6 @@
 import { updateLandmark } from './landmark-world';
 import Phaser from 'phaser';
+import { camelGroundY } from './camel-ground';
 import type { Alley } from './game';
 import { body } from './game-shared';
 import type { Sprite } from './game-shared';
@@ -12,6 +13,7 @@ import { updateAlexWorld } from './world4';
 import { updateLuxorWorld } from './world5';
 import { updateSiwaWorld } from './world8';
 import { sound } from './audio';
+import { touch } from './ui';
 
 export function fitView(scene: Alley) {
   const cam = scene.cameras.main;
@@ -129,6 +131,31 @@ export function updateWorld(scene: Alley, time: number, dt: number) {
     obj.setTexture(
       scene.skin('coin' + (Math.floor(time / 100 + obj.getData('phase')) % 6)),
     );
+  // Ground the camels before finding their riders. Carry the vertical step
+  // too, so a descending dune cannot drop away from under the rider.
+  for (const m of scene.moverList) {
+    if (!m.camel) continue;
+    const mb = body(m.img),
+      hb = body(scene.hero);
+    const riding =
+      Math.abs(hb.bottom - mb.top) < 8 &&
+      hb.velocity.y >= -5 &&
+      hb.right > mb.left + 2 &&
+      hb.left < mb.right - 2;
+    const y = camelGroundY(scene.L.at, scene.L.rows, m.img.x, m.img.y);
+    const dy = y - m.img.y;
+    if (Math.abs(dy) < 0.01) continue;
+    m.img.y = y;
+    mb.position.y += dy;
+    mb.prev.y += dy;
+    mb.center.y += dy;
+    if (riding) {
+      scene.hero.y += dy;
+      hb.position.y += dy;
+      hb.prev.y += dy;
+      hb.center.y += dy;
+    }
+  }
   // Ride carts and planks: carry the hero by the platform's own step.
   scene.riding = false;
   if (scene.mode === 'play' && !scene.zip && !scene.crane?.hang) {
@@ -188,8 +215,14 @@ export function updateWorld(scene: Alley, time: number, dt: number) {
     if (m.donkey) {
       const d = m.donkey;
       let vx = 0;
-      if (d.ridden && m.img.x < d.max) vx = m.camel ? m.speed : DONKEY.speed;
-      else if (!d.ridden && time - d.leftAt > 1200 && m.img.x > d.min)
+      if (d.ridden) {
+        const back =
+          m.camel &&
+          (scene.keys.LEFT.isDown || scene.keys.A.isDown || touch.left);
+        if (back && m.img.x > d.min) vx = -m.speed;
+        else if (!back && m.img.x < d.max)
+          vx = m.camel ? m.speed : DONKEY.speed;
+      } else if (!d.ridden && time - d.leftAt > 1200 && m.img.x > d.min)
         vx = -DONKEY.back;
       if (vx > 0 && m.img.x + vx * dt > d.max) vx = (d.max - m.img.x) / dt;
       if (vx < 0 && m.img.x + vx * dt < d.min) vx = (d.min - m.img.x) / dt;

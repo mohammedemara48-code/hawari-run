@@ -374,8 +374,14 @@ await ctx.setOffline(false);
       ...ours.changelog,
     ],
   });
-  const resume = () =>
-    page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  const resume = async () => {
+    // Other app-launch/fallback pages can own visibility in headed Chromium.
+    // Resuming means foregrounding this tab, not firing an event on a hidden one.
+    await page.bringToFront();
+    await page.evaluate(() =>
+      document.dispatchEvent(new Event('visibilitychange')),
+    );
+  };
   // Never during a level: held until the player is back on a menu.
   await page.locator('[data-screen="title"] [data-action="start"]').tap();
   await page.locator('.map-node[data-node="0"]').tap();
