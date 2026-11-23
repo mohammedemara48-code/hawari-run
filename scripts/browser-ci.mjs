@@ -45,6 +45,7 @@ try {
         'texture-runtime',
         'worlds-smoke',
         'world-art-runtime',
+        'backdrop-runtime',
         'armory-runtime',
         'alex4-playable',
       ]
