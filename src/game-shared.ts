@@ -95,6 +95,8 @@ export interface Mover {
   steam?: Phaser.GameObjects.Particles.ParticleEmitter;
   /** Platforms that carry a rider sideways with their own motion. */
   carry?: boolean;
+  /** Siwa camel: waits for its rider and returns to the boarding bank. */
+  camel?: boolean;
   /** Saqia bucket: wheel centre and its angular offset on the wheel. */
   saqia?: { cx: number; cy: number; phase: number };
   /** Donkey cart: runs to max while ridden, walks home when left. */

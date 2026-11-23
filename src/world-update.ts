@@ -146,7 +146,7 @@ export function updateWorld(scene: Alley, time: number, dt: number) {
     const ob = on && body(on.img);
     scene.riding = !!(
       ob &&
-      (on.lamp || on.boat || on.tram || on.axis === 'y') &&
+      (on.lamp || on.boat || on.tram || on.camel || on.axis === 'y') &&
       hb.velocity.y >= Math.min(0, ob.velocity.y) - 5
     );
     if (ob && hb.velocity.y >= Math.min(0, ob.velocity.y) - 5) {
@@ -188,14 +188,14 @@ export function updateWorld(scene: Alley, time: number, dt: number) {
     if (m.donkey) {
       const d = m.donkey;
       let vx = 0;
-      if (d.ridden && m.img.x < d.max) vx = DONKEY.speed;
+      if (d.ridden && m.img.x < d.max) vx = m.camel ? m.speed : DONKEY.speed;
       else if (!d.ridden && time - d.leftAt > 1200 && m.img.x > d.min)
         vx = -DONKEY.back;
       if (vx > 0 && m.img.x + vx * dt > d.max) vx = (d.max - m.img.x) / dt;
       if (vx < 0 && m.img.x + vx * dt < d.min) vx = (d.min - m.img.x) / dt;
       b.setVelocityX(vx);
       m.img.setTexture(
-        vx ? 'donkey' + (Math.floor(time / 160) % 2) : 'donkey0',
+        (m.camel ? 'camel' : 'donkey') + (vx ? Math.floor(time / 160) % 2 : 0),
       );
       continue;
     }

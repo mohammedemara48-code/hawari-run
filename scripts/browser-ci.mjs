@@ -50,6 +50,8 @@ try {
         'armory-runtime',
         'alex4-playable',
         'quay-playable',
+        'siwa-playable',
+        'world8-runtime',
         'account-landscape',
       ]
     : ['account-runtime'];
