@@ -1,3 +1,4 @@
+import { hasAdminAccess } from './admin';
 import type { LandmarkState } from './landmark-world';
 import Phaser from 'phaser';
 import { skinKey } from './skins';
@@ -321,7 +322,8 @@ export class Alley extends Phaser.Scene {
   action(action: string) {
     if (action.startsWith('play-')) {
       const n = Number(action.slice(5));
-      if (!(n <= loadProgress().unlocked)) return;
+      if (!Number.isInteger(n) || n < 0 || n >= LEVELS.length) return;
+      if (!(hasAdminAccess() || n <= loadProgress().unlocked)) return;
       this.score = 0;
       this.coinCount = 0;
       this.lives = 3;

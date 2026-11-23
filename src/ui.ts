@@ -1,3 +1,4 @@
+import { hasAdminAccess } from './admin';
 import { paintEgypt, type WorldState } from './map-art';
 import { sound } from './audio';
 import { BOSS_NAMES, LEVELS, WORLDS, type LevelMeta } from './level-data';
@@ -358,7 +359,9 @@ export function worldStates(
       .filter((o) => o.l.world === wi);
     if (!w.playable || !own.length) return 'soon';
     if (own.every((o) => progress.cleared[o.l.id])) return 'cleared';
-    return own[0].i <= progress.unlocked ? 'open' : 'locked';
+    return hasAdminAccess() || own[0].i <= progress.unlocked
+      ? 'open'
+      : 'locked';
   });
 }
 export function renderMap(
@@ -435,7 +438,7 @@ export function renderMap(
     .map((l, i) => ({ l, i }))
     .filter((o) => o.l.world === selectedWorld)
     .map(({ l, i }, k) => {
-      const locked = i > progress.unlocked,
+      const locked = !hasAdminAccess() && i > progress.unlocked,
         cleared = progress.cleared[l.id],
         secret = progress.secrets[l.id];
       const best = progress.best[l.id];
@@ -568,7 +571,7 @@ export function refreshJourney() {
   if (nameInput && !nameInput.value && player) nameInput.value = player.name;
   const name = player?.name ?? '';
   document.querySelectorAll<HTMLElement>('[data-player-name]').forEach((el) => {
-    el.textContent = name;
+    el.textContent = name + (hasAdminAccess() ? ' · أدمن' : '');
     el.hidden = !name;
   });
   document.querySelectorAll<HTMLElement>('[data-player-wrap]').forEach((el) => {

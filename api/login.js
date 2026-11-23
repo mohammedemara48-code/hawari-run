@@ -1,3 +1,4 @@
+import { isAdminPlayer, isReservedAdminName } from './_admin.js';
 import {
   clientIp,
   getSql,
@@ -38,13 +39,17 @@ export default async function handler(req, res) {
     const row = rows[0];
     const incoming = isProgress(body.progress) ? body.progress : null;
     if (!row) {
+      if (isReservedAdminName(name))
+        return json(res, 403, {
+          error: 'الاسم ده محجوز. تواصل مع صاحب اللعبة',
+        });
       const salt = newSalt();
       const progress = normalizeProgress(incoming);
       const made =
         await sql`INSERT INTO players (name, name_key, pin_salt, pin_hash, progress)
         VALUES (${name}, ${key}, ${salt}, ${await hashPin(pin, salt)}, ${JSON.stringify(progress)}::jsonb) RETURNING id`;
       setSession(res, made[0].id);
-      return json(res, 200, { name, created: true, progress });
+      return json(res, 200, { name, created: true, progress, admin: false });
     }
     const checked = await checkPlayerPin(sql, row, pin);
     if (checked.error)
@@ -52,7 +57,12 @@ export default async function handler(req, res) {
     const progress = await storeProgress(sql, row.id, incoming);
     await sql`UPDATE players SET failed_attempts = 0, locked_until = NULL WHERE id = ${row.id}`;
     setSession(res, row.id);
-    return json(res, 200, { name: row.name, created: false, progress });
+    return json(res, 200, {
+      name: row.name,
+      created: false,
+      progress,
+      admin: isAdminPlayer(row.id),
+    });
   } catch (err) {
     console.error('login failed', err?.message || err);
     return json(res, 500, { error: 'حصل خطأ، جرّب تاني' });
