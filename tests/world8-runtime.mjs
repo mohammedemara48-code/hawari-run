@@ -181,7 +181,9 @@ await ev(() => {
   // Mid sink-sand stretch: open sun, no palms.
   window.T.place(40 * 24 + 12, 13 * 24);
 });
-await wait(1500);
+await page.waitForFunction(() => window.T.s.siwa.thirst < 76, null, {
+  timeout: 8000,
+});
 const drained = await ev(() => window.T.s.siwa.thirst);
 assert.ok(drained < 80 - 3, `thirst drained in the sun (now ${drained})`);
 const sunRate = (80 - drained) / 1.5;

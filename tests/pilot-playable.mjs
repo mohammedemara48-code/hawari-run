@@ -214,8 +214,8 @@ try {
         jump = false;
         jumpUntil = 0;
       }
-      if (s.vy > 0) jumpUntil = 0;
-      if (jump && s.ground && s.now - lastJump > 600) {
+      if (s.vy > 0 || (s.ground && s.now - lastJump > 250)) jumpUntil = 0;
+      if (jump && s.ground && !held.has('Space') && s.now - lastJump > 450) {
         jumpUntil = Infinity;
         lastJump = s.now;
       }
