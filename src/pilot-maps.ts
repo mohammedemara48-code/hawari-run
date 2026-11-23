@@ -141,6 +141,18 @@ export function grovePilot(rows: string[]) {
   g.put(357, 9, 'ش');
   g.put(363, 6, 'ش');
   g.put(366, 4, 'ع');
+  // Camels cross visible deep sand, not an empty gap. Low dunes give their
+  // feet a real ground profile; the palm-log remains an optional high route.
+  for (const [a, b] of [
+    [169, 191],
+    [263, 283],
+  ]) {
+    for (let x = a; x <= b; x++) {
+      g.put(x, 13, '.');
+      g.put(x, 14, 'س');
+    }
+    for (let x = a + 7; x <= b - 6; x++) g.put(x, 13, 'س');
+  }
   return g.rows();
 }
 

@@ -21,6 +21,10 @@ try {
         window.hawari.scene.getScene('alley').startLevel(i, { checkpoint }),
       { i: index, checkpoint: process.env.PILOT_CHECKPOINT === '1' },
     );
+    if (process.env.PILOT_ONE_HEART === '1')
+      await page.evaluate(() => {
+        window.hawari.scene.getScene('alley').lives = 1;
+      });
     const held = new Set();
     const key = async (k, on) => {
       if (held.has(k) === on) return;
@@ -35,7 +39,7 @@ try {
     let jumpUntil = 0,
       lastJump = -1000,
       lastDown = -1000,
-      reachedFlag = false;
+      reachedFlag = index === 29;
     const detour =
       index === 0
         ? [
@@ -59,6 +63,7 @@ try {
             ];
     let waypoint = 0;
     const ridden = new Set(),
+      reversed = new Set(),
       samples = [],
       start = Date.now();
     for (let tick = 0; tick < 5000; tick++) {
@@ -72,7 +77,7 @@ try {
         for (let d = 0; d < 5; d++) {
           let supported = false;
           for (let r = row; r < s.L.rows; r++) {
-            if ('#=-~ف'.includes(s.L.at(col + d, r))) supported = true;
+            if ('#=-~فسل'.includes(s.L.at(col + d, r))) supported = true;
           }
           abyss.push(!supported);
         }
@@ -110,6 +115,9 @@ try {
                 target: s.L.meta.landmark.target,
               }
             : null,
+          pans: s.moverList
+            .filter((m) => !m.camel && m.axis === 'x')
+            .map((m) => ({ x: m.img.x, top: m.img.body.top, max: m.max })),
           camels:
             s.siwa?.camels.map((c) => ({
               x: c.img.x,
@@ -155,6 +163,32 @@ try {
         run = false;
         if (s.riding && Math.abs(s.x - (c.x + 60)) < 85) {
           ridden.add(ci);
+          if (
+            process.env.PILOT_CAMEL_REVERSE === '1' &&
+            !reversed.has(ci) &&
+            c.x > c.min + 200 &&
+            c.x < c.max - 100
+          ) {
+            await page.screenshot({ path: `${SHOTS}/camel-${ci}-forward.png` });
+            await key('ArrowRight', false);
+            await key('Space', false);
+            await key('ArrowLeft', true);
+            await page.waitForTimeout(650);
+            await page.screenshot({
+              path: `${SHOTS}/camel-${ci}-backward.png`,
+            });
+            const back = await page.evaluate((ci) => {
+              const s = window.hawari.scene.getScene('alley'),
+                c = s.siwa.camels[ci];
+              return { riding: s.riding, x: c.img.x, flip: c.img.flipX };
+            }, ci);
+            assert.ok(back.riding, 'player stays seated while reversing');
+            assert.ok(back.x < c.x - 20, 'left steers camel backward');
+            assert.equal(back.flip, false, 'returning camel faces left');
+            await key('ArrowLeft', false);
+            reversed.add(ci);
+            continue;
+          }
           dir = 0;
           if (c.x > c.max - 20) {
             dir = 1;
@@ -197,6 +231,14 @@ try {
       );
       if (ci < 0 && s.ground && (s.wall || enemy || gap)) jump = true;
 
+      if (index === 29 && s.x > 26 * 24 && s.x < 44 * 24) {
+        run = true;
+        dir = 1;
+        jump = s.ground && s.x > 28.5 * 24;
+      }
+      if (index === 29 && s.x > 74 * 24 && s.x < 89 * 24) {
+        jump = s.ground && s.x > 78 * 24;
+      }
       const route = process.env.PILOT_SECRETS === '1' ? detour[waypoint] : null;
       if (route && s.x > (detour[0].x - 6) * 24) {
         const tx = route.x * 24 + 12;
@@ -251,6 +293,7 @@ try {
       JSON.stringify({
         end,
         reachedFlag,
+        reversed: [...reversed],
         ridden: [...ridden],
         wallSeconds: (Date.now() - start) / 1000,
       }),
@@ -263,6 +306,8 @@ try {
       end.lives >= 1,
       'journey finishes within the normal three-life budget',
     );
+    if (index === 28 && process.env.PILOT_CAMEL_REVERSE === '1')
+      assert.equal(reversed.size, process.env.PILOT_CHECKPOINT === '1' ? 1 : 2);
     if (index === 28)
       assert.equal(ridden.size, process.env.PILOT_CHECKPOINT === '1' ? 1 : 2);
     await page.screenshot({ path: `${SHOTS}/pilot-${index + 1}-clear.png` });

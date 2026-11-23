@@ -4,6 +4,7 @@
 // onto an opened spring. Salt shatters mirages and interrupts a slam;
 // stomping him just bounces off.
 import Phaser from 'phaser';
+import { camelGroundY } from './camel-ground';
 import type { Alley } from './game';
 import { TILE } from './level-data';
 import { sound } from './audio';
@@ -187,22 +188,28 @@ export function buildSiwa(s: Alley): W8 | undefined {
     img.setOrigin(0, 1).setDepth(3);
     const x = d.a.col * TILE,
       y = (d.a.row + 1) * TILE;
-    img.setPosition(x, y);
+    const groundY = camelGroundY(L.at, L.rows, x, y);
+    img.setPosition(x, groundY);
     const b = body(img);
     b.setAllowGravity(false)
       .setImmovable(true)
       .setSize(100, 12)
       .setOffset(8, 22);
-    b.reset(x, y);
+    b.reset(x, groundY);
     oneWay(b);
     s.add
-      .text(x + 58, y - 100, 'انط على الجمل • سيب الحركة وإنت راكب', {
-        fontFamily: 'sans-serif',
-        fontSize: '11px',
-        color: '#fff2c4',
-        backgroundColor: '#183139',
-        padding: { x: 5, y: 4 },
-      })
+      .text(
+        x + 58,
+        y - 100,
+        'رمل غائر! اركب من ورا • سيبه يعدّي • شمال يرجّع',
+        {
+          fontFamily: 'sans-serif',
+          fontSize: '11px',
+          color: '#fff2c4',
+          backgroundColor: '#183139',
+          padding: { x: 5, y: 4 },
+        },
+      )
       .setOrigin(0.5, 1)
       .setDepth(12);
     const max = (d.endCol - CAMEL.width + 1) * TILE;
@@ -287,8 +294,13 @@ export function updateSiwaWorld(s: Alley, time: number, dt: number) {
   const ch = under(s);
   const b = body(s.hero);
   const grounded = b.blocked.down || b.touching.down || s.riding;
-  if (grounded && ch === 'س' && !w.boarding) {
-    const still = Math.abs(b.velocity.x) < SINK.still;
+  if (grounded && ch === 'س' && !w.boarding && !s.riding) {
+    const deep = w.camels.some(
+      (c) => s.hero.x > c.min + 72 && s.hero.x < c.max + 48,
+    );
+    const still = deep || Math.abs(b.velocity.x) < SINK.still;
+    if (deep)
+      s.hint('deep-sand', 'رمل غائر! ارجع اركب الجمل من ورا… رجليه بتعدّيك');
     if (still) {
       w.sinkMs += dt * 1000;
       if (w.sinkMs > 80) s.burst(s.hero.x, b.bottom, 0xd2a050, 1);
@@ -344,7 +356,8 @@ export function updateSiwaWorld(s: Alley, time: number, dt: number) {
   // Camels: the mover carries the hero; we only swap the walk texture.
   for (const c of w.camels) {
     const vx = body(c.img).velocity?.x ?? 0;
-    c.img.setFlipX(vx < -4);
+    // The painted camel faces left. Forward travel must face right.
+    c.img.setFlipX(vx > 4 || (Math.abs(vx) <= 4 && c.img.x <= c.min + 1));
     c.img.setTexture(
       Math.abs(vx) > 8 ? 'camel' + (Math.floor(time / 160) % 2) : 'camel0',
     );

@@ -97,7 +97,14 @@ export function w8Near(c: C, W: number) {
   void W;
 }
 
-export function sinkCell(c: C, x: number, y: number, col: number, row: number) {
+export function sinkCell(
+  c: C,
+  x: number,
+  y: number,
+  col: number,
+  row: number,
+  deep = false,
+) {
   rect(c, x, y, T, T, '#d2a050');
   const h = hash(col, row, 2);
   for (let i = 0; i < 5; i++) {
@@ -107,6 +114,13 @@ export function sinkCell(c: C, x: number, y: number, col: number, row: number) {
   }
   rect(c, x, y, T, 3, '#e8c878');
   rect(c, x + 2, y + 10, 8, 2, '#b0783088');
+  if (deep) {
+    rect(c, x, y + 3, T, T - 3, '#76552d');
+    for (let i = 0; i < 3; i++) {
+      rect(c, x + (i % 2 ? 3 : 10), y + 5 + i * 6, 11, 2, '#b58b48');
+      rect(c, x + (i % 2 ? 12 : 1), y + 8 + i * 6, 8, 1, '#453b28');
+    }
+  }
 }
 export function saltCell(
   c: C,
