@@ -101,8 +101,8 @@ try {
     } else if (s.x > 500 && s.x < 985 && !ferryLeft) {
       const ferry = s.movers[0];
       if (!ferryBoard) {
-        dir = s.x < 525 ? 1 : 0;
-        if (ferry.x < 700) {
+        dir = s.x < 600 ? 1 : 0;
+        if (ferry.x < 680 && s.x > 590) {
           jump = !!s.ground;
           ferryBoard = true;
           dir = 1;
