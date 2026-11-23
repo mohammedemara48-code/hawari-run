@@ -50,7 +50,8 @@ try {
         'armory-runtime',
         'alex4-playable',
         'quay-playable',
-        'siwa-playable',
+        'pilot-playable',
+        'pilot-diagnostics',
         'world8-runtime',
         'account-landscape',
       ]

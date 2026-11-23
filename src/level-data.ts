@@ -1,3 +1,4 @@
+import { lanternPilot, grovePilot } from './pilot-maps';
 import {
   LANDMARK_WORLDS,
   LANDMARK_LEVELS,
@@ -332,75 +333,6 @@ class Grid {
 }
 
 /* 1 ─ حارة الفوانيس: night alley, lanterns reveal ghost ledges. */
-function lanternAlley() {
-  const g = new Grid(170, 15);
-  g.ground(0, 30);
-  g.set(3, 12, 'P');
-  g.text(6, 12, 'o o o');
-  g.text(10, 9, 'BFB');
-  g.set(19, 12, 'g');
-  // Lesson: light the lantern, cross the pit on its ghost bridge.
-  g.set(27, 12, 'L');
-  g.text(25, 10, 'o o');
-  g.run(31, 36, 12, '~');
-  g.text(31, 11, 'oooooo');
-  g.ground(37, 86);
-  // Two routes: balconies above (bat), cats below.
-  g.run(41, 45, 10, '-');
-  g.run(47, 51, 7, '-');
-  g.text(47, 6, 'ooooo');
-  g.set(49, 8, 't');
-  g.set(46, 12, 'g');
-  g.set(54, 12, 'g');
-  g.text(57, 9, 'BCB');
-  g.set(63, 9, '?');
-  // A lantern raises a ghost stair to a coin terrace.
-  g.set(67, 12, 'L');
-  g.run(70, 71, 10, '~');
-  g.run(72, 73, 7, '~');
-  g.run(76, 81, 5, '-');
-  g.text(76, 4, 'oooooo');
-  g.set(78, 12, 'b');
-  g.set(84, 12, 'c');
-  // Set piece: the lantern relay across the dark chasm.
-  g.set(86, 12, 'L');
-  g.run(89, 91, 11, '~');
-  g.run(93, 95, 10, '=');
-  g.set(94, 9, 'L');
-  g.run(98, 100, 9, '~');
-  g.run(103, 105, 8, '=');
-  g.set(104, 7, 'L');
-  g.run(108, 110, 9, '~');
-  g.run(113, 115, 10, '=');
-  g.set(114, 9, 'L');
-  g.run(118, 120, 11, '~');
-  g.text(96, 7, 'o');
-  g.text(101, 6, 'o');
-  g.text(106, 6, 'o');
-  g.text(111, 7, 'o');
-  g.text(116, 8, 'o');
-  g.set(100, 4, 't');
-  g.set(110, 5, 't');
-  g.ground(122, 169);
-  // Secret: a dark wall top, an unlit lantern high up, a ghost path to the golden fanoos.
-  g.rect(130, 10, 132, 12, '#');
-  g.run(126, 129, 7, '-');
-  g.run(123, 126, 4, '-');
-  g.set(125, 3, 'L');
-  g.run(128, 129, 4, '~');
-  g.run(131, 132, 4, '~');
-  g.run(135, 141, 4, '-');
-  g.text(135, 3, 'oooo G');
-  g.set(140, 12, 'g');
-  g.set(147, 12, 'b');
-  g.text(150, 9, 'B?B');
-  g.set(156, 9, 'i');
-  g.set(158, 12, 'g');
-  g.text(152, 12, 'o o o');
-  g.set(164, 12, 'E');
-  return g.rows();
-}
-
 /* 2 ─ سوق تحت البلد: awnings bounce, carts ferry, crates crumble. */
 function market() {
   const g = new Grid(180, 15);
@@ -2427,7 +2359,7 @@ export const LEVELS: LevelMeta[] = [
     lanternRadius: 9,
     mechanic: 'فوانيس بتنوّر سلالم مخفية',
     enemy: 'الوطواط',
-    rows: lanternAlley(),
+    rows: lanternPilot(),
   },
   {
     world: 0,
@@ -2861,11 +2793,11 @@ export const LEVELS: LevelMeta[] = [
     subtitle: 'العطش بيأكل… امشي في ظل النخل، واشرب من العين، واركب الجمل',
     theme: 'siwa',
     timeOfDay: 'siwa-noon',
-    time: 200,
+    time: 320,
     dark: 0,
     mechanic: 'عطش وظل نخل وعيون، جمل تركبه، وبلح بيفتح اختصار فوق الرمل',
     enemy: 'العقرب',
-    rows: siwaGrove(),
+    rows: grovePilot(siwaGrove()),
   },
   {
     world: 7,

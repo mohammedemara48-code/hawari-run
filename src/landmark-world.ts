@@ -57,7 +57,16 @@ export function buildLandmark(s: Alley): LandmarkState | undefined {
       : [];
   return {
     kind: p.kind,
-    values: p.kind === 'balance' ? [0] : p.stations.map(() => 0),
+    values:
+      p.kind === 'balance'
+        ? [0]
+        : p.stations.map((col, i) =>
+            s.L.meta.id === 'giza-plateau' &&
+            s.checkpoint &&
+            col < (s.L.checkpoint?.col ?? 0)
+              ? p.target[i]
+              : 0,
+          ),
     solved: false,
     alarmUntil: 0,
     disabled: p.stations.map(() => false),
