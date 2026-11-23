@@ -128,10 +128,11 @@ export function loadLevel(scene: Alley) {
     const g = scene.add.graphics().setDepth(1);
     for (const x0 of [-edge, L.width]) {
       g.fillStyle(Phaser.Display.Color.HexStringToColor(pal.stone[2]).color, 1);
-      g.fillRect(x0, 0, edge, L.height);
+      const wallTop = meta.id === 'saltlake' ? 11 * TILE : 0;
+      g.fillRect(x0, wallTop, edge, L.height - wallTop);
       g.fillStyle(Phaser.Display.Color.HexStringToColor(pal.mortar).color, 1);
-      for (let y = 0; y < L.height; y += 12) g.fillRect(x0, y, edge, 1);
-      for (let y = 0; y < L.height; y += 12)
+      for (let y = wallTop; y < L.height; y += 12) g.fillRect(x0, y, edge, 1);
+      for (let y = wallTop; y < L.height; y += 12)
         for (let x = x0 + ((y / 12) % 2 ? 0 : 12); x < x0 + edge; x += 24)
           g.fillRect(x, y, 1, 12);
     }

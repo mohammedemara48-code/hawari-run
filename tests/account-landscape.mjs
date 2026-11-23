@@ -71,6 +71,7 @@ try {
   );
   await page.waitForTimeout(100);
   assert.equal(await page.locator('#journey-sync-status').isDisabled(), true);
+  assert.equal(await page.locator('#journey-sync-status').isVisible(), false);
   await page.evaluate(() =>
     window.hawari.scene.getScene('alley').action('switch-player'),
   );

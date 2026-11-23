@@ -2276,3 +2276,8 @@ html.form-upright .login-form .primary {
     flex: 1 1 40%;
   }
 }
+
+/* Save feedback stays on menus, never covers a jump or a hazard. */
+.game-wrap.playing > .journey-sync-status {
+  display: none;
+}
