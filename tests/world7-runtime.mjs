@@ -407,11 +407,13 @@ const hang = async () => {
       b = s.boss,
       k = s.crane.hooks[0];
     s.hazards.clear(true, true);
+    b.body.reset(4300, b.y); // Clear firing lane, away from the boarding platform.
     st.state = 'drop';
     st.until = s.time.now + 3000;
     st.invuln = 0;
     b.setVelocity(0, 0);
     k.x = Math.min(k.x1, Math.max(k.x0, b.x));
+    k.x0 = k.x; // Park this isolated hit fixture at the boarding point.
     k.pauseUntil = s.time.now + 3000;
     k.payload.setVisible(true);
     s.crane.cooldown = 0;
