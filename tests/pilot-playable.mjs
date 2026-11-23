@@ -78,7 +78,7 @@ try {
         }
         for (let d = 0; d < 8; d++) surface.push(s.L.at(col + d, row));
         return {
-          now: s.time.now,
+          now: s.elapsed * 1000,
           exit: s.spec.exit.x,
           checkpointX: s.spec.checkpoint.x,
           secret: s.secretFound,
@@ -124,6 +124,9 @@ try {
       if (s.cp) reachedFlag = true;
       if (s.mode === 'dead') {
         for (const k of [...held]) await key(k, false);
+        lastJump = -1000;
+        lastDown = -1000;
+        jumpUntil = 0;
         await page.waitForTimeout(150);
         continue;
       }
@@ -215,7 +218,7 @@ try {
         jump = false;
         jumpUntil = 0;
       }
-      if (s.vy > 0 || (s.ground && s.now - lastJump > 250)) jumpUntil = 0;
+      if (s.vy > 0) jumpUntil = 0;
       if (jump && s.ground && !held.has('Space') && s.now - lastJump > 450) {
         jumpUntil = Infinity;
         lastJump = s.now;
