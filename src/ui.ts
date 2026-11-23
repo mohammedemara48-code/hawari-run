@@ -265,7 +265,7 @@ export function screen(which: Screen, details = '') {
     'journey-sync-status',
   ) as HTMLButtonElement | null;
   if (status) {
-    status.hidden = which === 'login';
+    status.hidden = which === 'login' || which === 'hidden';
     status.disabled = which === 'hidden';
   }
   refreshJourney();
@@ -536,6 +536,11 @@ async function submitLogin(form: HTMLFormElement) {
   form.removeAttribute('data-switching');
   refreshJourney();
   handler('start-after-login');
+  toast(
+    result.localOnly
+      ? 'الدخول على الجهاز فقط. المزامنة لم تتم، جرّب تاني لما الشبكة ترجع'
+      : 'تم تسجيل الدخول ومزامنة تقدمك',
+  );
 }
 /** Fill كمّل buttons and the player name on every screen. */
 export function refreshJourney() {
@@ -576,7 +581,7 @@ export function refreshJourney() {
   }
 }
 
-// Account status is visible during play and on menus, never claims cloud success offline.
+// Account status belongs on menus, never over the active playfield.
 const syncLabels: Record<SyncState, string> = {
   local: 'الحفظ على الجهاز فقط',
   syncing: 'جاري مزامنة التقدم…',

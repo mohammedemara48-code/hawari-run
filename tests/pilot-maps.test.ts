@@ -5,12 +5,12 @@ import { LEVELS } from '../src/level-data';
 import baseline from './fixtures/pilot-baseline.json';
 import { parseLevel } from '../src/level-parse';
 describe('three-level pilot scope and restoration layout', () => {
-  it('changes only levels1,29,33, keeping44stable IDs and tracks', () => {
+  it('keeps44stable IDs and tracks; only pilot maps and the approved Salt Mirage repair differ', () => {
     expect(LEVELS).toHaveLength(44);
     LEVELS.forEach((l, i) => {
       expect(l.id).toBe(baseline[i].id);
       expect(l.track).toBe(baseline[i].track);
-      if (![0, 28, 32].includes(i))
+      if (![0, 28, 29, 32].includes(i))
         expect(
           createHash('sha256').update(JSON.stringify(l)).digest('hex'),
         ).toBe(baseline[i].hash);

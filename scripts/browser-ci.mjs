@@ -53,6 +53,8 @@ try {
         'pilot-playable',
         'pilot-diagnostics',
         'siwa-lighting',
+        'salt-touch-playable',
+        'sync-feedback',
         'world8-runtime',
         'account-landscape',
       ]

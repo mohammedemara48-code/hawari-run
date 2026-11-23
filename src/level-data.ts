@@ -2211,8 +2211,10 @@ function siwaSalt() {
   g.set(12, 12, 'ع');
   g.text(16, 9, 'BFB');
   g.set(24, 12, 'ق');
-  // A pit crossed by a floating salt pan, with shimmering mirages above.
+  // Salt islands keep every required jump within a short, walk-speed hop.
+  // The moving pan and upper mirages remain optional routes.
   g.rect(29, 13, 29, 14, 'ل');
+  for (const col of [31, 35, 39, 43]) g.rect(col, 13, col + 2, 14, 'ل');
   g.set(32, 12, 'M');
   g.run(36, 42, 9, 'غ');
   g.text(36, 8, 'oooo');
@@ -2222,7 +2224,8 @@ function siwaSalt() {
   g.text(60, 9, 'B?B');
   // Glare stretch: little shade, a fake-looking spring mid-path, a real one in a dip.
   g.rect(71, 13, 78, 14, 'ل');
-  g.run(80, 86, 12, 'غ'); // mirage stepping stones over a gap
+  g.run(80, 86, 12, 'غ'); // optional mirage route, with safe salt islands below
+  for (const col of [80, 84]) g.rect(col, 13, col + 2, 14, 'ل');
   g.rect(88, 13, 120, 14, 'ل');
   g.set(92, 12, 'ع');
   g.set(100, 12, 'c');
@@ -2231,6 +2234,7 @@ function siwaSalt() {
   g.set(114, 12, 'ع');
   // Floating pans and an upper mirage path to the secret.
   g.set(122, 10, 'M');
+  g.rect(122, 13, 122, 14, 'ل');
   g.run(130, 148, 7, 'غ');
   g.run(150, 156, 5, '-');
   g.set(154, 4, 'G');
@@ -2240,6 +2244,7 @@ function siwaSalt() {
   g.text(140, 9, 'B?B');
   g.set(150, 12, 'ع');
   g.set(160, 12, 'M');
+  g.rect(170, 13, 170, 14, 'ل');
   g.rect(172, 13, 209, 14, 'ل');
   g.set(176, 12, 'ع');
   g.set(184, 12, 'ق');

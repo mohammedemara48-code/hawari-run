@@ -239,7 +239,8 @@ export function needsLogin() {
   return true;
 }
 type LoginResult =
-  { ok: true; created?: boolean } | { ok: false; error: string };
+  | { ok: true; created?: boolean; localOnly?: boolean }
+  | { ok: false; error: string };
 async function post(url: string, body: unknown) {
   const res = await fetch(url, {
     method: 'POST',
@@ -285,7 +286,7 @@ export async function login(name: string, pin: string): Promise<LoginResult> {
         return { ok: false, error: 'مفيش شبكة، مش هقدر أغيّر اللاعب دلوقتي' };
       setPlayer({ name: n });
       status('local');
-      return { ok: true };
+      return { ok: true, localOnly: true };
     }
     const server = data.progress as Progress | undefined;
     if (server && typeof server === 'object') {
@@ -314,7 +315,7 @@ export async function login(name: string, pin: string): Promise<LoginResult> {
       return { ok: false, error: 'مفيش شبكة، مش هقدر أغيّر اللاعب دلوقتي' };
     setPlayer({ name: n });
     status('offline');
-    return { ok: true };
+    return { ok: true, localOnly: true };
   }
 }
 let syncTimer = 0;
