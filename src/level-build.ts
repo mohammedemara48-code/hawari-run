@@ -8,6 +8,7 @@ import { TILE } from './level-data';
 import { parseLevel } from './level-parse';
 import { bossBar } from './ui';
 import { sound } from './audio';
+import { requestBackdrop, releaseBackdrops } from './backdrops';
 import { prepareWorldArt } from './world-assets';
 import { releaseLevelTextures } from './level-textures';
 
@@ -17,6 +18,7 @@ export function loadLevel(scene: Alley) {
   scene.physics.world.colliders.destroy();
   scene.children.removeAll(true);
   releaseLevelTextures(scene.textures);
+  releaseBackdrops(scene);
   scene.layers = [];
   scene.lanterns = [];
   scene.moverList = [];
@@ -211,5 +213,6 @@ export function loadLevel(scene: Alley) {
   bossBar(false);
   scene.fitView();
   scene.updateHud();
+  requestBackdrop(scene, scene.level);
 }
 /** The normal camera: follow the hero with a little deadzone. */

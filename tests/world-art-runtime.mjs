@@ -16,6 +16,10 @@ try {
       unused: s.textures.exists('buffalo0'),
     };
   });
+  assert.deepEqual(
+    initial.keys.filter((k) => /^backdrop-/.test(k)),
+    ['backdrop-0'],
+  );
   assert.equal(
     initial.unused,
     false,

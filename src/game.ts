@@ -246,9 +246,7 @@ export class Alley extends Phaser.Scene {
   }
   preload() {
     // Painted backdrops (one per level), baked to 1280×360 mirrored loops.
-    LEVELS.forEach((_, i) =>
-      this.load.image(`backdrop-${i}`, `bg/l${i + 1}.webp`),
-    );
+    this.load.image('backdrop-0', 'bg/l1.webp');
     // Drawn creature art (bosses, enemies): replaces the procedural frames
     // with the same keys and sizes; see scripts/art.
     if (!location.search.includes('oldart')) {
