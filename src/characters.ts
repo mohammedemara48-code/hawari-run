@@ -243,6 +243,34 @@ function hero(raw: Pixels, big: boolean, pose: HeroPose) {
     p.r(hand[0] - 1, hand[1] + 2, 2, 1, P.skinShade);
     p.r(hand[0] + 2, hand[1], 1, 1, P.skinLight);
   };
+  // The courier's scarf trails opposite the run. Draw behind the body so
+  // its moving outline adds life without changing the collision silhouette.
+  const flutter = run
+    ? [0, -1, -2, -1, 1, 2, 1, 0][f]
+    : pose === 'fall'
+      ? -3
+      : pose === 'rise'
+        ? 2
+        : 0;
+  const tail = run || pose === 'rise' || pose === 'fall' ? 3 : 7;
+  p.poly(
+    [
+      [x(13), head + 22],
+      [x(8), head + 22],
+      [x(tail), head + 24 + flutter],
+      [x(tail + 2), head + 26 + flutter],
+      [x(8), head + 25],
+      [x(13), head + 24],
+    ],
+    P.scarfShade,
+    true,
+  );
+  p.line(
+    [x(12), head + 22],
+    [x(tail + 1), head + 24 + flutter],
+    1,
+    P.scarfLight,
+  );
   arm([x(11), top + 2], farHand, false);
   let backFoot: Point = [11, 62],
     frontFoot: Point = [21, 62];
@@ -369,10 +397,14 @@ function hero(raw: Pixels, big: boolean, pose: HeroPose) {
   }
   p.line([x(21), top + 1], [x(11), waist - 2], 2, P.orangeShade);
   p.line([x(20), top + 1], [x(10), waist - 2], 1, P.orangeLight);
-  p.box(x(6), waist - 6, 6, 6, P.orange);
-  p.r(x(6), waist - 6, 6, 2, P.orangeLight);
-  p.r(x(10), waist - 3, 2, 3, P.orangeShade);
-  p.r(x(8), waist - 3, 1, 1, P.creamLight);
+  const bagBob = run ? [0, -1, -1, 0, 1, 0, -1, 0][f] : 0;
+  p.box(x(5), waist - 6 + bagBob, 7, 7, P.orangeShade);
+  p.r(x(5), waist - 6 + bagBob, 7, 3, P.orange);
+  p.r(x(5), waist - 6 + bagBob, 6, 1, P.orangeLight);
+  p.r(x(6), waist - 3 + bagBob, 4, 3, P.orange);
+  p.r(x(7), waist - 3 + bagBob, 2, 2, P.orangeLight);
+  p.r(x(8), waist - 2 + bagBob, 1, 1, P.ink);
+  p.r(x(6), waist + bagBob, 5, 1, P.orangeLight);
   p.r(x(10), waist - 1, 12, 1, P.navyShade);
   p.r(x(16), waist - 1, 3, 1, P.orangeLight);
   arm([x(22), top + 2], nearHand, true);
