@@ -1623,266 +1623,292 @@ function mashrabiyaHouse(
   for (let i = x + 10; i < x + w - 10; i += 6)
     rect(c, i, base - 30, 1, 30, '#00000044');
 }
-export function makeParallax(scene: Phaser.Scene, theme: Theme) {
+export function makeParallax(
+  scene: Phaser.Scene,
+  theme: Theme,
+  painted = false,
+) {
   const pal = PALETTES[theme];
   const W = 960,
     H = 360;
   const key = (n: string) => `${theme}-${n}`;
-  if (scene.textures.exists(key('sky'))) return;
-  tex(scene, key('sky'), W, H, (c) => {
-    c.fillStyle = grad(c, 0, H, pal.sky);
-    c.fillRect(0, 0, W, H);
-    if (theme === 'night') {
-      for (let i = 0; i < 140; i++) {
-        const x = hash(i, 1) * W,
-          y = hash(i, 2) * H * 0.7;
-        rect(
-          c,
-          x,
-          y,
-          hash(i, 3) > 0.9 ? 2 : 1,
-          hash(i, 3) > 0.9 ? 2 : 1,
-          hash(i, 4) > 0.5 ? '#ffffff' : '#c8d0ff',
-        );
-      }
-      disc(c, 760, 70, 26, '#fff6d8');
-      disc(c, 770, 64, 24, '#1a2350');
-      c.globalAlpha = 0.25;
-      disc(c, 760, 70, 44, '#fff6d8');
-      c.globalAlpha = 1;
-    } else if (theme === 'market') {
-      disc(c, 220, 250, 60, '#ffd88f');
-      disc(c, 220, 250, 44, '#fff0c0');
-      for (let i = 0; i < 6; i++) {
-        const x = hash(i, 9) * W,
-          y = 60 + hash(i, 8) * 120;
-        rect(c, x, y, 120 + hash(i, 7) * 80, 6, '#f8b8a0aa');
-        rect(c, x + 20, y - 5, 70, 5, '#ffd0b8aa');
-      }
-    } else if (theme === 'farm') {
-      disc(c, 200, 230, 50, '#ffe0a0');
-      disc(c, 200, 230, 36, '#fff4d0');
-      for (let i = 0; i < 6; i++) {
-        const x = hash(i, 29) * W,
-          y = 40 + hash(i, 28) * 110;
-        rect(c, x, y, 110 + hash(i, 27) * 70, 6, '#f8c0a0bb');
-        rect(c, x + 16, y - 5, 60, 5, '#ffd8c0bb');
-      }
-    } else if (theme === 'roof') {
-      disc(c, 150, 70, 30, '#fff8d8');
-      for (let i = 0; i < 7; i++) {
-        const x = hash(i, 19) * W,
-          y = 30 + hash(i, 18) * 110;
-        for (let k = 0; k < 4; k++)
-          disc(c, x + k * 16, y - (k % 2) * 6, 14, '#ffffffdd');
-        rect(c, x - 10, y, 74, 10, '#ffffffdd');
-      }
-    } else {
-      // Tunnel wall.
-      for (let y = 0; y < H; y += 12)
-        for (let x = (y / 12) % 2 ? 0 : 16; x < W; x += 32) {
-          rect(c, x, y, 31, 11, hash(x, y) > 0.5 ? '#16201f' : '#1a2524');
-          rect(c, x, y, 31, 1, '#22302e');
+  if (
+    scene.textures.exists(key('near')) &&
+    (painted || scene.textures.exists(key('sky')))
+  )
+    return;
+  if (!painted) {
+    tex(scene, key('sky'), W, H, (c) => {
+      c.fillStyle = grad(c, 0, H, pal.sky);
+      c.fillRect(0, 0, W, H);
+      if (theme === 'night') {
+        for (let i = 0; i < 140; i++) {
+          const x = hash(i, 1) * W,
+            y = hash(i, 2) * H * 0.7;
+          rect(
+            c,
+            x,
+            y,
+            hash(i, 3) > 0.9 ? 2 : 1,
+            hash(i, 3) > 0.9 ? 2 : 1,
+            hash(i, 4) > 0.5 ? '#ffffff' : '#c8d0ff',
+          );
         }
-    }
-  });
-  tex(scene, key('far'), W, H, (c) => {
-    if (theme === 'night') {
-      const col = '#232b55';
-      houseRow(c, 330, 70, 3, [col, '#262f5a', '#20284f'], '#ffcf7a99', true);
-      citadel(c, 260, 270, 0.9, col, '#ffcf7a');
-      cairoTower(c, 640, 290, 1, col, '#ffcf7a');
-      azhar(c, 820, 280, 0.9, col, '#ffcf7a');
-      azhar(c, 860, 285, 0.8, col, '#ffcf7a');
-      dome(c, 470, 290, 22, col);
-      dome(c, 90, 300, 18, col);
-    } else if (theme === 'market') {
-      const col = '#8a4a58';
-      houseRow(c, 330, 80, 5, [col, '#94505e', '#7e4452'], '#ffd88f', false);
-      azhar(c, 140, 270, 1.1, col, '');
-      azhar(c, 180, 278, 0.9, col, '');
-      dome(c, 330, 280, 30, col);
-      // Khan el-Khalili gate (Bab al-Badistan).
-      rect(c, 520, 180, 120, 120, col);
-      disc(c, 580, 220, 34, '#c86a5a', Math.PI, 0);
-      rect(c, 546, 220, 68, 80, '#c86a5a');
-      for (let i = 0; i < 5; i++) rect(c, 530 + i * 24, 172, 12, 10, col);
-      citadel(c, 820, 290, 0.6, col, '');
-    } else if (theme === 'farm') {
-      // Village of mud towers and palms on the horizon.
-      const col = '#a07050';
-      rect(c, 0, 300, W, 60, '#8a9a5a');
-      for (let x = 20; x < W; x += 130) {
-        const h = 40 + hash(x, 3) * 40;
-        rect(c, x, 300 - h, 60, h, col);
-        rect(c, x + 20, 300 - h - 40, 18, 40, col);
-        disc(c, x + 29, 300 - h - 40, 9, col, Math.PI, 0);
+        disc(c, 760, 70, 26, '#fff6d8');
+        disc(c, 770, 64, 24, '#1a2350');
+        c.globalAlpha = 0.25;
+        disc(c, 760, 70, 44, '#fff6d8');
+        c.globalAlpha = 1;
+      } else if (theme === 'market') {
+        disc(c, 220, 250, 60, '#ffd88f');
+        disc(c, 220, 250, 44, '#fff0c0');
+        for (let i = 0; i < 6; i++) {
+          const x = hash(i, 9) * W,
+            y = 60 + hash(i, 8) * 120;
+          rect(c, x, y, 120 + hash(i, 7) * 80, 6, '#f8b8a0aa');
+          rect(c, x + 20, y - 5, 70, 5, '#ffd0b8aa');
+        }
+      } else if (theme === 'farm') {
+        disc(c, 200, 230, 50, '#ffe0a0');
+        disc(c, 200, 230, 36, '#fff4d0');
+        for (let i = 0; i < 6; i++) {
+          const x = hash(i, 29) * W,
+            y = 40 + hash(i, 28) * 110;
+          rect(c, x, y, 110 + hash(i, 27) * 70, 6, '#f8c0a0bb');
+          rect(c, x + 16, y - 5, 60, 5, '#ffd8c0bb');
+        }
+      } else if (theme === 'roof') {
+        disc(c, 150, 70, 30, '#fff8d8');
+        for (let i = 0; i < 7; i++) {
+          const x = hash(i, 19) * W,
+            y = 30 + hash(i, 18) * 110;
+          for (let k = 0; k < 4; k++)
+            disc(c, x + k * 16, y - (k % 2) * 6, 14, '#ffffffdd');
+          rect(c, x - 10, y, 74, 10, '#ffffffdd');
+        }
+      } else {
+        // Tunnel wall.
+        for (let y = 0; y < H; y += 12)
+          for (let x = (y / 12) % 2 ? 0 : 16; x < W; x += 32) {
+            rect(c, x, y, 31, 11, hash(x, y) > 0.5 ? '#16201f' : '#1a2524');
+            rect(c, x, y, 31, 1, '#22302e');
+          }
       }
-      for (let x = 60; x < W; x += 90)
-        palm(c, x, 302, 60 + hash(x, 5) * 30, '#6a6a3a', 6);
-    } else if (theme === 'roof') {
-      const pyr = '#e8c890',
-        pyrShade = '#c8a070';
-      pyramids(c, 120, 300, 0.9, pyr, pyrShade);
-      // The Nile with a bridge.
-      rect(c, 0, 300, W, 18, '#6fb0d0');
-      rect(c, 0, 302, W, 2, '#bfe6f4');
-      for (let x = 380; x < 760; x += 38) {
-        rect(c, x, 286, 4, 18, '#8a9aa8');
-        c.strokeStyle = '#8a9aa8';
-        c.lineWidth = 2;
-        c.beginPath();
-        c.arc(x + 19, 300, 17, Math.PI, 0);
-        c.stroke();
-      }
-      rect(c, 370, 284, 400, 4, '#7a8a98');
-      cairoTower(c, 640, 290, 0.9, '#8aa0b4', '');
-      citadel(c, 860, 296, 0.5, '#9aa8b8', '');
-      houseRow(c, 340, 40, 9, ['#c8b8a0', '#d4c4ac', '#bcac94'], '', false);
-    } else {
-      // Metro tunnel arches with a lit platform sign.
-      for (let x = 0; x < W; x += 240) {
-        rect(c, x, 80, 240, 280, '#101818');
-        disc(c, x + 120, 200, 100, '#0b1212', Math.PI, 0);
-        rect(c, x + 20, 200, 200, 160, '#0b1212');
-        for (let i = 0; i < 9; i++)
-          rect(c, x + 26 + i * 22, 112 + Math.abs(4 - i) * 6, 4, 4, '#2a3a3a');
-      }
-      sign(c, 400, 150, 70, 'محطة العتبة', '#1f4a8a', '#ffffff');
-      sign(c, 780, 160, 50, 'مترو', '#c83a3a', '#ffffff');
-    }
-  });
-  tex(scene, key('mid'), W, H, (c) => {
-    if (theme === 'night' || theme === 'market') {
-      const night = theme === 'night';
-      const cols = night
-        ? ['#3a3256', '#41385c', '#352d50']
-        : ['#b06a4e', '#c07a58', '#a05e44'];
-      let x = 0,
-        i = 0;
-      while (x < W) {
-        const w = 120 + Math.floor(hash(i, 21) * 70),
-          h = 160 + Math.floor(hash(i, 22) * 90);
-        mashrabiyaHouse(
-          c,
-          x,
-          360,
-          w,
-          h,
-          cols[i % 3],
-          night ? '#5a4f78' : '#e8c09a',
-          '#ffcf7a',
-          night,
-          i,
-        );
-        if (!night) {
-          const labels = [
-            'فول وطعمية',
-            'عطارة',
-            'خردوات',
-            'كشري',
-            'عصير قصب',
-            'حلواني',
-          ];
-          sign(
-            c,
-            x + 14,
-            360 - 50,
-            w - 28,
-            labels[i % labels.length],
-            ['#2f62a8', '#2f8a5a', '#c83a3a'][i % 3],
-            '#fff6d8',
-          );
-        } else if (i % 2)
-          sign(
-            c,
-            x + 18,
-            360 - 50,
-            w - 36,
-            ['قهوة المعلّم', 'مكوجي', 'بقالة'][i % 3],
-            '#2a2040',
-            '#ffcf7a',
-          );
-        x += w + 6;
-        i++;
-      }
-      // Strings of little lanterns / bunting between houses.
-      c.strokeStyle = night ? '#00000088' : '#3a241888';
-      for (let k = 0; k < 4; k++) {
-        const y0 = 70 + k * 30;
-        c.beginPath();
-        c.moveTo(k * 240, y0);
-        c.quadraticCurveTo(k * 240 + 120, y0 + 30, k * 240 + 240, y0);
-        c.stroke();
-        for (let t = 0.1; t < 1; t += 0.12) {
-          const px = k * 240 + 240 * t,
-            py = y0 + 60 * t * (1 - t);
-          if (night)
+    });
+    tex(scene, key('far'), W, H, (c) => {
+      if (theme === 'night') {
+        const col = '#232b55';
+        houseRow(c, 330, 70, 3, [col, '#262f5a', '#20284f'], '#ffcf7a99', true);
+        citadel(c, 260, 270, 0.9, col, '#ffcf7a');
+        cairoTower(c, 640, 290, 1, col, '#ffcf7a');
+        azhar(c, 820, 280, 0.9, col, '#ffcf7a');
+        azhar(c, 860, 285, 0.8, col, '#ffcf7a');
+        dome(c, 470, 290, 22, col);
+        dome(c, 90, 300, 18, col);
+      } else if (theme === 'market') {
+        const col = '#8a4a58';
+        houseRow(c, 330, 80, 5, [col, '#94505e', '#7e4452'], '#ffd88f', false);
+        azhar(c, 140, 270, 1.1, col, '');
+        azhar(c, 180, 278, 0.9, col, '');
+        dome(c, 330, 280, 30, col);
+        // Khan el-Khalili gate (Bab al-Badistan).
+        rect(c, 520, 180, 120, 120, col);
+        disc(c, 580, 220, 34, '#c86a5a', Math.PI, 0);
+        rect(c, 546, 220, 68, 80, '#c86a5a');
+        for (let i = 0; i < 5; i++) rect(c, 530 + i * 24, 172, 12, 10, col);
+        citadel(c, 820, 290, 0.6, col, '');
+      } else if (theme === 'farm') {
+        // Village of mud towers and palms on the horizon.
+        const col = '#a07050';
+        rect(c, 0, 300, W, 60, '#8a9a5a');
+        for (let x = 20; x < W; x += 130) {
+          const h = 40 + hash(x, 3) * 40;
+          rect(c, x, 300 - h, 60, h, col);
+          rect(c, x + 20, 300 - h - 40, 18, 40, col);
+          disc(c, x + 29, 300 - h - 40, 9, col, Math.PI, 0);
+        }
+        for (let x = 60; x < W; x += 90)
+          palm(c, x, 302, 60 + hash(x, 5) * 30, '#6a6a3a', 6);
+      } else if (theme === 'roof') {
+        const pyr = '#e8c890',
+          pyrShade = '#c8a070';
+        pyramids(c, 120, 300, 0.9, pyr, pyrShade);
+        // The Nile with a bridge.
+        rect(c, 0, 300, W, 18, '#6fb0d0');
+        rect(c, 0, 302, W, 2, '#bfe6f4');
+        for (let x = 380; x < 760; x += 38) {
+          rect(c, x, 286, 4, 18, '#8a9aa8');
+          c.strokeStyle = '#8a9aa8';
+          c.lineWidth = 2;
+          c.beginPath();
+          c.arc(x + 19, 300, 17, Math.PI, 0);
+          c.stroke();
+        }
+        rect(c, 370, 284, 400, 4, '#7a8a98');
+        cairoTower(c, 640, 290, 0.9, '#8aa0b4', '');
+        citadel(c, 860, 296, 0.5, '#9aa8b8', '');
+        houseRow(c, 340, 40, 9, ['#c8b8a0', '#d4c4ac', '#bcac94'], '', false);
+      } else {
+        // Metro tunnel arches with a lit platform sign.
+        for (let x = 0; x < W; x += 240) {
+          rect(c, x, 80, 240, 280, '#101818');
+          disc(c, x + 120, 200, 100, '#0b1212', Math.PI, 0);
+          rect(c, x + 20, 200, 200, 160, '#0b1212');
+          for (let i = 0; i < 9; i++)
             rect(
               c,
-              px - 2,
-              py,
+              x + 26 + i * 22,
+              112 + Math.abs(4 - i) * 6,
               4,
-              6,
-              hash(k, t * 100) > 0.4 ? '#ffcf7a' : '#ff8a5a',
-            );
-          else
-            poly(
-              c,
-              [
-                [px - 4, py],
-                [px + 4, py],
-                [px, py + 8],
-              ],
-              ['#e8443a', '#ffd36b', '#2f8a5a', '#2f62a8'][
-                Math.floor(t * 8) % 4
-              ],
+              4,
+              '#2a3a3a',
             );
         }
+        sign(c, 400, 150, 70, 'محطة العتبة', '#1f4a8a', '#ffffff');
+        sign(c, 780, 160, 50, 'مترو', '#c83a3a', '#ffffff');
       }
-    } else if (theme === 'farm') {
-      // Fields in stripes with palms along the canal.
-      for (let y = 260; y < H; y += 14)
-        rect(c, 0, y, W, 14, (y / 14) % 2 ? '#6a8a3a' : '#7a9a44');
-      rect(c, 0, 300, W, 8, '#4a8a8a');
-      for (let x = 30; x < W; x += 140)
-        palm(c, x, 300, 110 + hash(x, 9) * 40, '#3a4a2a', -8);
-    } else if (theme === 'roof') {
-      houseRow(c, 360, 120, 13, ['#c09a78', '#b08a6a', '#cca684'], '', false);
-      // Pigeon towers (gheyya).
-      for (const x of [180, 610]) {
-        poly(
-          c,
-          [
-            [x - 16, 250],
-            [x + 16, 250],
-            [x + 26, 120],
-            [x - 26, 120],
-          ],
-          '#8a6a4a',
-        );
-        for (let y = 130; y < 250; y += 12)
-          rect(c, x - 22 + (y - 120) / 12, y, 44 - (y - 120) / 6, 2, '#5a4030');
-        rect(c, x - 30, 112, 60, 8, '#5a4030');
-        rect(c, x - 1, 90, 2, 22, '#5a4030');
-        rect(c, x, 90, 14, 8, '#d8443a');
+    });
+    tex(scene, key('mid'), W, H, (c) => {
+      if (theme === 'night' || theme === 'market') {
+        const night = theme === 'night';
+        const cols = night
+          ? ['#3a3256', '#41385c', '#352d50']
+          : ['#b06a4e', '#c07a58', '#a05e44'];
+        let x = 0,
+          i = 0;
+        while (x < W) {
+          const w = 120 + Math.floor(hash(i, 21) * 70),
+            h = 160 + Math.floor(hash(i, 22) * 90);
+          mashrabiyaHouse(
+            c,
+            x,
+            360,
+            w,
+            h,
+            cols[i % 3],
+            night ? '#5a4f78' : '#e8c09a',
+            '#ffcf7a',
+            night,
+            i,
+          );
+          if (!night) {
+            const labels = [
+              'فول وطعمية',
+              'عطارة',
+              'خردوات',
+              'كشري',
+              'عصير قصب',
+              'حلواني',
+            ];
+            sign(
+              c,
+              x + 14,
+              360 - 50,
+              w - 28,
+              labels[i % labels.length],
+              ['#2f62a8', '#2f8a5a', '#c83a3a'][i % 3],
+              '#fff6d8',
+            );
+          } else if (i % 2)
+            sign(
+              c,
+              x + 18,
+              360 - 50,
+              w - 36,
+              ['قهوة المعلّم', 'مكوجي', 'بقالة'][i % 3],
+              '#2a2040',
+              '#ffcf7a',
+            );
+          x += w + 6;
+          i++;
+        }
+        // Strings of little lanterns / bunting between houses.
+        c.strokeStyle = night ? '#00000088' : '#3a241888';
+        for (let k = 0; k < 4; k++) {
+          const y0 = 70 + k * 30;
+          c.beginPath();
+          c.moveTo(k * 240, y0);
+          c.quadraticCurveTo(k * 240 + 120, y0 + 30, k * 240 + 240, y0);
+          c.stroke();
+          for (let t = 0.1; t < 1; t += 0.12) {
+            const px = k * 240 + 240 * t,
+              py = y0 + 60 * t * (1 - t);
+            if (night)
+              rect(
+                c,
+                px - 2,
+                py,
+                4,
+                6,
+                hash(k, t * 100) > 0.4 ? '#ffcf7a' : '#ff8a5a',
+              );
+            else
+              poly(
+                c,
+                [
+                  [px - 4, py],
+                  [px + 4, py],
+                  [px, py + 8],
+                ],
+                ['#e8443a', '#ffd36b', '#2f8a5a', '#2f62a8'][
+                  Math.floor(t * 8) % 4
+                ],
+              );
+          }
+        }
+      } else if (theme === 'farm') {
+        // Fields in stripes with palms along the canal.
+        for (let y = 260; y < H; y += 14)
+          rect(c, 0, y, W, 14, (y / 14) % 2 ? '#6a8a3a' : '#7a9a44');
+        rect(c, 0, 300, W, 8, '#4a8a8a');
+        for (let x = 30; x < W; x += 140)
+          palm(c, x, 300, 110 + hash(x, 9) * 40, '#3a4a2a', -8);
+      } else if (theme === 'roof') {
+        houseRow(c, 360, 120, 13, ['#c09a78', '#b08a6a', '#cca684'], '', false);
+        // Pigeon towers (gheyya).
+        for (const x of [180, 610]) {
+          poly(
+            c,
+            [
+              [x - 16, 250],
+              [x + 16, 250],
+              [x + 26, 120],
+              [x - 26, 120],
+            ],
+            '#8a6a4a',
+          );
+          for (let y = 130; y < 250; y += 12)
+            rect(
+              c,
+              x - 22 + (y - 120) / 12,
+              y,
+              44 - (y - 120) / 6,
+              2,
+              '#5a4030',
+            );
+          rect(c, x - 30, 112, 60, 8, '#5a4030');
+          rect(c, x - 1, 90, 2, 22, '#5a4030');
+          rect(c, x, 90, 14, 8, '#d8443a');
+        }
+      } else {
+        // Pipes and girders.
+        for (let x = 0; x < W; x += 160) {
+          rect(c, x + 30, 0, 14, 360, '#24302f');
+          rect(c, x + 32, 0, 3, 360, '#3a4a48');
+          for (let y = 40; y < 360; y += 90)
+            rect(c, x + 26, y, 22, 6, '#4a3a2a');
+        }
+        rect(c, 0, 60, W, 10, '#2c3a38');
+        rect(c, 0, 62, W, 2, '#4a5a58');
+        for (let x = 80; x < W; x += 320) {
+          rect(c, x, 20, 50, 30, '#1a2222');
+          for (let i = 0; i < 5; i++)
+            rect(c, x + 4 + i * 10, 22, 4, 26, '#e8d07a55');
+        }
       }
-    } else {
-      // Pipes and girders.
-      for (let x = 0; x < W; x += 160) {
-        rect(c, x + 30, 0, 14, 360, '#24302f');
-        rect(c, x + 32, 0, 3, 360, '#3a4a48');
-        for (let y = 40; y < 360; y += 90) rect(c, x + 26, y, 22, 6, '#4a3a2a');
-      }
-      rect(c, 0, 60, W, 10, '#2c3a38');
-      rect(c, 0, 62, W, 2, '#4a5a58');
-      for (let x = 80; x < W; x += 320) {
-        rect(c, x, 20, 50, 30, '#1a2222');
-        for (let i = 0; i < 5; i++)
-          rect(c, x + 4 + i * 10, 22, 4, 26, '#e8d07a55');
-      }
-    }
-  });
+    });
+  }
+  if (scene.textures.exists(key('near'))) return;
   tex(scene, key('near'), W, H, (c) => {
     const col =
       theme === 'night'

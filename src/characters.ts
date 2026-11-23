@@ -110,22 +110,24 @@ export function make(
 ) {
   const t = scene.textures.createCanvas(key, w, h)!;
   t.context.imageSmoothingEnabled = false;
-  paint(new Pixels(t.context));
-  if (mirror) {
-    const copy = document.createElement('canvas');
-    copy.width = w;
-    copy.height = h;
-    copy.getContext('2d')!.drawImage(t.canvas, 0, 0);
-    t.context.clearRect(0, 0, w, h);
-    t.context.save();
-    t.context.scale(-1, 1);
-    t.context.drawImage(copy, -w, 0);
-    t.context.restore();
-  }
   // Drawn art baked offline (public/sprites) wins over the procedural frame.
   const cell = (
     scene.cache.json.get('sprites-map') as Record<string, number[]> | undefined
   )?.[key];
+  if (!cell || !scene.textures.exists('sprites')) {
+    paint(new Pixels(t.context));
+    if (mirror) {
+      const copy = document.createElement('canvas');
+      copy.width = w;
+      copy.height = h;
+      copy.getContext('2d')!.drawImage(t.canvas, 0, 0);
+      t.context.clearRect(0, 0, w, h);
+      t.context.save();
+      t.context.scale(-1, 1);
+      t.context.drawImage(copy, -w, 0);
+      t.context.restore();
+    }
+  }
   if (cell && scene.textures.exists('sprites')) {
     const [sx, sy] = cell;
     t.context.clearRect(0, 0, w, h);

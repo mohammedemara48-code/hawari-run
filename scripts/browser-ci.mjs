@@ -44,6 +44,7 @@ try {
         'hero-runtime',
         'texture-runtime',
         'worlds-smoke',
+        'world-art-runtime',
         'armory-runtime',
         'alex4-playable',
       ]
