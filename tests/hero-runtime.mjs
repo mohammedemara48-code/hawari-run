@@ -35,17 +35,22 @@ await page.waitForTimeout(180);
 assert.equal((await s()).height, 46);
 assert.equal((await s()).offset, 18);
 await page.keyboard.down('ArrowRight');
-await page.waitForTimeout(180);
-assert.match((await s()).pose, /^run/);
+await page.waitForFunction(() =>
+  /^run/.test(window.hawari.scene.getScene('alley').hero.getData('pose')),
+);
 await page.keyboard.up('ArrowRight');
 await page.keyboard.down('ArrowLeft');
-await page.waitForTimeout(35);
-assert.equal((await s()).pose, 'skid');
+await page.waitForFunction(
+  () => window.hawari.scene.getScene('alley').hero.getData('pose') === 'skid',
+  null,
+  { timeout: 5000 },
+);
 await page.keyboard.up('ArrowLeft');
 await page.waitForTimeout(180);
 await page.keyboard.down('ArrowDown');
-await page.waitForTimeout(75);
-assert.equal((await s()).pose, 'crouch');
+await page.waitForFunction(
+  () => window.hawari.scene.getScene('alley').hero.getData('pose') === 'crouch',
+);
 assert.equal((await s()).height, 32);
 assert.equal((await s()).bottom, ground);
 await page.keyboard.up('ArrowDown');
@@ -53,8 +58,9 @@ await page.waitForTimeout(80);
 assert.equal((await s()).height, 46);
 assert.equal((await s()).bottom, ground);
 await page.keyboard.down('Space');
-await page.waitForTimeout(120);
-assert.equal((await s()).pose, 'rise');
+await page.waitForFunction(
+  () => window.hawari.scene.getScene('alley').hero.getData('pose') === 'rise',
+);
 await page.keyboard.up('Space');
 // Headless rendering can advance fewer physics frames than wall-clock time.
 // Keep checking the actual airborne transition rather than assuming its duration.
@@ -67,7 +73,10 @@ await page.waitForFunction(
   { timeout: 5000 },
 );
 assert.equal((await s()).pose, 'fall');
-await page.waitForTimeout(350);
+await page.waitForFunction(() => {
+  const b = window.hawari.scene.getScene('alley').hero.body;
+  return b.blocked.down || b.touching.down;
+});
 await page.evaluate(() => window.hawari.scene.getScene('alley').setPower(1));
 await page.waitForTimeout(65);
 assert.match((await s()).pose, /^grow/);
