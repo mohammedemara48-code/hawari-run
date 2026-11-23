@@ -189,7 +189,8 @@ try {
         (e) =>
           e.x > s.x - 12 &&
           e.x < s.x + (index === 0 ? 80 : 125) &&
-          Math.abs(e.y - s.y) < 65,
+          e.y > s.feet - 36 &&
+          e.y < s.feet + 18,
       );
       if (ci < 0 && s.ground && (s.wall || enemy || gap)) jump = true;
 
