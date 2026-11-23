@@ -4,7 +4,9 @@ import {
   createHmac,
   randomBytes,
   timingSafeEqual,
+  scrypt,
 } from 'node:crypto';
+import { promisify } from 'node:util';
 import { neon } from '@neondatabase/serverless';
 
 const buckets = new Map();
@@ -18,6 +20,11 @@ export function clientIp(req) {
 /** Light per-IP limit: 30 requests / minute. */
 export function rateLimit(ip, max = 30, windowMs = 60_000) {
   const now = Date.now();
+  if (buckets.size > 4096) {
+    for (const [key, bucket] of buckets)
+      if (now >= bucket.reset) buckets.delete(key);
+    if (buckets.size > 4096 && !buckets.has(ip)) return false;
+  }
   const b = buckets.get(ip);
   if (!b || now >= b.reset) {
     buckets.set(ip, { count: 1, reset: now + windowMs });
@@ -59,20 +66,44 @@ export function validPin(pin) {
   return typeof pin === 'string' && /^\d{4}$/.test(pin);
 }
 
-export function hashPin(pin, salt) {
-  return createHash('sha256')
-    .update(salt + pin)
-    .digest('hex');
+const derive = promisify(scrypt);
+export async function hashPin(pin, salt) {
+  const key = await derive(pin, salt, 32);
+  return key.toString('hex');
 }
-
 export function newSalt() {
-  return randomBytes(16).toString('hex');
+  return 'scrypt$' + randomBytes(12).toString('hex');
 }
-
-export function pinMatches(pin, salt, expected) {
-  const got = Buffer.from(hashPin(pin, salt), 'hex');
-  const want = Buffer.from(expected, 'hex');
+export async function pinMatches(pin, salt, expected) {
+  if (typeof expected !== 'string' || typeof salt !== 'string') return false;
+  const actual = salt.startsWith('scrypt$')
+    ? await hashPin(pin, salt)
+    : createHash('sha256')
+        .update(salt + pin)
+        .digest('hex');
+  const got = Buffer.from(actual),
+    want = Buffer.from(expected);
   return got.length === want.length && timingSafeEqual(got, want);
+}
+/** Reserve a PIN attempt atomically in the shared database, across instances.
+ * Reset the window after its lock expires. Eight concurrent tries share a cap.
+ */
+export async function checkPlayerPin(sql, row, pin) {
+  const reserved = await sql`UPDATE players SET
+    failed_attempts = CASE WHEN locked_until IS NOT NULL AND locked_until <= now() THEN 1 ELSE COALESCE(failed_attempts, 0) + 1 END,
+    locked_until = CASE WHEN (CASE WHEN locked_until IS NOT NULL AND locked_until <= now() THEN 1 ELSE COALESCE(failed_attempts, 0) + 1 END) >= 8 THEN now() + interval '1 minute' ELSE NULL END
+    WHERE id = ${row.id} AND (locked_until IS NULL OR locked_until <= now()) RETURNING id`;
+  if (!reserved.length) return { error: 429, message: 'استنى شوية وجرّب تاني' };
+  if (!(await pinMatches(pin, row.pin_salt, row.pin_hash)))
+    return { error: 401, message: 'الرقم السري غلط' };
+  // Upgrade legacy hashes only after successful authentication, no PIN reset.
+  if (!row.pin_salt.startsWith('scrypt$')) {
+    const salt = newSalt();
+    const upgraded = await hashPin(pin, salt);
+    await sql`UPDATE players SET pin_salt = ${salt}, pin_hash = ${upgraded} WHERE id = ${row.id} AND pin_hash = ${row.pin_hash}`;
+  }
+  await sql`UPDATE players SET failed_attempts = 0, locked_until = NULL WHERE id = ${row.id}`;
+  return { row };
 }
 
 export { isProgress } from '../shared/progress.js';
@@ -114,7 +145,12 @@ export function sessionId(req) {
   const raw = String(req.headers.cookie || '');
   const m = raw.match(/(?:^|;\s*)hawari_session=([^;]+)/);
   if (!m) return null;
-  const parts = decodeURIComponent(m[1]).split('.');
+  let parts;
+  try {
+    parts = decodeURIComponent(m[1]).split('.');
+  } catch {
+    return null;
+  }
   if (parts.length !== 3) return null;
   const [id, iat, sig] = parts;
   const want = Buffer.from(sign(`${id}.${iat}`));

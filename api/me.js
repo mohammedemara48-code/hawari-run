@@ -9,6 +9,7 @@ import {
   sessionId,
   setSession,
 } from './_db.js';
+import { normalizeProgress } from '../shared/progress.js';
 
 export default async function handler(req, res) {
   if (req.method === 'DELETE') {
@@ -19,7 +20,10 @@ export default async function handler(req, res) {
   if (!rateLimit(clientIp(req), 40))
     return json(res, 429, { error: 'استنى شوية وجرّب تاني' });
   const id = sessionId(req);
-  if (!id) return json(res, 401, { error: 'none' });
+  if (!id) {
+    clearSession(res);
+    return json(res, 401, { error: 'none' });
+  }
   const sql = getSql();
   if (!sql) return json(res, 503, { error: 'السيرفر مش جاهز' });
   try {
@@ -33,7 +37,7 @@ export default async function handler(req, res) {
     setSession(res, rows[0].id);
     return json(res, 200, {
       name: rows[0].name,
-      progress: rows[0].progress || {},
+      progress: normalizeProgress(rows[0].progress),
     });
   } catch (err) {
     console.error('me failed', err?.message || err);

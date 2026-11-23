@@ -2151,3 +2151,28 @@ html.form-upright .login-form .primary {
   font-size: 16px;
   padding: 12px;
 }
+
+.journey-sync-status {
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 24;
+  max-width: 70%;
+  padding: 2px 8px;
+  border: 1px solid #c8b47755;
+  border-radius: 4px;
+  color: #d7cfb3;
+  background: #10252dea;
+  font:
+    11px Tahoma,
+    sans-serif;
+  cursor: pointer;
+}
+.journey-sync-status[data-state='synced'] {
+  color: #abd3ac;
+}
+.journey-sync-status[data-state='error'],
+.journey-sync-status[data-state='login-required'] {
+  color: #ffd38a;
+}

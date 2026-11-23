@@ -2,7 +2,7 @@ import { paintEgypt, type WorldState } from './map-art';
 import { sound } from './audio';
 import { BOSS_NAMES, LEVELS, WORLDS, type LevelMeta } from './level-data';
 import { loadProgress, type Progress } from './progress';
-import { getPlayer, login } from './account';
+import { getPlayer, login, onSyncState, type SyncState } from './account';
 import { powerLabel, worldWeapon, type WorldWeapon } from './weapons';
 export type Screen =
   'title' | 'map' | 'pause' | 'clear' | 'over' | 'win' | 'hidden' | 'login';
@@ -479,6 +479,7 @@ async function submitLogin(form: HTMLFormElement) {
   }
   if (btn) btn.disabled = true;
   const result = await login(name, pin);
+  (document.getElementById('player-pin-input') as HTMLInputElement).value = '';
   if (btn) btn.disabled = false;
   if (!result.ok) {
     if (err) {
@@ -522,3 +523,29 @@ export function refreshJourney() {
   const cancel = document.getElementById('login-cancel');
   if (cancel) cancel.hidden = !player;
 }
+
+// Account status is visible during play and on menus, never claims cloud success offline.
+const syncLabels: Record<SyncState, string> = {
+  local: 'الحفظ على الجهاز فقط',
+  syncing: 'جاري مزامنة التقدم…',
+  synced: 'التقدم متزامن',
+  offline: 'بدون شبكة: الحفظ على الجهاز',
+  'login-required': 'الحفظ محلي: سجّل دخولك للمزامنة',
+  error: 'المزامنة لم تكتمل: الحفظ على الجهاز',
+};
+onSyncState((state) => {
+  if (typeof document === 'undefined') return;
+  let el = document.getElementById('journey-sync-status');
+  if (!el) {
+    el = document.createElement('button');
+    el.id = 'journey-sync-status';
+    el.className = 'journey-sync-status';
+    el.setAttribute('type', 'button');
+    el.setAttribute('aria-live', 'polite');
+    el.dataset.action = 'switch-player';
+    document.querySelector('#game-wrap')?.prepend(el);
+  }
+  el.textContent = syncLabels[state];
+  el.dataset.state = state;
+  el.title = 'اضغط لتسجيل الدخول أو تغيير اللاعب';
+});
