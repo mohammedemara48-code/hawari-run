@@ -10,35 +10,28 @@ import { makeAlexProps } from './world4-art';
 import { makeLuxorCreatures } from './creatures-luxor';
 import { isW5, makeLuxorProps } from './world5-art';
 import { isW6, makeAswanProps } from './world6-art';
-import { sailIdle, sailStep, type Sail } from './sail';
-import { craneIdle, hangStep, tryHook, type Crane } from './crane';
+import { sailIdle, type Sail } from './sail';
+import { craneIdle, type Crane } from './crane';
 import { isW7, makePortSaidProps } from './world7-art';
 import { isW8, makeSiwaProps } from './world8-art';
-import { boardStep, maybeStartBoard, updateSiwaWorld, type W8 } from './world8';
+import { updateSiwaWorld, type W8 } from './world8';
 
-import { luxorMove, updateLuxorWorld, type W5 } from './world5';
-import { alexMove, bossGustPush, updateAlexWorld, type W4 } from './world4';
-import { beltPush, updateDamiettaWorld, updateNet, type W3 } from './world3';
+import { updateLuxorWorld, type W5 } from './world5';
+import { updateAlexWorld, type W4 } from './world4';
+import { updateDamiettaWorld, type W3 } from './world3';
 import { makeFarmProps, makeParallax, makeProps } from './world-art';
 
-import { approach, jumpAllowed, tally } from './rules';
+import { tally } from './rules';
 import { INVULN_MS, SPAWN_CLEAR } from './weapons';
-import { PHYSICS } from './levels';
 import { LEVELS, TILE, WORLDS } from './level-data';
 import {
   BIRD_TELL_MS,
   BOUNCE,
-  CANAL,
   DONKEY,
   FLYING,
-  GLIDE,
-  GUST,
   LEDGE,
-  MUD,
-  SAND,
   SAQIA,
   SOLID,
-  WET,
   type Parsed,
 } from './level-parse';
 import { sound } from './audio';
@@ -111,6 +104,7 @@ import {
   updateHazards as updateHazardsImpl,
 } from './hazards';
 import { updateEnemy as updateEnemyImpl } from './enemy-update';
+import { updateGame as updateGameImpl } from './game-loop';
 import {
   findSecret as findSecretImpl,
   lineAt as lineAtImpl,
@@ -1337,387 +1331,7 @@ export class Alley extends Phaser.Scene {
     void dt;
   }
   update(time: number, delta: number) {
-    const dt = Math.min(delta, 35) / 1000;
-    this.clock += dt;
-    if (!this.hero) return;
-    this.updateWorld(time, dt);
-    if (this.mode === 'title' || this.mode === 'map') {
-      this.animateHero(time, true, 0, false);
-      return;
-    }
-    if (this.mode !== 'play') return;
-    this.elapsed += dt;
-    this.remaining -= dt;
-    if (this.remaining <= 0) {
-      this.lastHurtBy = 'time';
-      this.die();
-      return;
-    }
-    const left = this.keys.LEFT.isDown || this.keys.A.isDown || touch.left,
-      right = this.keys.RIGHT.isDown || this.keys.D.isDown || touch.right;
-    const jump =
-      this.keys.SPACE.isDown ||
-      this.keys.Z.isDown ||
-      this.keys.UP.isDown ||
-      this.keys.W.isDown ||
-      touch.jump ||
-      touch.stickJump;
-    const keyAction = this.keys.X.isDown || this.keys.SHIFT.isDown,
-      action = keyAction || touch.run,
-      throwing = keyAction || touch.throw,
-      down = this.keys.DOWN.isDown || this.keys.S.isDown || touch.down;
-    const b = body(this.hero);
-    // Riding a lamp or boat that drops away under you still counts as
-    // standing, so you can always jump off it.
-    const grounded = b.blocked.down || b.touching.down || this.riding;
-    if (grounded) this.lastGround = time;
-    if (jump && !this.jumpWas) this.lastPress = time;
-    // Sailing the felucca replaces walking: the hero rides the deck.
-    move: {
-      if (this.sail?.on) {
-        sailStep(this, this.sail, time, dt, {
-          dir: Number(right) - Number(left),
-          jump: jump && !this.jumpWas,
-        });
-        this.lastPress = -1000;
-        this.animateHero(time, time >= this.sail.hopUntil, 0, false);
-        break move;
-      }
-      if (this.siwa) maybeStartBoard(this, this.siwa);
-      if (this.siwa?.boarding) {
-        boardStep(this, this.siwa, time, dt, {
-          dir: Number(right) - Number(left),
-          jump: jump && !this.jumpWas,
-        });
-        this.animateHero(time, grounded, 1, false);
-        break move;
-      }
-      if (this.crane?.hang) {
-        hangStep(this, this.crane, time, {
-          dir: Number(right) - Number(left),
-          jumpPressed: jump && !this.jumpWas,
-          downPressed: down && !this.downWas,
-        });
-        this.lastPress = -1000;
-        this.animateHero(time, false, 0, false);
-        break move;
-      }
-      // Wind gusts: the level's strength and rhythm (Cairo: 2.6 s on, 1.6
-      // off), easing in and out so you feel each one build.
-      const G = this.L.meta.gust ?? GUST,
-        gt = time % (G.on + G.off);
-      const gust = this.L.wind.length > 0 && gt < G.on;
-      const env = gust ? Math.min(1, gt / 350, (G.on - gt) / 250) : 0;
-      if (gust !== this.windOn) {
-        this.windOn = gust;
-        this.windEmitters.forEach((e) => (gust ? e.start() : e.stop()));
-        if (
-          gust &&
-          this.L.wind.some(
-            (w) => Math.abs(this.hero.y - (w.y0 + w.y1) / 2) < 300,
-          )
-        )
-          sound.fx('wind');
-      }
-      let windPush = 0;
-      if (gust)
-        for (const w of this.L.wind)
-          if (
-            this.hero.x > w.x0 &&
-            this.hero.x < w.x1 &&
-            this.hero.y > w.y0 &&
-            this.hero.y < w.y1
-          )
-            windPush = w.dir * G.push * env;
-      windPush += bossGustPush(this, time);
-      const dir = Number(right) - Number(left);
-      // Countryside ground: mud bogs you down, canals float you and drag you.
-      const under = this.L.at(
-        Math.floor(b.center.x / TILE),
-        Math.floor((b.bottom + 2) / TILE),
-      );
-      this.onMud = grounded && under === 'u';
-      if (this.onMud) {
-        this.hint('mud', 'الطين بيمسك في رجلك… والنطّة من فوقه ضعيفة');
-        if (dir && Math.floor(time / 110) % 2 === 0)
-          this.burst(this.hero.x, b.bottom, 0x4a3020, 1);
-      }
-      const canal = this.zip ? undefined : this.canalAt(b.center.x, b.bottom);
-      if (canal && !this.swimming) {
-        sound.fx('splash');
-        this.burst(this.hero.x, canal.top, 0x8ad0b8, 8);
-        if (canal.sea)
-          this.hint(
-            'sea',
-            'البحر بيعلى وينزل مع المدّ… اعوم واضغط نطّ عشان تطلع',
-          );
-        else
-          this.hint(
-            'canal',
-            canal.dir < 0
-              ? 'التيار ضدّك! اعوم واضغط نطّ عشان تطلع'
-              : 'التيار شايلك… اضغط نطّ عشان تطلع من الترعة',
-          );
-      }
-      this.swimming = !!canal;
-      if (canal) {
-        const depth = b.center.y - canal.top;
-        if (depth > -2)
-          b.velocity.y -= (1100 + Math.min(1, (depth + 2) / 14) * 900) * dt;
-        b.velocity.y *= Math.pow(0.9, dt * 60);
-        b.velocity.y = Phaser.Math.Clamp(b.velocity.y, -CANAL.swimJump, 150);
-        windPush += canal.dir * CANAL.current;
-        const stroke =
-          depth < 16 &&
-          ((jump && !this.jumpWas) ||
-            (touch.stickJump && time - this.lastStroke >= CANAL.stroke));
-        if (stroke) {
-          this.hero.setVelocityY(-CANAL.swimJump);
-          this.lastStroke = time;
-          this.lastPress = -1000;
-          sound.fx('swim');
-          this.burst(this.hero.x, canal.top, 0x8ad0b8, 6);
-        }
-        if (Math.floor(time / 300) % 4 === 0 && Math.abs(b.velocity.x) > 20)
-          this.burst(
-            this.hero.x - this.facing * 10,
-            canal.top + 2,
-            0xc8fff0,
-            1,
-          );
-      }
-      windPush += beltPush(under, grounded);
-      const alex = alexMove(this, grounded, under, jump, dt);
-      const sand = luxorMove(this, grounded, under);
-      windPush += sand.push;
-      if (alex.glide) windPush *= GLIDE.wind;
-      if (beltPush(under, grounded))
-        this.hint('belt', 'السير شغّال! بيزقّك… امشي عكسه أو استغلّه');
-      const hanging =
-        !this.zip &&
-        updateNet(
-          this,
-          time,
-          { dir, jump, jumpPressed: jump && !this.jumpWas, down },
-          grounded,
-        );
-      if (this.zip) this.updateZip(time, jump);
-      else if (hanging) {
-        this.lastPress = -1000;
-      } else {
-        if (!grounded && time > this.zipCooldown) this.tryGrab();
-        if (!grounded && !this.zip && this.crane)
-          tryHook(this, this.crane, time);
-        if (
-          !this.zip &&
-          jumpAllowed(time - this.lastGround, time - this.lastPress)
-        ) {
-          this.hero.setVelocityY(
-            (action ? -PHYSICS.runJump : -PHYSICS.jump) *
-              (this.onMud ? MUD.jump : 1),
-          );
-          this.lastGround = -1000;
-          this.lastPress = -1000;
-          sound.fx('jump');
-          this.burst(this.hero.x, this.hero.y + 17, 0xdcb08a, 5);
-        }
-        if (
-          !jump &&
-          this.jumpWas &&
-          b.velocity.y < -180 &&
-          b.velocity.y > -PHYSICS.runJump - 5
-        )
-          this.hero.setVelocityY(b.velocity.y * 0.48);
-        const speed =
-          (action ? 245 : 157) *
-          (this.onMud ? MUD.speed : 1) *
-          (this.swimming ? CANAL.swim : 1);
-        b.velocity.x = approach(
-          b.velocity.x,
-          dir * speed + windPush,
-          (dir
-            ? sand.sand
-              ? SAND.accel
-              : alex.wet || under === 'ل'
-                ? WET.accel
-                : 1000
-            : grounded
-              ? sand.sand
-                ? SAND.carry
-                : alex.wet || under === 'ل'
-                  ? WET.decel
-                  : 1400
-              : 450) * dt,
-        );
-        const skid =
-          dir && Math.sign(b.velocity.x) !== dir && Math.abs(b.velocity.x) > 50;
-        if (dir && !skid) this.facing = dir;
-        // Hold down on a one-way ledge to drop through it.
-        if (down && grounded) {
-          if (!this.downWas) this.downSince = time;
-          if (time - this.downSince > 280 && this.onOneWay()) {
-            this.dropUntil = time + 240;
-            this.downSince = time + 10000;
-          }
-        }
-      }
-      this.hero.setFlipX(this.facing < 0);
-      this.animateHero(time, grounded && !this.zip, dir, down);
-    }
-    if (time < this.invincible) {
-      this.hero.setTint(
-        [0xffcc79, 0x8ee9cb, 0xffffff][Math.floor(time / 100) % 3],
-      );
-      if (Math.floor(time / 80) % 2 === 0)
-        this.burst(this.hero.x, this.hero.y, 0x9fe3c4, 1);
-    } else if (time < this.hurtUntil)
-      this.hero.setAlpha(Math.floor(time / 90) % 2 === 0 ? 0.45 : 1);
-    else this.hero.setAlpha(1);
-    this.heroGlow.setPosition(this.hero.x, this.hero.y);
-    if (this.heldLantern && this.heldLanternGlow) {
-      const lx = this.hero.x + this.facing * 11,
-        ly = this.hero.y + 8;
-      const flicker =
-        0.82 +
-        Math.sin(this.clock * 7) * 0.08 +
-        Math.sin(this.clock * 13) * 0.04;
-      this.heldLantern.setPosition(lx, ly).setFlipX(this.facing < 0);
-      this.heldLanternGlow
-        .setPosition(lx, ly)
-        .setFlipX(this.facing < 0)
-        .setAlpha(flicker);
-    }
-    if (
-      throwing &&
-      !this.actionWas &&
-      this.power === 2 &&
-      !this.weapon().hidden &&
-      time - this.lastShot > 280
-    ) {
-      const w = this.weapon();
-      this.lastShot = time;
-      this.throwUntil = time + 220;
-      const shot = this.shots.create(
-        this.hero.x + this.facing * 18,
-        this.hero.y - 3,
-        w.projectile,
-      ) as Sprite;
-      shot
-        .setVelocity(this.facing * w.vx, w.vy)
-        .setData('born', time)
-        .setData('bounce', w.bounce)
-        .setData('spin', (w.spin ?? 0) * this.facing)
-        .setData('splat', w.splat ?? (w.bounce ? 0xf5a34d : 0x8a4a2a))
-        .setDepth(9);
-      body(shot).setAllowGravity(true).setGravityY(w.gravityY);
-      sound.fx(w.sfx);
-    }
-    for (const s of this.shots.getChildren() as Sprite[]) {
-      if (time - s.getData('born') > 1800) s.destroy();
-      else if (s.getData('spin')) s.angle += s.getData('spin') * dt;
-    }
-    let near = false;
-    for (const e of this.enemies.getChildren() as Sprite[]) {
-      if (e.y > this.L.height + 60) {
-        e.destroy();
-        continue;
-      }
-      if (
-        Math.abs(e.x - this.hero.x) < 220 &&
-        Math.abs(e.y - this.hero.y) < 160
-      )
-        near = true;
-      this.updateEnemy(e, time);
-    }
-    this.updateItems();
-    if (this.boss?.active) this.updateBoss(time);
-    if (this.camFocus && this.boss?.active) this.frameBossFight();
-    for (const l of this.lanterns)
-      if (
-        !l.lit &&
-        Math.abs(l.img.x - this.hero.x) < 34 &&
-        Math.abs(l.img.y - this.hero.y) < 46
-      )
-        this.lightLantern(l);
-    if (
-      this.secret?.active &&
-      Math.abs(this.secret.x - this.hero.x) < 22 &&
-      Math.abs(this.secret.y - this.hero.y) < 34
-    )
-      this.findSecret();
-    if (this.fakeRect) {
-      const inside = this.fakeRect.contains(this.hero.x, this.hero.y);
-      for (const f of this.fakes)
-        f.setAlpha(approach(f.alpha, inside ? 0.22 : 1, dt * 4));
-    }
-    if (this.L.tank && down && !this.downWas && grounded) this.useTank();
-    let intensity = near ? 1 : 0;
-    if (this.water) {
-      const w = this.water;
-      const inShaft = this.hero.x > w.x0 && this.hero.x < w.x1;
-      if (!w.active && this.hero.x > w.trigger && inShaft) {
-        w.active = true;
-        toast('المية طالعة! اطلع بسرعة');
-        sound.fx('splash');
-        this.cameras.main.shake(250, 0.005);
-      }
-      if (w.active && w.y > w.stop) w.y = Math.max(w.stop, w.y - w.speed * dt);
-      if (w.active && inShaft && w.y > w.stop) intensity = 2;
-      if (inShaft && b.bottom > w.y + 10) {
-        sound.fx('splash');
-        this.lastHurtBy = 'water';
-        this.die();
-        return;
-      }
-    }
-    if (this.remaining < 100) intensity = Math.max(intensity, 2);
-    if (!this.bossState.active || this.bossState.defeated)
-      sound.setIntensity(intensity);
-    const cp = this.spec.checkpoint;
-    if (
-      this.L.checkpoint &&
-      !this.checkpoint &&
-      Math.abs(this.hero.x - cp.x) < 20 &&
-      Math.abs(b.bottom - cp.y) < 30
-    ) {
-      this.checkpoint = true;
-      this.flag?.setTexture('checkpoint-lit');
-      this.burst(cp.x, cp.y - 50, 0xffd36b, 16);
-      toast('علم الأمان اترفع — هترجع هنا لو وقعت');
-      sound.fx('checkpoint');
-      this.stashRun();
-    }
-    if (
-      this.exitDoor?.visible &&
-      Math.abs(this.hero.x - this.spec.exit.x) < 18 &&
-      Math.abs(b.bottom - this.spec.exit.y) < 30
-    )
-      this.complete();
-    if (this.hero.x < 12) this.hero.x = 12;
-    // Once the gull's fight starts the camera is locked to the keep roof;
-    // keep the hero inside it too, so you can't walk (or be blown by his
-    // wing-beat) off screen.
-    if (
-      this.bossKind === 'gull' &&
-      this.bossState.active &&
-      this.boss?.active
-    ) {
-      const lo = this.bossState.arenaX + 12;
-      if (this.hero.x < lo) {
-        this.hero.x = lo;
-        if (body(this.hero).velocity.x < 0) body(this.hero).velocity.x = 0;
-      }
-    }
-    if (this.hero.x > this.L.width - 12) this.hero.x = this.L.width - 12;
-    if (this.hero.y > this.L.height + 60) {
-      this.lastHurtBy = 'fall';
-      this.die();
-    }
-    this.riseVy = body(this.hero).velocity.y;
-    this.jumpWas = jump;
-    this.actionWas = throwing;
-    this.downWas = down;
-    this.updateHud();
+    updateGameImpl(this, time, delta);
   }
   findSecret() {
     findSecretImpl(this);
