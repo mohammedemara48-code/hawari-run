@@ -17,8 +17,9 @@ try {
       () => window.hawari?.scene.getScene('alley')?.hero,
     );
     await page.evaluate(
-      (i) => window.hawari.scene.getScene('alley').startLevel(i),
-      index,
+      ({ i, checkpoint }) =>
+        window.hawari.scene.getScene('alley').startLevel(i, { checkpoint }),
+      { i: index, checkpoint: process.env.PILOT_CHECKPOINT === '1' },
     );
     const held = new Set();
     const key = async (k, on) => {
@@ -258,7 +259,8 @@ try {
       end.lives >= 1,
       'journey finishes within the normal three-life budget',
     );
-    if (index === 28) assert.equal(ridden.size, 2);
+    if (index === 28)
+      assert.equal(ridden.size, process.env.PILOT_CHECKPOINT === '1' ? 1 : 2);
     await page.screenshot({ path: `${SHOTS}/pilot-${index + 1}-clear.png` });
     await page.close();
   }

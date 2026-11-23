@@ -78,7 +78,9 @@ export function lanternPilot() {
     g.run(x, x + 3, 11, '#');
     g.run(x - 2, x + 4, 9, 'o');
   }
-  for (const x of [63, 125, 203, 280]) g.put(x, 12, 'g');
+  for (const x of [63, 125, 280]) g.put(x, 12, 'g');
+  // The courtyard cat guards the optional balcony, not the flag's landing lane.
+  g.put(203, 6, 'g');
   g.put(82, 9, '?');
   g.put(218, 9, '?');
   g.put(288, 9, 'i');
