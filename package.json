@@ -11,10 +11,10 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
-    "lint": "eslint src tests",
+    "lint": "eslint src tests api shared",
     "format": "prettier --write .",
     "check": "tsc --noEmit && npm run lint && prettier --check . && npm test && vite build",
-    "test:browser": "node tests/smoke.mjs && node tests/levels-runtime.mjs && node tests/hero-runtime.mjs && node tests/world2-runtime.mjs && node tests/world3-runtime.mjs && node tests/world4-runtime.mjs && node tests/world5-runtime.mjs && node tests/armory-runtime.mjs && node tests/w2-playable.mjs && node tests/alex4-playable.mjs && node tests/mobile.mjs",
+    "test:browser": "node tests/smoke.mjs && node tests/levels-runtime.mjs && node tests/hero-runtime.mjs && node tests/world2-runtime.mjs && node tests/world3-runtime.mjs && node tests/world4-runtime.mjs && node tests/world5-runtime.mjs && node tests/armory-runtime.mjs && node tests/w2-playable.mjs && node tests/alex4-playable.mjs && node tests/mobile.mjs && node tests/world6-runtime.mjs && node tests/world7-runtime.mjs && node tests/world8-runtime.mjs && node tests/texture-runtime.mjs",
     "test:offline": "node tests/offline.mjs",
     "test:hero": "node tests/hero-runtime.mjs",
     "shots:hero": "node tests/hero-shots.mjs",
@@ -30,7 +30,8 @@
     "test:w5-play": "node tests/w5-playable.mjs",
     "test:armory": "node tests/armory-runtime.mjs",
     "shots:v2": "node tests/shots-v2.mjs",
-    "test:alex4": "node tests/alex4-playable.mjs"
+    "test:alex4": "node tests/alex4-playable.mjs",
+    "test:browser:ci": "node scripts/browser-ci.mjs"
   },
   "keywords": [],
   "author": "",

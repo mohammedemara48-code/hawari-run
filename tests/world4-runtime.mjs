@@ -1,3 +1,4 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Runtime check of World 4 (اسكندرية): breaking waves, wet tiles, umbrella
 // gliding, the tram ride with its scrolling view and wires to duck under,
 // the Stanley gale, the storm, the four new creatures and the boss
@@ -109,8 +110,7 @@ const sample = async (ms, fn, arg) => {
   }
   return out;
 };
-const shot = (name) =>
-  page.screenshot({ path: `/workspace/hawari-shots/${name}` });
+const shot = (name) => page.screenshot({ path: `${SHOTS_DIR}/${name}` });
 const log = (...a) => console.log('✔', ...a);
 /** Make the next hit count: one food power so a hit shows as a power loss. */
 const vulnerable = () =>

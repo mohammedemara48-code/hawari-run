@@ -1,8 +1,9 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Screenshots for the v2 Cairo world: title, level 4, landscape-phone
 // fullscreen play, and "after" shots to compare with 11-before-level1/2.png.
 import { chromium } from '@playwright/test';
 const URL = process.env.GAME_URL || 'http://localhost:5173/';
-const OUT = '/workspace/hawari-shots/';
+const OUT = SHOTS_DIR + '/';
 const b = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
 const errors = [];
 const boot = async (page) => {

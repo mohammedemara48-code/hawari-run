@@ -1,3 +1,4 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Runtime check of World 2 (الأرياف): mud, canals, saqia wheels, the donkey
 // cart, the new enemies and the buffalo boss, driven in the real scene.
 import { chromium } from '@playwright/test';
@@ -82,8 +83,7 @@ const sample = async (ms, fn) => {
   }
   return out;
 };
-const shot = (name) =>
-  page.screenshot({ path: `/workspace/hawari-shots/${name}` });
+const shot = (name) => page.screenshot({ path: `${SHOTS_DIR}/${name}` });
 const log = (...a) => console.log('✔', ...a);
 /** Hold jump and record the strongest upward speed while it is held. */
 const jumpPeak = async () => {

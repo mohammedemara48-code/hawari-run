@@ -1,9 +1,10 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Runtime check of World 6 (أسوان): an old save that cleared Karnak (its
 // stored frontier stuck at the old last level) opens Aswan; the palm frond
 // (start pickup, throw, spin); crocodiles gape before they lunge; a lever
 // lifts a dam gate; the frond crate before the boss; the great crocodile is
 // only him plus at most one splash wave, and can be stomped while his jaws
-// are stuck. Screenshots go to /workspace/hawari-shots/23-aswan-*.png.
+// are stuck. Screenshots go to test-results/screenshots/23-aswan-*.png.
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 const browser = await chromium.launch({
@@ -83,8 +84,7 @@ await ev(() => {
     },
   };
 });
-const shot = (name) =>
-  page.screenshot({ path: `/workspace/hawari-shots/${name}` });
+const shot = (name) => page.screenshot({ path: `${SHOTS_DIR}/${name}` });
 const log = (...a) => console.log('✔', ...a);
 const floorAt = (c) =>
   ev((c) => {

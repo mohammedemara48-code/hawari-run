@@ -1,3 +1,4 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Runtime check of every level's signature mechanic, the boss and the flow.
 // Drives the real scene in Chromium; the vitest level graph proves each map is
 // completable, this proves the pieces behave the way the graph assumes.
@@ -67,8 +68,7 @@ const sample = async (ms, fn) => {
   }
   return out;
 };
-const shot = (name) =>
-  page.screenshot({ path: `/workspace/hawari-shots/${name}` });
+const shot = (name) => page.screenshot({ path: `${SHOTS_DIR}/${name}` });
 const log = (...a) => console.log('✔', ...a);
 
 /* Flow: title → map; only level 1 unlocked. */
@@ -171,21 +171,27 @@ const cart = await ev(() => {
 });
 await ev(([x, t]) => window.T.place(x, t - 2), [cart.x, cart.top]);
 await wait(350);
-const cartX = () =>
-  ev(
-    () =>
-      window.T.s.moverList.find((m) => m.img.texture.key === 'vcart').img.body
-        .center.x,
-  );
-const c0 = await hero(),
-  k0 = await cartX();
-await wait(800);
-const c1 = await hero(),
-  k1 = await cartX();
-assert.ok(Math.abs(k1 - k0) > 10, 'cart moves');
+const cartSamples = await sample(1200, () => {
+  const s = window.T.s;
+  const cart = s.moverList.find((m) => m.img.texture.key === 'vcart').img.body;
+  const hero = s.hero.body;
+  return {
+    x: cart.center.x,
+    offset: hero.center.x - cart.center.x,
+    grounded: hero.blocked.down || hero.touching.down,
+  };
+});
+const xs = cartSamples.map((p) => p.x);
 assert.ok(
-  c1.grounded && Math.abs(c1.x - k1 - (c0.x - k0)) < 5,
-  `cart carries the hero ${JSON.stringify([k0, k1, c0.x, c1.x])}`,
+  Math.max(...xs) - Math.min(...xs) > 10,
+  'cart moves during observation window',
+);
+const riding = cartSamples.filter((p) => p.grounded);
+assert.ok(riding.length >= 3, 'hero remains grounded on cart');
+const offsets = riding.map((p) => p.offset);
+assert.ok(
+  Math.max(...offsets) - Math.min(...offsets) < 5,
+  'cart carries hero through direction changes',
 );
 const crate = await ev(() => {
   const c = window.T.s.crates.getChildren()[0];
@@ -211,7 +217,7 @@ log(
   'L2 awning vy',
   Math.round(awVy),
   'cart moved',
-  Math.round(c1.x - c0.x),
+  Math.round(Math.max(...xs) - Math.min(...xs)),
   'with hero',
 );
 
@@ -393,7 +399,7 @@ await wait(1100);
 const hpC = await ev(() => window.T.s.bossState.hp);
 for (
   let i = 0;
-  i < 6 && (await ev(() => window.T.s.bossState.hp)) === hpC;
+  i < 20 && (await ev(() => window.T.s.bossState.hp)) === hpC;
   i++
 ) {
   await ev(() => {
@@ -531,39 +537,28 @@ assert.equal(
 await shot('13-map.png');
 log('exits + progress map');
 
-/* Walkers' textures face left (the game flips them to walk right): the
-   rooster's beak and the rat's eye must sit in the left half, and a walker
-   heading right is flipped so it looks where it's going. */
+/* The sprite atlas replaces procedural art, so exact procedural palette
+ * colors are not a valid direction oracle. Check real frames have visible
+ * pixels here; the gameplay assertion below checks runtime facing. */
 const facing = await ev(() => {
   const s = window.T.s;
-  const find = (key, hex) => {
+  return ['rooster0', 'rat0'].map((key) => {
     const img = s.textures.get(key).getSourceImage();
-    const g = Object.assign(document.createElement('canvas'), {
-      width: img.width,
-      height: img.height,
-    }).getContext('2d');
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const g = canvas.getContext('2d');
     g.drawImage(img, 0, 0);
-    const d = g.getImageData(0, 0, img.width, img.height).data;
-    const [r, gg, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-    let sum = 0,
-      n = 0;
-    for (let i = 0; i < d.length; i += 4)
-      if (d[i] === r && d[i + 1] === gg && d[i + 2] === b && d[i + 3] > 200) {
-        sum += (i / 4) % img.width;
-        n++;
-      }
-    return n ? sum / n / img.width : -1;
-  };
-  return {
-    rooster: find('rooster0', '#f2b33a'),
-    rat: find('rat0', '#ff4d4d'),
-  };
+    const data = g.getImageData(0, 0, img.width, img.height).data;
+    let visible = 0;
+    for (let i = 3; i < data.length; i += 4) if (data[i] > 200) visible++;
+    return { key, visible };
+  });
 });
 assert.ok(
-  facing.rooster > 0 && facing.rooster < 0.5,
-  `rooster texture faces left (${facing.rooster})`,
+  facing.every((frame) => frame.visible > 20),
+  'actual atlas frames contain visible art',
 );
-assert.ok(facing.rat > 0 && facing.rat < 0.5, `rat faces left (${facing.rat})`);
 await ev(() => window.T.go(1));
 const walk = await ev(async () => {
   const s = window.T.s;

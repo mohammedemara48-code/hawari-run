@@ -1,6 +1,7 @@
 // Installed-app (PWA) checks against the production build in dist/.
 // Run `npm run build` first. Serves dist/ itself so the test can swap in the
 // previous release's worker to exercise an upgrade.
+import { CHANGELOG } from '../src/changelog.ts';
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -23,6 +24,16 @@ let serveOldWorker = false;
 let liveVersion = null;
 const server = createServer(async (req, res) => {
   const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  if (path.startsWith('/api/')) {
+    // This is an isolated static/offline harness, not a production account server.
+    res
+      .writeHead(200, {
+        'content-type': 'application/json',
+        'cache-control': 'no-store',
+      })
+      .end('{}');
+    return;
+  }
   try {
     let body;
     let file = path === '/' ? '/index.html' : path;
@@ -415,9 +426,11 @@ await ctx.setOffline(false);
   );
   await page.reload();
   await page.locator('.update-dialog').waitFor({ timeout: 5000 });
-  assert.match(
-    await page.locator('.update-dialog').innerText(),
-    /الجديد في التحديث[\s\S]*قلعة قايتباي/,
+  const dialogText = await page.locator('.update-dialog').innerText();
+  assert.match(dialogText, /الجديد في التحديث/);
+  assert.ok(
+    dialogText.includes(CHANGELOG[0].notes[0]),
+    'current release notes shown',
   );
   await page.getByRole('button', { name: /تمام/ }).tap();
   await page.reload();

@@ -1,3 +1,4 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Runtime check of World 8 (سيوة): an old save that cleared Port Said
 // opens Siwa; thirst drains in the sun, slower in shade, a spring refills
 // it, and empty thirst costs a life; sink-sand swallows you if you stand
@@ -6,7 +7,7 @@
 // on its own; the Qibli's stomp bounces, salt interrupts a slam, and an
 // open spring grounds him; the captain now leads on to Siwa and the Qibli
 // to the ending. City weapon is salt, with its own button icon.
-// Screenshots: /workspace/hawari-shots/29-siwa-*.png.
+// Screenshots: test-results/screenshots/29-siwa-*.png.
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 const browser = await chromium.launch({
@@ -94,8 +95,7 @@ await ev(() => {
     },
   };
 });
-const shot = (name) =>
-  page.screenshot({ path: `/workspace/hawari-shots/${name}` });
+const shot = (name) => page.screenshot({ path: `${SHOTS_DIR}/${name}` });
 const log = (...a) => console.log('✔', ...a);
 
 await page.locator('[data-screen="title"] [data-action="start"]').click();

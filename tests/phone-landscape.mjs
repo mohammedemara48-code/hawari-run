@@ -1,10 +1,11 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Phone landscape: no side bars, login, then كمّل from a checkpoint.
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 
 const url = process.env.GAME_URL || 'http://localhost:5173';
-const out = '/workspace/hawari-shots';
+const out = SHOTS_DIR;
 await mkdir(out, { recursive: true });
 
 const browser = await chromium.launch({

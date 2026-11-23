@@ -1,3 +1,4 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Play through World 2 (الأرياف) with enemies on and no invulnerability
 // cheats. An input bot only holds right, jumps, and throws the نبلة.
 import { chromium } from '@playwright/test';
@@ -6,7 +7,7 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-const SHOTS = '/workspace/hawari-shots';
+const SHOTS = SHOTS_DIR;
 let server;
 let gameUrl = process.env.GAME_URL;
 if (!gameUrl) {

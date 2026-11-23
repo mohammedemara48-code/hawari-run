@@ -1,3 +1,4 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Runtime check of World 7 (بورسعيد), built on the port's cranes: an old
 // save that cleared Aswan opens Port Said; no throwable weapon anywhere;
 // grabbing a moving crane hook, riding it over a gap and jumping off onto
@@ -7,7 +8,7 @@
 // (stomps bounce), he drops at most one container at a time, swats at you
 // from phase 2 when you hang close, and three containers dropped from the
 // gantry hook beat him; the crocodile leads on to Port Said and the captain
-// on to Siwa. Screenshots: /workspace/hawari-shots/27-portsaid-*.png.
+// on to Siwa. Screenshots: test-results/screenshots/27-portsaid-*.png.
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 const browser = await chromium.launch({
@@ -92,8 +93,7 @@ await ev(() => {
     },
   };
 });
-const shot = (name) =>
-  page.screenshot({ path: `/workspace/hawari-shots/${name}` });
+const shot = (name) => page.screenshot({ path: `${SHOTS_DIR}/${name}` });
 const log = (...a) => console.log('✔', ...a);
 
 /* Map: the old save opens Port Said and its first level. */
