@@ -10,15 +10,15 @@ import { makeAlexProps } from './world4-art';
 import { makeLuxorCreatures } from './creatures-luxor';
 import { isW5, makeLuxorProps } from './world5-art';
 import { isW6, makeAswanProps } from './world6-art';
-import { sailIdle, type Sail } from './sail';
-import { craneIdle, type Crane } from './crane';
+import { type Sail } from './sail';
+import { type Crane } from './crane';
 import { isW7, makePortSaidProps } from './world7-art';
 import { isW8, makeSiwaProps } from './world8-art';
-import { updateSiwaWorld, type W8 } from './world8';
+import { type W8 } from './world8';
 
-import { updateLuxorWorld, type W5 } from './world5';
-import { updateAlexWorld, type W4 } from './world4';
-import { updateDamiettaWorld, type W3 } from './world3';
+import { type W5 } from './world5';
+import { type W4 } from './world4';
+import { type W3 } from './world3';
 import { makeFarmProps, makeParallax, makeProps } from './world-art';
 
 import { tally } from './rules';
@@ -27,10 +27,8 @@ import { LEVELS, TILE, WORLDS } from './level-data';
 import {
   BIRD_TELL_MS,
   BOUNCE,
-  DONKEY,
   FLYING,
   LEDGE,
-  SAQIA,
   SOLID,
   type Parsed,
 } from './level-parse';
@@ -105,6 +103,11 @@ import {
 } from './hazards';
 import { updateEnemy as updateEnemyImpl } from './enemy-update';
 import { updateGame as updateGameImpl } from './game-loop';
+import {
+  fitView as fitViewImpl,
+  updateDarkness as updateDarknessImpl,
+  updateWorld as updateWorldImpl,
+} from './world-update';
 import {
   findSecret as findSecretImpl,
   lineAt as lineAtImpl,
@@ -1130,205 +1133,13 @@ export class Alley extends Phaser.Scene {
   }
   /* ───────────────────────── View ───────────────────────── */
   fitView() {
-    const cam = this.cameras.main;
-    const w = this.scale.gameSize.width,
-      h = this.scale.gameSize.height;
-    cam.setSize(w, h);
-    for (const l of this.layers) l.setSize(w, 360);
-    if (this.dark) this.dark.resize(w, h);
+    fitViewImpl(this);
   }
   updateDarkness() {
-    const rt = this.dark;
-    if (!rt) return;
-    const cam = this.cameras.main,
-      sx = cam.scrollX,
-      sy = cam.scrollY;
-    rt.clear();
-    rt.fill(
-      this.L.meta.theme === 'tomb' ? 0x080402 : 0x05061a,
-      Math.min(0.95, this.L.meta.dark + this.darkBoost),
-    );
-    const light = (x: number, y: number, r: number, a = 1) => {
-      if (
-        x + r < sx ||
-        x - r > sx + cam.width ||
-        y + r < sy ||
-        y - r > sy + cam.height
-      )
-        return;
-      rt.stamp('light', undefined, x - sx, y - sy, {
-        scale: (r * 2) / 256,
-        alpha: a,
-        erase: true,
-      });
-    };
-    light(
-      this.hero.x,
-      this.hero.y,
-      (this.L.meta.theme === 'tomb' ? 92 : 120) + Math.sin(this.clock * 3) * 3,
-    );
-    const radius = (this.L.meta.lanternRadius ?? 4) * TILE;
-    for (const l of this.lanterns)
-      light(l.img.x, l.img.y, l.lit ? radius * 1.05 : 46, l.lit ? 1 : 0.7);
-    if (this.secret?.active) light(this.secret.x, this.secret.y, 60, 0.9);
-    if (this.exitDoor?.visible)
-      light(this.exitDoor.x, this.exitDoor.y - 50, 110);
-    if (this.flag)
-      light(this.flag.x, this.flag.y - 40, this.checkpoint ? 120 : 50, 0.8);
-    if (this.water)
-      light((this.water.x0 + this.water.x1) / 2, this.water.y, 170, 0.7);
-    if (this.boss?.active && this.bossState.active)
-      light(this.boss.x, this.boss.y, this.darkBoost > 0.2 ? 64 : 170);
-    for (const s of this.shots.getChildren() as Sprite[])
-      light(s.x, s.y, 50, 0.9);
-    for (const m of this.moverList) light(m.img.x + 24, m.img.y, 60, 0.6);
-    // Luxor: levers glow faintly and the stone doors catch the light, so the
-    // puzzles can be read in the tomb's dark.
-    if (this.w5)
-      for (const d of this.w5.doors) {
-        if (d.lever) light(d.lever.x, d.lever.y - 14, 46, 0.85);
-        light(d.x, (d.y0 + d.y1) / 2, d.open ? 80 : 52, 0.7);
-      }
-    // Crushing pillars: the carved head shows faintly, brighter as it shudders.
-    if (this.w5)
-      for (const p of this.w5.pillars)
-        light(
-          p.head.x,
-          p.head.y - 14,
-          p.state === 'warn' ? 60 : 38,
-          p.state === 'warn' ? 0.9 : 0.55,
-        );
+    updateDarknessImpl(this);
   }
   updateWorld(time: number, dt: number) {
-    const cam = this.cameras.main;
-    const maxY = Math.max(0, this.L.height - cam.height);
-    for (const l of this.layers) {
-      const f = l.getData('factor') as number,
-        name = l.getData('name');
-      if (name === 'near' || name === 'backdrop') {
-        l.tilePositionX = cam.scrollX * f;
-        l.y = 0;
-      } else if (name === 'sky') {
-        l.tilePositionX = cam.scrollX * f + this.clock * 2;
-        l.y = 0;
-        l.setScale(1, Math.max(1, cam.height / 360));
-      } else {
-        l.tilePositionX = cam.scrollX * f;
-        // Climbing lowers the skyline so the sky opens up above.
-        l.y = cam.height - 360 + Math.min(320, (maxY - cam.scrollY) * f * 0.6);
-      }
-    }
-    this.ambient?.setPosition(
-      cam.scrollX + cam.width / 2,
-      cam.scrollY + (this.L.meta.theme === 'sewer' ? 20 : cam.height / 2),
-    );
-    const shine = this.skin(Math.floor(time / 140) % 10 < 2 ? 'box1' : 'box');
-    const flare = Math.floor(time / 180) % 4 === 0 ? 'armory1' : 'armory';
-    for (const obj of this.blocks.getChildren() as Sprite[]) {
-      const kind = obj.getData('kind');
-      if (kind === 'box' && obj.texture.key !== shine) obj.setTexture(shine);
-      else if (kind === 'armory' && obj.texture.key !== flare)
-        obj.setTexture(flare);
-    }
-    for (const obj of this.coins.getChildren() as Sprite[])
-      obj.setTexture(
-        this.skin('coin' + (Math.floor(time / 100 + obj.getData('phase')) % 6)),
-      );
-    // Ride carts and planks: carry the hero by the platform's own step.
-    this.riding = false;
-    if (this.mode === 'play' && !this.zip && !this.crane?.hang) {
-      const hb = body(this.hero);
-      const on = this.moverList.find((m) => {
-        const mb = body(m.img);
-        const slop = m.lamp || m.boat || m.axis === 'y' ? 8 : 3;
-        return (
-          m.carry &&
-          Math.abs(hb.bottom - mb.top) < slop &&
-          hb.right > mb.left + 2 &&
-          hb.left < mb.right - 2
-        );
-      });
-      const ob = on && body(on.img);
-      this.riding = !!(
-        ob &&
-        (on.lamp || on.boat || on.tram || on.axis === 'y') &&
-        hb.velocity.y >= Math.min(0, ob.velocity.y) - 5
-      );
-      if (ob && hb.velocity.y >= Math.min(0, ob.velocity.y) - 5) {
-        this.hero.x += ob.velocity.x * dt;
-        // Swinging lamps and bobbing boats also drop away under you: stick.
-        // Port Said's hoists need the same stick going up, or gravity
-        // leaves you behind the rising container.
-        if (on.lamp || on.boat || on.axis === 'y') {
-          hb.velocity.y = ob.velocity.y;
-          if (on.axis === 'y') this.hero.y += ob.top - hb.bottom;
-        }
-      }
-      for (const m of this.moverList)
-        if (m.donkey) {
-          const ridden = on === m && hb.velocity.y >= 0;
-          if (ridden && !m.donkey.ridden) sound.fx('cart');
-          m.donkey.ridden = ridden;
-          if (ridden) m.donkey.leftAt = time;
-        }
-    }
-    for (const w of this.wheels) w.rotation = this.clock * SAQIA.speed;
-    for (const k of this.canals)
-      k.surface.tilePositionX = -this.clock * 30 * k.dir;
-    for (const m of this.moverList) {
-      const b = body(m.img);
-      if (m.lamp || m.boat || m.tram || m.balloon) continue;
-      if (m.saqia) {
-        // Follow the wheel: the rim's own velocity plus a gentle pull back
-        // onto the rim, so buckets glide instead of jittering.
-        const a = m.saqia.phase + this.clock * SAQIA.speed,
-          v = SAQIA.radius * TILE * SAQIA.speed;
-        const [tx, ty] = this.saqiaPos(m, this.clock);
-        b.setVelocity(
-          -Math.sin(a) * v + Phaser.Math.Clamp((tx - m.img.x) * 8, -200, 200),
-          Math.cos(a) * v + Phaser.Math.Clamp((ty - m.img.y) * 8, -200, 200),
-        );
-        continue;
-      }
-      if (m.donkey) {
-        const d = m.donkey;
-        let vx = 0;
-        if (d.ridden && m.img.x < d.max) vx = DONKEY.speed;
-        else if (!d.ridden && time - d.leftAt > 1200 && m.img.x > d.min)
-          vx = -DONKEY.back;
-        if (vx > 0 && m.img.x + vx * dt > d.max) vx = (d.max - m.img.x) / dt;
-        if (vx < 0 && m.img.x + vx * dt < d.min) vx = (d.min - m.img.x) / dt;
-        b.setVelocityX(vx);
-        m.img.setTexture(
-          vx ? 'donkey' + (Math.floor(time / 160) % 2) : 'donkey0',
-        );
-        continue;
-      }
-      if (m.axis === 'x') {
-        if (m.img.x <= m.min && b.velocity.x <= 0) b.setVelocityX(m.speed);
-        if (m.img.x >= m.max && b.velocity.x >= 0) b.setVelocityX(-m.speed);
-      } else {
-        if (m.img.y <= m.min && b.velocity.y <= 0) b.setVelocityY(m.speed);
-        if (m.img.y >= m.max && b.velocity.y >= 0) b.setVelocityY(-m.speed);
-      }
-      if (m.chains && m.chainTop !== undefined)
-        for (const c of m.chains)
-          c.setSize(4, Math.max(4, m.img.y - m.chainTop));
-      m.steam?.setPosition(m.img.x + 53, m.img.y - 2);
-    }
-    updateDamiettaWorld(this, time, dt);
-    updateAlexWorld(this, time, dt);
-    updateLuxorWorld(this, time, dt);
-    updateSiwaWorld(this, time, dt);
-    if (this.sail && !this.sail.on) sailIdle(this, this.sail);
-    if (this.crane) craneIdle(this, this.crane, time, dt);
-    if (this.water) {
-      this.water.top.tilePositionX = this.clock * 20;
-      this.water.top.y = this.water.y;
-      this.water.fill.y = this.water.y + 14;
-    }
-    this.updateDarkness();
-    void dt;
+    updateWorldImpl(this, time, dt);
   }
   update(time: number, delta: number) {
     updateGameImpl(this, time, delta);
