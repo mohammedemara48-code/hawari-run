@@ -56,7 +56,16 @@ await page.keyboard.down('Space');
 await page.waitForTimeout(120);
 assert.equal((await s()).pose, 'rise');
 await page.keyboard.up('Space');
-await page.waitForTimeout(200);
+// Headless rendering can advance fewer physics frames than wall-clock time.
+// Keep checking the actual airborne transition rather than assuming its duration.
+await page.waitForFunction(
+  () => {
+    const s = window.hawari.scene.getScene('alley');
+    return s.hero.body.velocity.y >= 0 && s.hero.getData('pose') === 'fall';
+  },
+  null,
+  { timeout: 5000 },
+);
 assert.equal((await s()).pose, 'fall');
 await page.waitForTimeout(350);
 await page.evaluate(() => window.hawari.scene.getScene('alley').setPower(1));

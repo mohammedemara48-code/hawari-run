@@ -121,7 +121,12 @@ await ev(
   ([x, t]) => window.T.place(x, t - 30),
   [lant.ghosts[0].x, lant.ghosts[0].top],
 );
-await wait(500);
+// Wait for the physics outcome, not a fixed number of wall-clock milliseconds.
+await page.waitForFunction(
+  (top) => window.T.hero().bottom > top + 20,
+  lant.ghosts[0].top,
+  { timeout: 5000 },
+);
 assert.ok(
   (await hero()).bottom > lant.ghosts[0].top + 20,
   'unlit ghost ledge is not solid',
