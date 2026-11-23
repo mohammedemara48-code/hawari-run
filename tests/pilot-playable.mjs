@@ -191,7 +191,7 @@ try {
       const enemy = s.enemies.some(
         (e) =>
           e.x > s.x - 12 &&
-          e.x < s.x + (index === 0 ? 80 : 125) &&
+          e.x < s.x + 125 &&
           e.y > s.feet - 36 &&
           e.y < s.feet + 18,
       );
@@ -233,7 +233,7 @@ try {
           path: `${SHOTS}/pilot-${index + 1}-${tick}.png`,
         });
       samples.push(s);
-      await page.waitForTimeout(50);
+      await page.waitForTimeout(16);
     }
     const end = await page.evaluate(() => {
       const s = window.hawari.scene.getScene('alley');
