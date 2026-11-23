@@ -61,7 +61,7 @@ try {
     const ridden = new Set(),
       samples = [],
       start = Date.now();
-    for (let tick = 0; tick < 1600; tick++) {
+    for (let tick = 0; tick < 5000; tick++) {
       const s = await page.evaluate(() => {
         const s = window.hawari.scene.getScene('alley'),
           b = s.hero.body;
