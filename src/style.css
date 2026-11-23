@@ -2205,3 +2205,74 @@ html.form-upright .login-form .primary {
     Tahoma,
     sans-serif;
 }
+
+/* Account entry remains landscape and scrolls even with the keyboard open. */
+.login-screen {
+  top: 50%;
+  max-height: calc(100% - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 24px;
+  z-index: 30;
+}
+.login-screen .login-form input {
+  min-height: 36px;
+  box-sizing: border-box;
+}
+.journey-sync-status:disabled {
+  pointer-events: none;
+  cursor: default;
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .login-screen {
+    width: min(620px, calc(100% - 32px));
+    padding: 10px 20px;
+  }
+  .login-screen h2 {
+    font-size: 19px;
+    margin: 2px 0 4px;
+  }
+  .login-screen p {
+    font-size: 11px;
+    margin: 3px 0;
+  }
+  .login-screen .overline {
+    font-size: 10px;
+  }
+  .login-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 14px;
+  }
+  .login-form .modal-actions,
+  .login-form .login-error {
+    grid-column: 1 / -1;
+  }
+  .login-screen .modal-actions {
+    margin-top: 4px;
+  }
+  .login-screen .primary {
+    min-height: 36px;
+    padding: 7px 18px;
+  }
+}
+.login-form label,
+.login-form input {
+  min-width: 0;
+  width: 100%;
+}
+.login-screen .modal-actions {
+  flex-wrap: wrap;
+}
+.login-screen .ghost-btn {
+  white-space: normal;
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .login-form {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .login-screen .modal-actions button {
+    min-width: 0;
+    flex: 1 1 40%;
+  }
+}

@@ -28,7 +28,13 @@ import {
 import { sound } from './audio';
 import { bindUI, bossBar, ending, renderMap, screen, toast, touch } from './ui';
 import { clearResume, loadProgress, recordClear, saveResume } from './progress';
-import { getPlayer, needsLogin, pullProgress, restoreSession } from './account';
+import {
+  getPlayer,
+  needsLogin,
+  pullProgress,
+  restoreSession,
+  continueLocally,
+} from './account';
 import {
   buildProps as buildPropsImpl,
   buildFarm as buildFarmImpl,
@@ -294,8 +300,8 @@ export class Alley extends Phaser.Scene {
     this.loadLevel();
     this.physics.pause();
     armFirstTapFullscreen();
-    if (needsLogin()) screen('login');
-    else screen('title');
+    // Restore the saved identity before deciding to offer sign-in.
+    screen('title');
     void this.bootSession();
     document.addEventListener(
       'visibilitychange',
@@ -341,7 +347,10 @@ export class Alley extends Phaser.Scene {
         this.resumeLevel();
         break;
       case 'switch-player': {
-        if (this.mode === 'play' || this.mode === 'pause') this.stashRun();
+        // The save badge must never interrupt a run, including stray taps.
+        if (this.mode === 'play') break;
+        if (this.mode === 'pause') this.stashRun();
+        this.physics.pause();
         screen('login');
         const cancel = document.getElementById('login-cancel');
         if (cancel) cancel.hidden = false;
@@ -351,7 +360,8 @@ export class Alley extends Phaser.Scene {
         break;
       }
       case 'login-cancel':
-        if (getPlayer()) this.showTitle();
+        continueLocally();
+        this.showTitle();
         break;
       case 'map':
         if (this.mode === 'play' || this.mode === 'pause') this.stashRun();
@@ -410,7 +420,10 @@ export class Alley extends Phaser.Scene {
     // IndexedDB and the server session before showing the login screen.
     const hadLocal = !!getPlayer();
     await restoreSession();
-    if (needsLogin()) return;
+    if (needsLogin()) {
+      if (this.mode === 'title') screen('login');
+      return;
+    }
     if (!hadLocal) {
       const login = document.querySelector<HTMLElement>(
         '[data-screen="login"]',

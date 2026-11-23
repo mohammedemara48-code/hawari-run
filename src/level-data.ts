@@ -2188,20 +2188,19 @@ function harbourQuay() {
   g.set(50, 11, 'ب');
   g.text(55, 8, 'B?B');
   // Containers stacked on the quay; the fanoos on top of the stack.
-  g.rect(62, 10, 65, 11);
-  g.rect(67, 7, 70, 11);
-  g.rect(72, 4, 74, 11);
-  g.text(72, 3, 'ooo');
-  g.set(73, 2, 'G');
+  g.rect(62, 10, 66, 11);
+  g.rect(67, 8, 71, 11);
+  g.rect(72, 6, 74, 11);
+  g.text(72, 5, 'ooo');
+  g.set(73, 4, 'G');
   g.set(80, 11, 'ر');
   g.set(98, 11, 'c');
   g.text(102, 8, 'BFB');
   g.set(118, 11, 'ب');
   // The arena: ledges up to the gantry hook's height.
-  g.run(150, 153, 9, '-');
-  g.run(168, 171, 9, '-');
-  g.run(189, 192, 9, '-');
-  g.set(150, 4, 'ه');
+  // Boarding stays inside the boss camera. Keep the firing lane clear.
+  g.run(163, 166, 9, '-');
+  g.set(164, 4, 'ه');
   g.set(194, 4, 'ة');
   g.rect(199, 0, 199, 11);
   g.set(176, 11, 'Z');

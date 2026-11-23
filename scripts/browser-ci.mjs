@@ -49,6 +49,8 @@ try {
         'landmark-runtime',
         'armory-runtime',
         'alex4-playable',
+        'quay-playable',
+        'account-landscape',
       ]
     : ['account-runtime'];
   const chosen = process.env.BROWSER_TESTS

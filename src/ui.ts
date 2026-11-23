@@ -261,6 +261,13 @@ export function screen(which: Screen, details = '') {
     // preventScroll: a long modal (the ending) must open at its top.
     first?.focus({ preventScroll: true });
   }
+  const status = document.getElementById(
+    'journey-sync-status',
+  ) as HTMLButtonElement | null;
+  if (status) {
+    status.hidden = which === 'login';
+    status.disabled = which === 'hidden';
+  }
   refreshJourney();
 }
 function text(id: string, value: string) {
@@ -550,6 +557,10 @@ export function refreshJourney() {
       el.hidden = !resume;
       if (resume) el.textContent = label;
     });
+  const nameInput = document.getElementById(
+    'player-name-input',
+  ) as HTMLInputElement | null;
+  if (nameInput && !nameInput.value && player) nameInput.value = player.name;
   const name = player?.name ?? '';
   document.querySelectorAll<HTMLElement>('[data-player-name]').forEach((el) => {
     el.textContent = name;
@@ -559,7 +570,10 @@ export function refreshJourney() {
     el.hidden = !name;
   });
   const cancel = document.getElementById('login-cancel');
-  if (cancel) cancel.hidden = !player;
+  if (cancel) {
+    cancel.hidden = false;
+    cancel.textContent = player ? 'رجوع' : 'كمّل على الجهاز من غير حساب';
+  }
 }
 
 // Account status is visible during play and on menus, never claims cloud success offline.

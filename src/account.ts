@@ -216,8 +216,20 @@ export async function restoreSession(): Promise<boolean> {
   return !!getPlayer();
 }
 /** First visit asks for a name; Playwright runs skip this unless ?login=1. */
+export function continueLocally() {
+  try {
+    localStorage.setItem('hawari-local-play', '1');
+  } catch {
+    /* ignore */
+  }
+}
 export function needsLogin() {
   if (getPlayer()) return false;
+  try {
+    if (localStorage.getItem('hawari-local-play') === '1') return false;
+  } catch {
+    /* ignore */
+  }
   try {
     if (new URLSearchParams(location.search).has('login')) return true;
     if (navigator.webdriver) return false;

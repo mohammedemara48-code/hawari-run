@@ -14,6 +14,7 @@ import { TILE } from './level-data';
 import { CRANE } from './level-parse';
 import { PHYSICS } from './levels';
 import { sound } from './audio';
+import { touch } from './ui';
 import { makePortSaidProps } from './world7-art';
 
 type Img = Phaser.GameObjects.Image;
@@ -22,7 +23,12 @@ const body = (o: Phaser.GameObjects.GameObject) =>
   (o as Phaser.Physics.Arcade.Image).body as Body;
 
 /** How far the hook hangs below its trolley, and the magnet's numbers. */
-export const HOOK = { drop: 58, release: 340, payloadReload: 1400 };
+export const HOOK = {
+  drop: 58,
+  release: 340,
+  payloadReload: 1400,
+  gantrySpeed: 260,
+};
 export const MAGNET = { lead: 420, far: 560, catchUp: 130, reach: 26 };
 
 export interface Hook {
@@ -40,6 +46,7 @@ export interface Hook {
   /** The quay's gantry hook carries a container to drop on the boss. */
   payload?: Img;
   loadAt?: number;
+  controls?: Phaser.GameObjects.Text;
 }
 interface Falling {
   img: Img;
@@ -121,6 +128,16 @@ export function buildCrane(s: Alley): Crane | undefined {
         .setDepth(6)
         .setScale(0.9);
       k.loadAt = 0;
+      k.controls = s.add
+        .text(x0, y - 35, '← → تحريك   ↓ إسقاط   نط: سيب', {
+          fontFamily: 'sans-serif',
+          fontSize: '12px',
+          color: '#ffffff',
+          backgroundColor: '#201a12',
+          padding: { x: 6, y: 4 },
+        })
+        .setOrigin(0.5, 1)
+        .setDepth(15);
     }
     c.hooks.push(k);
   }
@@ -200,7 +217,21 @@ export function buildCrane(s: Alley): Crane | undefined {
  * dropped containers fall, and the magnet sweeps along. */
 export function craneIdle(s: Alley, c: Crane, time: number, dt: number) {
   for (const k of c.hooks) {
-    if (time < k.pauseUntil) k.vx = 0;
+    if (k.payload) {
+      // The boss gantry is a player-operated crane, not a long forced ride.
+      // Park at the boarding platform whenever the player lets go.
+      const dir =
+        c.hang === k
+          ? Number(s.keys.RIGHT.isDown || s.keys.D.isDown || touch.right) -
+            Number(s.keys.LEFT.isDown || s.keys.A.isDown || touch.left)
+          : k.x > k.x0 + 1
+            ? -1
+            : 0;
+      k.vx = dir * HOOK.gantrySpeed;
+      const next = Phaser.Math.Clamp(k.x + k.vx * dt, k.x0, k.x1);
+      if (next === k.x) k.vx = 0;
+      k.x = next;
+    } else if (time < k.pauseUntil) k.vx = 0;
     else {
       k.vx = k.dir * CRANE.hookSpeed;
       k.x += k.vx * dt;
@@ -215,18 +246,22 @@ export function craneIdle(s: Alley, c: Crane, time: number, dt: number) {
     k.hook.setPosition(k.x, k.y);
     k.hook.rotation = Math.sin(time / 260) * (k.vx ? 0.12 : 0.04);
     if (k.payload) {
-      // Reload at the left end of the run.
-      if (
-        !k.payload.visible &&
-        k.loadAt &&
-        time > k.loadAt &&
-        k.x <= k.x0 + 2
-      ) {
+      // Reload in place, without a full rail round trip.
+      if (!k.payload.visible && k.loadAt && time > k.loadAt) {
         k.payload.setVisible(true);
         k.loadAt = 0;
         sound.fx('clack');
       }
       k.payload.setPosition(k.x, k.y + 30);
+      k.controls
+        ?.setPosition(k.x, k.y - 35)
+        .setText(
+          c.hang === k
+            ? k.payload.visible
+              ? '← → تحريك   ↓ إسقاط   نط: سيب'
+              : 'جاري التحميل…   نط: سيب'
+            : 'انط من المنصة للخطاف',
+        );
     }
   }
   for (const { img, g } of c.cables) {
@@ -340,7 +375,7 @@ export function tryHook(s: Alley, c: Crane, time: number) {
       s.hint(
         k.payload ? 'gantry' : 'hook',
         k.payload
-          ? 'إنت شايل الحاوية! لما تبقى فوق كابينة الريّس اضغط ↓ تنزّلها عليه'
+          ? 'إنت المتحكم في الونش: يمين وشمال تحرّكه، سيب الاتجاه يقف، ↓ يرمي الحاوية، ونطّ يسيب الخطاف'
           : 'اتشعبطت في الخطّاف! استنى لما يعدّي الفجوة… واضغط نطّ تسيب',
       );
       return true;
@@ -378,7 +413,7 @@ export function hangStep(
     b.setVelocity(k.vx * 0.9 + ctl.dir * 90, -PHYSICS.jump * 0.85);
     sound.fx('jump');
   } else if (
-    (ctl.downPressed && !k.payload) ||
+    (ctl.downPressed && !k.payload?.visible) ||
     b.blocked.left ||
     b.blocked.right
   ) {
