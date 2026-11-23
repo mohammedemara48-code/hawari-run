@@ -23,7 +23,7 @@ try {
         b = s.hero.body,
         k = s.crane.hooks[0];
       return {
-        time: s.time.now,
+        time: s.elapsed * 1000,
         x: s.hero.x,
         y: s.hero.y,
         feet: b.bottom,
