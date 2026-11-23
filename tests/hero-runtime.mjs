@@ -35,17 +35,27 @@ await page.waitForTimeout(180);
 assert.equal((await s()).height, 46);
 assert.equal((await s()).offset, 18);
 await page.keyboard.down('ArrowRight');
-await page.waitForFunction(() =>
-  /^run/.test(window.hawari.scene.getScene('alley').hero.getData('pose')),
+await page.waitForFunction(
+  () =>
+    /^run/.test(window.hawari.scene.getScene('alley').hero.getData('pose')) &&
+    window.hawari.scene.getScene('alley').hero.body.velocity.x >= 140,
 );
-await page.keyboard.up('ArrowRight');
-await page.keyboard.down('ArrowLeft');
+// Reverse atomically: separate protocol calls can leave multiple no-input
+// frames on slow CI, braking to a stop before the turn arrives.
+await page.evaluate(() => {
+  const s = window.hawari.scene.getScene('alley');
+  s.keys.RIGHT.isDown = false;
+  s.keys.LEFT.isDown = true;
+});
 await page.waitForFunction(
   () => window.hawari.scene.getScene('alley').hero.getData('pose') === 'skid',
   null,
   { timeout: 5000 },
 );
-await page.keyboard.up('ArrowLeft');
+await page.evaluate(() => {
+  window.hawari.scene.getScene('alley').keys.LEFT.isDown = false;
+});
+await page.keyboard.up('ArrowRight');
 await page.waitForTimeout(180);
 await page.keyboard.down('ArrowDown');
 await page.waitForFunction(
