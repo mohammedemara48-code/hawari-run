@@ -1,25 +1,17 @@
 import Phaser from 'phaser';
-import { makeSkins, skinKey } from './skins';
+import { skinKey } from './skins';
 import { makeArt } from './art';
-import { makeCreatures } from './creatures';
-import { makeFarmCreatures } from './creatures-farm';
-import { makeDamiettaProps } from './world3-art';
-import { makeSeaCreatures } from './creatures-sea';
-import { makeAlexCreatures } from './creatures-alex';
-import { makeAlexProps } from './world4-art';
-import { makeLuxorCreatures } from './creatures-luxor';
-import { isW5, makeLuxorProps } from './world5-art';
-import { isW6, makeAswanProps } from './world6-art';
+import { isW5 } from './world5-art';
+import { isW6 } from './world6-art';
 import { type Sail } from './sail';
 import { type Crane } from './crane';
-import { isW7, makePortSaidProps } from './world7-art';
-import { isW8, makeSiwaProps } from './world8-art';
+import { isW7 } from './world7-art';
+import { isW8 } from './world8-art';
 import { type W8 } from './world8';
 
 import { type W5 } from './world5';
 import { type W4 } from './world4';
 import { type W3 } from './world3';
-import { makeFarmProps, makeParallax, makeProps } from './world-art';
 
 import { tally } from './rules';
 import { INVULN_MS, SPAWN_CLEAR } from './weapons';
@@ -266,33 +258,26 @@ export class Alley extends Phaser.Scene {
   }
   create() {
     makeArt(this);
-    makeCreatures(this);
-    makeFarmCreatures(this);
-    makeSeaCreatures(this);
-    makeAlexCreatures(this);
-    makeProps(this);
-    makeFarmProps(this);
-    makeDamiettaProps(this);
-    makeAlexProps(this);
-    makeLuxorCreatures(this);
-    makeLuxorProps(this);
-    makeAswanProps(this);
-    makePortSaidProps(this);
-    makeSiwaProps(this);
-    makeSkins(this);
-    for (const l of LEVELS) makeParallax(this, l.theme);
     this.keys = this.input.keyboard!.addKeys(
       'LEFT,RIGHT,UP,DOWN,A,D,W,S,Z,X,SPACE,SHIFT,ESC,ENTER,M',
       false,
     ) as Record<string, Phaser.Input.Keyboard.Key>;
     this.input.keyboard!.addCapture(['SPACE', 'UP', 'DOWN', 'LEFT', 'RIGHT']);
+    const lifetime = new AbortController();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => lifetime.abort());
     // Let letters and spaces reach the name field while typing.
     const kb = this.input.keyboard!;
-    document.addEventListener('focusin', (e) => {
-      if ((e.target as HTMLElement).matches?.('input, textarea'))
-        kb.disableGlobalCapture();
+    document.addEventListener(
+      'focusin',
+      (e) => {
+        if ((e.target as HTMLElement).matches?.('input, textarea'))
+          kb.disableGlobalCapture();
+      },
+      { signal: lifetime.signal },
+    );
+    document.addEventListener('focusout', () => kb.enableGlobalCapture(), {
+      signal: lifetime.signal,
     });
-    document.addEventListener('focusout', () => kb.enableGlobalCapture());
     bindUI((a) => this.action(a));
     this.input.keyboard!.on('keydown-ESC', () => this.action('pause'));
     this.input.keyboard!.on('keydown-ENTER', () => {
@@ -312,13 +297,19 @@ export class Alley extends Phaser.Scene {
     if (needsLogin()) screen('login');
     else screen('title');
     void this.bootSession();
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden && this.mode === 'play') {
-        this.stashRun();
-        this.action('pause');
-      }
+    document.addEventListener(
+      'visibilitychange',
+      () => {
+        if (document.hidden && this.mode === 'play') {
+          this.stashRun();
+          this.action('pause');
+        }
+      },
+      { signal: lifetime.signal },
+    );
+    window.addEventListener('pagehide', () => this.stashRun(), {
+      signal: lifetime.signal,
     });
-    window.addEventListener('pagehide', () => this.stashRun());
   }
   /* ───────────────────────── Flow ───────────────────────── */
   action(action: string) {

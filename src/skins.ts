@@ -428,7 +428,7 @@ function emblem(
   }
 }
 
-export function makeSkins(scene: Phaser.Scene) {
+export function makeSkins(scene: Phaser.Scene, onlyTheme?: string) {
   // The countryside power-up: a bunch of fresh dates (بلح) instead of foul.
   if (!scene.textures.exists('farm-food'))
     tex(scene, 'farm-food', 24, 20, (c) => {
@@ -518,6 +518,7 @@ export function makeSkins(scene: Phaser.Scene) {
         rect(c, 21, 2, 2, 1, '#a8e060');
       });
   for (const [theme, s] of Object.entries(SKINS)) {
+    if (onlyTheme && theme !== onlyTheme) continue;
     if (scene.textures.exists(`${theme}-box`)) continue;
     const [bf, bl, bs, bm] = s.brick;
     tex(scene, `${theme}-brick`, 24, 24, (c) => {

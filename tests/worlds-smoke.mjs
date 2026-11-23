@@ -18,6 +18,8 @@ try {
       const s = window.hawari.scene.getScene('alley');
       s.startLevel(index);
       s.hurtUntil = s.time.now + 1e8;
+      if (s.children.list.some((o) => o.texture?.key === '__MISSING'))
+        throw new Error(`Missing art entering ${index}`);
       s.enemies.clear(true, true);
       return { x: s.hero.x, time: s.time.now };
     }, index);

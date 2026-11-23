@@ -135,11 +135,21 @@ function bindStick(zone: HTMLElement) {
       resetStick?.();
     });
 }
+let throwButton: HTMLButtonElement | null = null;
+let throwSignature = '';
 export function setThrowReady(
   ready: boolean,
   weapon: WorldWeapon = worldWeapon(0),
 ) {
-  const b = document.querySelector<HTMLButtonElement>('[data-touch="throw"]');
+  const previousButton = throwButton;
+  const b = throwButton?.isConnected
+    ? throwButton
+    : (throwButton = document.querySelector<HTMLButtonElement>(
+        '[data-touch="throw"]',
+      ));
+  const signature = `${ready}:${weapon.id}:${!!weapon.hidden}`;
+  if (b && b === previousButton && signature === throwSignature) return;
+  throwSignature = signature;
   if (!b) return;
   b.hidden = !!weapon.hidden;
   if (weapon.hidden) return;
@@ -158,8 +168,11 @@ export function setThrowReady(
   });
 }
 let handler: (action: string) => void = () => {};
+let uiBound = false;
 export function bindUI(fn: (action: string) => void) {
   handler = fn;
+  if (uiBound) return;
+  uiBound = true;
   // Delegated so buttons rendered later (the map) work too.
   document.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');

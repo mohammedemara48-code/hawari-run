@@ -8,6 +8,7 @@ import { TILE } from './level-data';
 import { parseLevel } from './level-parse';
 import { bossBar } from './ui';
 import { sound } from './audio';
+import { prepareWorldArt } from './world-assets';
 import { releaseLevelTextures } from './level-textures';
 
 export function loadLevel(scene: Alley) {
@@ -41,6 +42,7 @@ export function loadLevel(scene: Alley) {
   scene.secret = undefined;
   scene.zip = null;
   const L = (scene.L = parseLevel(scene.level));
+  prepareWorldArt(scene, L.meta);
   const meta = L.meta,
     pal = PALETTES[meta.theme];
   scene.spec = {

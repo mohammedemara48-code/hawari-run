@@ -15,7 +15,7 @@ An original Egyptian side-scrolling platformer. Race through lantern-lit alleys 
 
 ## What's inside
 
-- Two complete, original routes: **حارة الفوانيس** (4,992 px) and **سوق تحت البلد** (5,376 px).
+- 32 authored levels across eight worlds: Cairo, the countryside, Damietta, Alexandria, Luxor, Aswan, Port Said and Siwa.
 - Acceleration, braking, variable-height jumps, 110 ms coyote time and 120 ms jump buffering.
 - Animated arabesque treasure boxes, breakable bricks, spinning coins and debris/dust.
 - Foul sandwiches for growth, chili for bouncing pepper shots, lucky beads for nine-second invulnerability.
@@ -24,7 +24,7 @@ An original Egyptian side-scrolling platformer. Race through lantern-lit alleys 
 - Three-layer parallax, shaded pixel sprites, eight-frame running, four idle drawings, skid, rise/fall, crouch, hurt/death, growth and chili-throw poses.
 - Original two-voice chiptune scores and synthesized effects; mute and fullscreen controls.
 - Three lives, 50-coin extra lives, countdown timer, detailed level-clear tally and a final result.
-- Arabic RTL UI. Offline PWA with locally hosted fonts; no accounts, analytics or server required.
+- Arabic RTL UI and an offline PWA with locally hosted fonts. Play and progress work locally; optional name/PIN accounts use the server API to sync across devices.
 
 ![Alley gameplay](docs/screenshots/02-alley.png)
 ![Underground market](docs/screenshots/03-market.png)
@@ -99,3 +99,19 @@ This is a compact first release, not a large commercial game: two levels, one re
 ## Credits and license
 
 Game code and original art/audio: MIT. See [LICENSE](LICENSE) and [CREDITS.md](CREDITS.md). Arabic fonts retain their SIL Open Font License. Phaser is MIT-licensed. No third-party game art or audio is used.
+
+## Save and account safety
+
+- Valid local saves are normalized without resetting achievements. The browser and API share the same level registry and validation rules in `shared/progress.js`.
+- Achievements merge monotonically. Checkpoints have a separate update/deletion clock. Server writes use compare-and-swap retries so concurrent devices cannot blindly replace each other.
+- PINs are sent only for login or one-time legacy session migration, never persisted by the current browser code. Sessions use a signed HttpOnly cookie. Existing SHA256 hashes upgrade to asynchronous scrypt after a correct login, without resetting PINs or progress.
+- The status button distinguishes local-only, offline, syncing, synced and login-required saves. An expired session does not delete local progress.
+- Current PINs remain four digits for compatibility. This is a casual-game account system, not suitable for sensitive personal information. The shared database limits account attempts; IP limiting remains instance-local defense in depth.
+
+## Verification and art sources
+
+`npm run check` runs types, lint (including API/shared code), unit tests and the production build. `npm run test:browser:ci` starts its own production server and covers all eight worlds, character runtime, terrain texture lifetime, weapon crates, a phone scene and the PWA. `BROWSER_MODE=account npm run test:browser:ci` isolates browser credential migration with mocked API responses. Set `SHOTS_DIR` to change screenshot output from `test-results/screenshots`.
+
+`npm run test:browser` also includes older detailed mechanic suites. Some still use timing-sensitive observations; they are not a substitute for a manual complete playthrough or real-phone performance testing. Never run `tests/session-live.mjs` with a real player's credentials as a routine CI test.
+
+Hero art is procedural in `src/characters.ts`. Baked creature frames in `public/sprites/creatures.png` and their JSON map take priority over procedural creature drawings; `?oldart` selects the fallback for comparison. World-specific art is generated on first visit through `src/world-assets.ts`. Painted backdrop files are still loaded at boot, intentionally preserving synchronous transitions and offline coverage until network lazy loading is implemented separately.
