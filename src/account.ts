@@ -268,22 +268,40 @@ export function syncProgress() {
     void pushProgress();
   }, 400);
 }
+let pushing = false;
+let pushAgain = false;
 async function pushProgress() {
-  const p = getPlayer();
-  if (!p) return;
+  if (pushing) {
+    pushAgain = true;
+    return;
+  }
+  pushing = true;
   try {
-    await fetch('/api/progress', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({
-        name: p.name,
-        pin: p.pin,
-        progress: loadProgress(),
-      }),
-    });
-  } catch {
-    /* Stay on the local cache. */
+    do {
+      pushAgain = false;
+      const p = getPlayer();
+      if (!p) break;
+      try {
+        const res = await fetch('/api/progress', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            name: p.name,
+            pin: p.pin,
+            progress: loadProgress(),
+          }),
+        });
+        if (!res.ok) break;
+        const data = await res.json();
+        if (getPlayer()?.name === p.name && data.progress)
+          saveProgress(mergeProgress(loadProgress(), data.progress), false);
+      } catch {
+        break; /* Stay on the local cache. */
+      }
+    } while (pushAgain);
+  } finally {
+    pushing = false;
   }
 }
 export async function pullProgress() {

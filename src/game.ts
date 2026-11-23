@@ -464,6 +464,10 @@ export class Alley extends Phaser.Scene {
   }
   /** Start a level (keeps the run's score and lives). Public for tests. */
   startLevel(index: number, opts?: { checkpoint?: boolean }) {
+    if (!Number.isInteger(index) || index < 0 || index >= LEVELS.length) {
+      this.showMap();
+      return;
+    }
     sound.start();
     this.level = index;
     this.checkpoint = !!opts?.checkpoint;

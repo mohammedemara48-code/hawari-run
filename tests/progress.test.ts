@@ -56,8 +56,8 @@ describe('progress and resume', () => {
   it('merges two saves by taking the best of both', () => {
     const a = emptyProgress();
     a.unlocked = 3;
-    a.best = { alley: 100 };
-    a.cleared = { alley: true };
+    a.best = { lanterns: 100 };
+    a.cleared = { lanterns: true };
     a.resume = {
       levelIndex: 1,
       checkpoint: false,
@@ -69,7 +69,7 @@ describe('progress and resume', () => {
     };
     const b = emptyProgress();
     b.unlocked = 2;
-    b.best = { alley: 250, market: 40 };
+    b.best = { lanterns: 250, market: 40 };
     b.secrets = { market: true };
     b.resume = {
       levelIndex: 2,
@@ -82,10 +82,10 @@ describe('progress and resume', () => {
     };
     const m = mergeProgress(a, b);
     expect(m.unlocked).toBeGreaterThanOrEqual(3);
-    expect(m.best.alley).toBe(250);
+    expect(m.best.lanterns).toBe(250);
     expect(m.best.market).toBe(40);
     expect(m.secrets.market).toBe(true);
-    expect(m.cleared.alley).toBe(true);
+    expect(m.cleared.lanterns).toBe(true);
     expect(m.resume?.levelIndex).toBe(2);
     expect(m.resume?.checkpoint).toBe(true);
   });
