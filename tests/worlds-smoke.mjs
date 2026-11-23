@@ -13,7 +13,7 @@ try {
   await page.waitForFunction(
     () => window.hawari?.scene.getScene('alley')?.hero,
   );
-  for (const index of [0, 4, 8, 12, 16, 20, 25, 28]) {
+  for (const index of [0, 4, 8, 12, 16, 20, 25, 28, 32, 36, 40]) {
     const initial = await page.evaluate((index) => {
       const s = window.hawari.scene.getScene('alley');
       s.startLevel(index);

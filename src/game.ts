@@ -1,3 +1,4 @@
+import type { LandmarkState } from './landmark-world';
 import Phaser from 'phaser';
 import { skinKey } from './skins';
 import { makeArt } from './art';
@@ -202,6 +203,7 @@ export class Alley extends Phaser.Scene {
   sail?: Sail;
   /** World 8 (سيوة): thirst, dunes, camels, board, storm. */
   siwa?: W8;
+  landmark?: LandmarkState;
   dropUntil = 0;
   downSince = 0;
   keys!: Record<string, Phaser.Input.Keyboard.Key>;

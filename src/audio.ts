@@ -1,3 +1,4 @@
+import { addLandmarkMusic } from './landmark-music';
 // Original chiptune score and effects, synthesised live with Web Audio.
 // Each level has its own maqam-flavoured theme over darbuka rhythms
 // (maqsum, baladi, saidi); intensity layers build up when danger is near.
@@ -38,7 +39,7 @@ export const RHYTHM = {
 } as const;
 type RhythmName = keyof typeof RHYTHM;
 type Timbre = 'mizmar' | 'rababa' | 'simsimiyya' | 'accordion' | 'ney';
-interface Track {
+export interface Track {
   name: string;
   maqam: MaqamName;
   root: number; // MIDI note of the tonic
@@ -943,6 +944,7 @@ export const TRACKS: Track[] = [
     bass: seq('0 0 . 0 4 . 0 .   0 0 . 0 -1 . -1 .'),
   },
 ];
+addLandmarkMusic(TRACKS);
 const midi = (n: number) => 440 * 2 ** ((n - 69) / 12);
 export function degreeToSemis(maqam: MaqamName, degree: number) {
   const scale = MAQAM[maqam],

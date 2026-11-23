@@ -1,3 +1,4 @@
+import { updateLandmark } from './landmark-world';
 import Phaser from 'phaser';
 import type { Alley } from './game';
 import { body } from './game-shared';
@@ -72,6 +73,17 @@ export function updateDarkness(scene: Alley) {
       if (d.lever) light(d.lever.x, d.lever.y - 14, 46, 0.85);
       light(d.x, (d.y0 + d.y1) / 2, d.open ? 80 : 52, 0.7);
     }
+  // Gameplay silhouettes stay readable in Cairo darkness, without lighting
+  // ghost ledges or changing their separate lantern-distance collision rule.
+  for (const obj of [
+    ...scene.blocks.getChildren(),
+    ...scene.coins.getChildren(),
+    ...scene.enemies.getChildren(),
+    ...scene.hazards.getChildren(),
+  ]) {
+    const item = obj as Sprite;
+    if (item.active) light(item.x, item.y, 34, 0.65);
+  }
   // Crushing pillars: the carved head shows faintly, brighter as it shudders.
   if (scene.w5)
     for (const p of scene.w5.pillars)
@@ -202,6 +214,7 @@ export function updateWorld(scene: Alley, time: number, dt: number) {
   updateAlexWorld(scene, time, dt);
   updateLuxorWorld(scene, time, dt);
   updateSiwaWorld(scene, time, dt);
+  updateLandmark(scene, time, dt);
   if (scene.sail && !scene.sail.on) sailIdle(scene, scene.sail);
   if (scene.crane) craneIdle(scene, scene.crane, time, dt);
   if (scene.water) {

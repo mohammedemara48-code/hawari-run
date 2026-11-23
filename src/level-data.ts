@@ -1,3 +1,8 @@
+import {
+  LANDMARK_WORLDS,
+  LANDMARK_LEVELS,
+  type LandmarkPuzzle,
+} from './landmark-data';
 // Authored level maps for «بلبل في الحواري». Every level is a 24px tile grid
 // built with small helpers so routes can be read (and tested) as text.
 //
@@ -98,7 +103,10 @@ export type Theme =
   | 'tomb'
   | 'nubia'
   | 'portsaid'
-  | 'siwa';
+  | 'siwa'
+  | 'giza'
+  | 'citadel'
+  | 'rashid';
 /** One region of the journey across Egypt. */
 export interface WorldMeta {
   id: string;
@@ -186,6 +194,7 @@ export const WORLDS: WorldMeta[] = [
     playable: true,
   },
 ];
+WORLDS.push(...LANDMARK_WORLDS);
 /** Each world's boss, by kind (map, HUD bar and the ending recap). */
 export const BOSS_NAMES: Record<NonNullable<LevelMeta['bossKind']>, string> = {
   fatwa: 'الفتوة برعي',
@@ -196,6 +205,9 @@ export const BOSS_NAMES: Record<NonNullable<LevelMeta['bossKind']>, string> = {
   croc: 'تمساح النيل الكبير',
   captain: 'ريّس الميناء',
   qibli: 'القِبْلي',
+  prism: 'خنفساء المنشور',
+  guardian: 'حارس النحاس',
+  mill: 'ترس الطاحونة',
 };
 export interface LevelMeta {
   /** Index into WORLDS. */
@@ -230,7 +242,11 @@ export interface LevelMeta {
     | 'ram'
     | 'croc'
     | 'captain'
-    | 'qibli';
+    | 'qibli'
+    | 'prism'
+    | 'guardian'
+    | 'mill';
+  landmark?: LandmarkPuzzle;
   /** World 5: torches burn out after this many seconds. */
   torchBurn?: number;
   /** World 5: the Nile current (px/s, negative = flowing left). */
@@ -2901,3 +2917,5 @@ export const LEVELS: LevelMeta[] = [
     rows: siwaQibli(),
   },
 ];
+
+LEVELS.push(...LANDMARK_LEVELS);

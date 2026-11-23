@@ -1,3 +1,5 @@
+import { buildReadability } from './readability';
+import { buildLandmark } from './landmark-world';
 import Phaser from 'phaser';
 import type { Alley } from './game';
 import { EDGE, body } from './game-shared';
@@ -28,6 +30,7 @@ export function loadLevel(scene: Alley) {
   scene.sail = undefined;
   scene.crane = undefined;
   scene.siwa = undefined;
+  scene.landmark = undefined;
   scene.darkBoost = 0;
   scene.wheels = [];
   scene.swimming = false;
@@ -114,7 +117,9 @@ export function loadLevel(scene: Alley) {
         .setOrigin(0)
         .setScrollFactor(0)
         .setDepth(depth)
-        .setAlpha(name === 'near' ? (painted ? 0.55 : 0.9) : 1)
+        .setAlpha(
+          name === 'near' ? (meta.landmark ? 0 : painted ? 0.55 : 0.9) : 1,
+        )
         .setData('factor', factor)
         .setData('name', name),
     );
@@ -205,8 +210,14 @@ export function loadLevel(scene: Alley) {
   if (scene.checkpoint)
     for (const l of scene.lanterns)
       if (l.img.x < spawn.x) scene.lightLantern(l, false);
+  scene.landmark = buildLandmark(scene);
+  if (scene.landmark) {
+    scene.physics.add.collider(scene.hero, scene.landmark.gates);
+    scene.physics.add.collider(scene.hero, scene.landmark.platforms);
+  }
   scene.buildColliders();
   scene.clearSpawnCamp();
+  buildReadability(scene);
   scene.buildAtmosphere();
   sound.setTrack(meta.track);
   sound.setIntensity(0);

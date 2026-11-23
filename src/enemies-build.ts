@@ -96,6 +96,9 @@ export function bossName(scene: Alley) {
 export function bossTex(scene: Alley, pose: string) {
   return (
     {
+      prism: 'boss-prism-',
+      guardian: 'boss-guardian-',
+      mill: 'boss-mill-',
       ram: 'boss5-',
       croc: 'boss6-',
       captain: 'boss7-',
@@ -113,7 +116,10 @@ export function makeBoss(scene: Alley, x: number, bottom: number) {
   const boss = scene.physics.add
     .sprite(x, bottom - (crab ? 36 : buffalo ? 33 : 32), scene.bossTex('idle0'))
     .setDepth(9);
-  if (scene.bossKind === 'gull') {
+  if (scene.L.meta.landmark) {
+    body(boss).setSize(68, 72).setOffset(14, 14);
+    boss.y = bottom - 48;
+  } else if (scene.bossKind === 'gull') {
     body(boss).setSize(72, 40).setOffset(28, 39).setAllowGravity(false);
     boss.y = bottom - 60;
   } else if (scene.bossKind === 'ram') {

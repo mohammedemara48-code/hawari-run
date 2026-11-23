@@ -208,6 +208,33 @@ export const SKINS: Record<string, Skin> = {
     collectible: 'dates',
     bond: 'mud',
   },
+  giza: {
+    brick: ['#c5a36d', '#efd19b', '#987441', '#70553c'],
+    box: ['#d7b672', '#ffe8ad', '#91733b', '#2a787d', '#82e8df', '#6a4f30'],
+    emblem: 'diamond',
+    used: ['#9f855c', '#c0a777', '#6c5438'],
+    coin: ['#675023', '#e7ba51', '#ffe6a1', '#fffbee'],
+    collectible: 'coin',
+    bond: 'block',
+  },
+  citadel: {
+    brick: ['#aa9678', '#dac7a5', '#7c6a52', '#584936'],
+    box: ['#b98c44', '#f1cf7b', '#75532f', '#3c5e58', '#b5dbca', '#62472b'],
+    emblem: 'star',
+    used: ['#85745d', '#b3a088', '#5d4c37'],
+    coin: ['#624020', '#d2a346', '#ffe09c', '#fff9de'],
+    collectible: 'coin',
+    bond: 'block',
+  },
+  rashid: {
+    brick: ['#a55e49', '#eee2c8', '#403b36', '#c4b49a'],
+    box: ['#9b663c', '#d5ad78', '#624229', '#315a51', '#b9dbb4', '#5c3a28'],
+    emblem: 'gear',
+    used: ['#76573e', '#ac8964', '#403328'],
+    coin: ['#5e4929', '#d7b25f', '#ffdc8d', '#fff6dd'],
+    collectible: 'coin',
+    bond: 'running',
+  },
   // The tomb: painted plaster, a canopic jar glinting in torchlight.
   tomb: {
     brick: ['#8a6a44', '#a8845a', '#5a4028', '#2e1e12'],

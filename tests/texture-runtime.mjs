@@ -11,7 +11,9 @@ try {
     () => window.hawari?.scene.getScene('alley')?.hero,
   );
   const snapshots = [];
-  for (const index of [0, 1, 2, 3, 4, 8, 12, 16, 20, 25, 28, 31, 0]) {
+  for (const index of [
+    0, 1, 2, 3, 4, 8, 12, 16, 20, 25, 28, 31, 32, 36, 40, 43, 0,
+  ]) {
     const snapshot = await page.evaluate((index) => {
       const s = window.hawari.scene.getScene('alley');
       s.startLevel(index);

@@ -32,6 +32,18 @@ export const LEVEL_IDS = [
   'saltlake',
   'shali',
   'qibli',
+  'giza-plateau',
+  'giza-valley',
+  'giza-gallery',
+  'giza-horizon',
+  'citadel-ramparts',
+  'citadel-towers',
+  'citadel-terraces',
+  'citadel-guardian',
+  'rashid-lattices',
+  'rashid-merchants',
+  'rashid-river',
+  'rashid-mill',
 ];
 const object = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const uint = (v, fallback = 0, max = Number.MAX_SAFE_INTEGER) =>

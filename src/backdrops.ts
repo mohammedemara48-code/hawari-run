@@ -41,7 +41,8 @@ export function requestBackdrop(scene: Alley, index: number) {
         layer.destroy();
         return false;
       }
-      if (layer.getData('name') === 'near') layer.setAlpha(0.55);
+      if (layer.getData('name') === 'near')
+        layer.setAlpha(scene.L.meta.landmark ? 0 : 0.55);
       return true;
     });
     scene.layers.unshift(backdrop);

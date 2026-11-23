@@ -12,6 +12,7 @@ import { makeLuxorProps } from './world5-art';
 import { makeAswanProps } from './world6-art';
 import { makePortSaidProps } from './world7-art';
 import { makeSiwaProps } from './world8-art';
+import { makeLandmarkArt } from './landmark-art';
 import { makeSkins } from './skins';
 const prepared = new WeakMap<Phaser.Scene, Set<number>>();
 /** Keep the synchronous level switch contract, but paint only worlds visited.
@@ -27,6 +28,11 @@ export function prepareWorldArt(scene: Phaser.Scene, meta: LevelMeta) {
     makeProps(scene);
   }
   if (!worlds.has(meta.world)) {
+    if (meta.world >= 8) {
+      makeLuxorCreatures(scene);
+      makeLuxorProps(scene);
+      makeLandmarkArt(scene);
+    }
     switch (meta.world) {
       case 1:
         makeFarmCreatures(scene);
@@ -46,11 +52,17 @@ export function prepareWorldArt(scene: Phaser.Scene, meta: LevelMeta) {
         makeLuxorProps(scene);
         break;
       case 5:
+        makeSeaCreatures(scene);
+        makeDamiettaProps(scene);
+        makeAlexProps(scene);
         makeLuxorCreatures(scene);
         makeLuxorProps(scene);
         makeAswanProps(scene);
         break;
       case 6:
+        makeLuxorProps(scene);
+        makeAswanProps(scene);
+        makeAlexProps(scene);
         makeSeaCreatures(scene);
         makeDamiettaProps(scene);
         makePortSaidProps(scene);
