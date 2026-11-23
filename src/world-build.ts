@@ -215,9 +215,17 @@ export function buildAtmosphere(scene: Alley) {
     nubia: 'mote',
     portsaid: 'mote',
     siwa: 'sand-grain',
+    giza: 'sand-grain',
+    citadel: 'mote',
+    rashid: 'mote',
   }[meta.theme];
   scene.ambient = scene.add
-    .particles(0, 0, key, conf[meta.theme])
+    .particles(
+      0,
+      0,
+      key,
+      conf[meta.theme] ?? conf[meta.theme === 'giza' ? 'temple' : 'market'],
+    )
     .setDepth(meta.theme === 'night' ? 53 : 30);
   for (const w of L.wind) {
     const e = scene.add.particles(0, 0, 'streak', {

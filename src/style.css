@@ -2176,3 +2176,32 @@ html.form-upright .login-form .primary {
 .journey-sync-status[data-state='login-required'] {
   color: #ffd38a;
 }
+
+/* Nearby landmark worlds share a city area. Only the active/pointed label
+   floats over the map; the full named world picker stays available to touch. */
+.world-pin:not(.selected):not(:hover):not(:focus-visible) .pin-name {
+  opacity: 0;
+  pointer-events: none;
+}
+.world-pin.selected,
+.world-pin:hover,
+.world-pin:focus-visible {
+  z-index: 5;
+}
+.world-pin.selected .pin-name,
+.world-pin:hover .pin-name,
+.world-pin:focus-visible .pin-name {
+  opacity: 1;
+}
+[data-world-chooser] {
+  max-width: 100%;
+  padding: 5px 9px;
+  margin-bottom: 7px;
+  color: #ffdc8a;
+  background: #182d33;
+  border: 1px solid #a48c55;
+  font:
+    600 13px Changa,
+    Tahoma,
+    sans-serif;
+}

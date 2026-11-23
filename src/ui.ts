@@ -171,6 +171,12 @@ let handler: (action: string) => void = () => {};
 let uiBound = false;
 export function bindUI(fn: (action: string) => void) {
   handler = fn;
+  const count = new Intl.NumberFormat('ar-EG').format(
+    WORLDS.filter((world) => world.playable).length,
+  );
+  document.querySelectorAll('[data-world-count]').forEach((el) => {
+    el.textContent = count;
+  });
   if (uiBound) return;
   uiBound = true;
   // Delegated so buttons rendered later (the map) work too.
@@ -397,6 +403,25 @@ export function renderMap(
     }),
   );
   const w = WORLDS[selectedWorld];
+  let chooser = document.querySelector<HTMLSelectElement>(
+    '[data-world-chooser]',
+  );
+  if (!chooser) {
+    chooser = document.createElement('select');
+    chooser.dataset.worldChooser = '';
+    chooser.setAttribute('aria-label', 'اختار عالم المشوار');
+    document
+      .getElementById('world-name')
+      ?.insertAdjacentElement('beforebegin', chooser);
+    chooser.addEventListener('change', () =>
+      renderMap(lastMap!.progress, lastMap!.levels, Number(chooser!.value)),
+    );
+  }
+  chooser.innerHTML = WORLDS.map(
+    (world, index) =>
+      `<option value="${index}" ${states[index] === 'locked' || states[index] === 'soon' ? 'disabled' : ''}>${index + 1} · ${world.name} ${states[index] === 'locked' ? '🔒' : ''}</option>`,
+  ).join('');
+  chooser.value = String(selectedWorld);
   text('world-name', `${selectedWorld + 1} · ${w.name}`);
   text('world-sub', w.subtitle);
   nodes.innerHTML = levels

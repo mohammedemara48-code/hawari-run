@@ -106,6 +106,51 @@ function sign(
 
 /* ───────────────────────── Palettes ───────────────────────── */
 export const PALETTES: Record<Theme, Palette> = {
+  giza: {
+    sky: [
+      [0, '#354a76'],
+      [1, '#efc887'],
+    ],
+    stone: ['#b99461', '#caa875', '#98764c', '#dec196'],
+    mortar: '#71563e',
+    top: ['#e6cf9b', '#f8e0ad', '#bd9b67'],
+    wood: ['#805d39', '#b18a52', '#513c29'],
+    accent: '#54cfd2',
+    glow: '#ffdb80',
+    window: '#59442f',
+    windowLit: '#ffdc9b',
+    fog: '#ba9770',
+  },
+  citadel: {
+    sky: [
+      [0, '#364c70'],
+      [1, '#d5a277'],
+    ],
+    stone: ['#9a8c72', '#afa189', '#81745f', '#c7b69b'],
+    mortar: '#645744',
+    top: ['#e4ceb0', '#f1dcc0', '#bcaa8d'],
+    wood: ['#604331', '#94704d', '#3c2c24'],
+    accent: '#cfad60',
+    glow: '#ffcf6f',
+    window: '#3f342e',
+    windowLit: '#ffdc8e',
+    fog: '#7b756f',
+  },
+  rashid: {
+    sky: [
+      [0, '#466b80'],
+      [1, '#e5bb91'],
+    ],
+    stone: ['#8f493b', '#e1d4b8', '#3c3835', '#ac5d47'],
+    mortar: '#d0ba96',
+    top: ['#e6c9a2', '#f7dfb4', '#b77d56'],
+    wood: ['#593c29', '#906744', '#33291e'],
+    accent: '#78b8a3',
+    glow: '#ffca73',
+    window: '#352a24',
+    windowLit: '#ffd291',
+    fog: '#66817e',
+  },
   night: {
     sky: [
       [0, '#070b1f'],

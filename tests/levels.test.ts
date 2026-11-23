@@ -5,8 +5,8 @@ import { heroBody } from '../src/hero-state';
 import { fitsThrough, onSurface, reach, standable } from './level-graph';
 
 describe('authored levels', () => {
-  it('has eight playable worlds; Aswan sails, Port Said swings, Siwa thirsts', () => {
-    expect(LEVELS.length).toBe(32);
+  it('has eleven playable worlds with three append-only landmark worlds', () => {
+    expect(LEVELS.length).toBe(44);
     const cairo = LEVELS.filter((l) => l.world === 0),
       rif = LEVELS.filter((l) => l.world === 1);
     expect(cairo.length).toBe(4);
@@ -59,22 +59,22 @@ describe('authored levels', () => {
     expect(siwa[0].rows.join('').includes('ن')).toBe(true);
     expect(siwa[1].rows.join('').includes('غ')).toBe(true);
     expect(siwa[2].rows.join('').includes('X')).toBe(true);
-    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(32);
-    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(32);
+    expect(new Set(LEVELS.map((l) => l.mechanic)).size).toBe(44);
+    expect(new Set(LEVELS.map((l) => l.track)).size).toBe(44);
     // Levels are grouped by world in order, and each world ends with a boss.
     expect(LEVELS.map((l) => l.world)).toEqual([
       0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5,
-      6, 6, 6, 7, 7, 7, 7,
+      6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 10,
     ]);
     expect([3, 7, 11, 15, 19, 24, 27, 31].every((i) => LEVELS[i].boss)).toBe(
       true,
     );
-    expect(LEVELS.filter((l) => l.boss).length).toBe(8);
+    expect(LEVELS.filter((l) => l.boss).length).toBe(11);
     expect(LEVELS[19].bossKind).toBe('ram');
     expect(LEVELS[24].bossKind).toBe('croc');
     expect(LEVELS[27].bossKind).toBe('captain');
     expect(LEVELS[31].bossKind).toBe('qibli');
-    expect(WORLDS.filter((w) => w.playable).length).toBe(8);
+    expect(WORLDS.filter((w) => w.playable).length).toBe(11);
     expect(WORLDS.map((w) => w.name)).toEqual([
       'القاهرة',
       'الأرياف',
@@ -84,6 +84,9 @@ describe('authored levels', () => {
       'أسوان',
       'بورسعيد',
       'سيوة',
+      'هضبة الأهرامات',
+      'قلعة صلاح الدين',
+      'رشيد',
     ]);
   });
   LEVELS.forEach((meta, index) => {

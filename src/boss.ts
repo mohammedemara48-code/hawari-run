@@ -1,3 +1,8 @@
+import {
+  landmarkBossContact,
+  landmarkBossShot,
+  updateLandmarkBoss,
+} from './landmark-world';
 import Phaser from 'phaser';
 import type { Alley } from './game';
 import { EDGE, body } from './game-shared';
@@ -28,6 +33,10 @@ export function bossContact(scene: Alley) {
   const b = body(scene.hero),
     bb = body(boss);
   const fromAbove = b.velocity.y > 0 && b.prev.y + b.height <= bb.top + 16;
+  if (scene.landmark) {
+    landmarkBossContact(scene, fromAbove);
+    return;
+  }
   if (scene.bossKind === 'crab') {
     scene.crabContact(fromAbove);
     return;
@@ -85,6 +94,10 @@ export function bossContact(scene: Alley) {
 export function bossChili(scene: Alley) {
   const s = scene.bossState;
   if (s.defeated || !s.active || scene.time.now < s.invuln) return;
+  if (scene.landmark) {
+    landmarkBossShot(scene);
+    return;
+  }
   if (
     scene.bossKind === 'crab' &&
     (s.state === 'guard' || s.state === 'snap')
@@ -240,10 +253,13 @@ export function bossDefeat(scene: Alley) {
   bossBar(false);
   toast(
     {
+      prism: 'خنفساء المنشور اتطفت! باب الأفق اتفتح',
+      guardian: 'حارس النحاس سلّم المفتاح! باب القلعة اتفتح',
+      mill: 'الترس وقف بسلام! رشيد اتفتحت والمشوار اكتمل',
       ram: 'الكبش الحارس رجع حجر! باب الكرنك اتفتح… وأسوان مستنياك',
       croc: 'التمساح الكبير رجع النيل! الجزيرة بقت بتاعتك… وبورسعيد مستنياك',
       captain: 'ريّس الميناء نزل من الونش! الميناء بقى بتاعك… وسيوة مستنياك',
-      qibli: 'القِبْلي اتشتت على العين! الواحة بقت بتاعتك… والمشوار خلص',
+      qibli: 'القِبْلي اتشتت على العين! الواحة بقت بتاعتك… والأهرامات مستنياك',
       buffalo: 'أبو قرون قعد في الطين! باب الجرن اتفتح',
       crab: 'أبو مقص رجع البحر! رأس البر بقت بتاعتك',
       gull: 'ريّس النوة طار مع الريح! النوة هديت والقلعة بقت بتاعتك',
@@ -322,6 +338,9 @@ export function updateBoss(scene: Alley, time: number) {
       sound.setTrack(scene.L.meta.bossTrack ?? 4);
       sound.fx(
         {
+          prism: 'clack',
+          guardian: 'rumble',
+          mill: 'clack',
           ram: 'rumble',
           croc: 'roar',
           captain: 'rumble',
@@ -335,6 +354,9 @@ export function updateBoss(scene: Alley, time: number) {
       bossBar(true, 1, 1, scene.bossName);
       toast(
         {
+          prism: 'اعكس النور على المستقبلات، ولما الخنفساء تنوّر أخضر اضربها',
+          guardian: 'افصل فوانيس الحراس من وراهم، وبعدها درع الحارس ينكشف',
+          mill: 'وزن الأكياس على العلامة، ولما قلب الترس ينوّر اضربه',
           croc: 'تمساح النيل الكبير: «الجزيرة دي بتاعتي!» — لما يهجم ويغرز بقه في الرملة اتنطّ على راسه، ونطّ فوق موجة ديله',
           captain:
             'ريّس الميناء: «محدّش يرسى في ميناي!» — ابعد عن علامة الحاوية، اتشعبط في خطّاف الونش الكبير اللي فوق ونزّل الحاوية على كابينته',
@@ -351,6 +373,11 @@ export function updateBoss(scene: Alley, time: number) {
       scene.bossSet('walk', 1600);
       scene.cameras.main.shake(300, 0.006);
     }
+    return;
+  }
+  if (scene.landmark) {
+    updateLandmarkBoss(scene, time);
+    scene.updateHazards(time);
     return;
   }
   if (scene.bossKind === 'buffalo') {

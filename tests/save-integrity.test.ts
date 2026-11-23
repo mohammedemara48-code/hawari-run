@@ -14,7 +14,7 @@ describe('save validation and texture lifetime', () => {
     expect(LEVEL_IDS).toEqual(LEVELS.map((l) => l.id));
   });
   it('rejects fractional/out-of-range levels and normalizes unsafe numeric fields', () => {
-    for (const levelIndex of [0.5, -1, 32, NaN, Infinity])
+    for (const levelIndex of [0.5, -1, LEVELS.length, NaN, Infinity])
       expect(validResume({ levelIndex })).toBeNull();
     expect(
       validResume({
