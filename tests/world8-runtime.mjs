@@ -221,7 +221,11 @@ await ev(() => {
   s.siwa.sinkMs = 1400;
   s.siwa.sinking = true;
 });
-await wait(600);
+await page.waitForFunction(
+  () => window.T.s.lives < 9 || window.T.s.mode === 'dead',
+  null,
+  { timeout: 5000 },
+);
 const afterSink = await ev(() => ({
   lives: window.T.s.lives,
   mode: window.T.s.mode,
@@ -367,10 +371,10 @@ await ev(() => {
 await wait(900);
 assert.equal(
   await ev(() => window.T.s.mode),
-  'win',
-  'the journey ends at Siwa',
+  'clear',
+  'the journey continues from Siwa to Giza',
 );
-log('qibli boss → the ending');
+log('qibli boss → on to Giza');
 
 const leftover = errors.filter((e) => !/ResizeObserver|AudioContext/.test(e));
 assert.deepEqual(leftover, [], leftover.join('\n'));

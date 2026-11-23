@@ -183,15 +183,28 @@ export function buildSiwa(s: Alley): W8 | undefined {
     }
   // Camels reuse the donkey markers, but they're a riding animal — no cart planks.
   for (const d of L.donkeys) {
-    const img = s.physics.add.image(0, 0, 'camel0') as Img;
+    const img = s.movers.create(0, 0, 'camel0') as Img;
     img.setOrigin(0, 1).setDepth(3);
     const x = d.a.col * TILE,
       y = (d.a.row + 1) * TILE;
     img.setPosition(x, y);
     const b = body(img);
-    b.setSize(100, 12).setOffset(8, -16);
+    b.setAllowGravity(false)
+      .setImmovable(true)
+      .setSize(100, 12)
+      .setOffset(8, 22);
     b.reset(x, y);
     oneWay(b);
+    s.add
+      .text(x + 58, y - 100, 'انط على الجمل • سيب الحركة وإنت راكب', {
+        fontFamily: 'sans-serif',
+        fontSize: '11px',
+        color: '#fff2c4',
+        backgroundColor: '#183139',
+        padding: { x: 5, y: 4 },
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(12);
     const max = (d.endCol - CAMEL.width + 1) * TILE;
     w.camels.push({ img, min: x, max, dir: 1, waitUntil: 0 });
     // Carry like a mover so the hero stands on the camel's back.
@@ -202,6 +215,8 @@ export function buildSiwa(s: Alley): W8 | undefined {
       max,
       speed: CAMEL.speed,
       carry: true,
+      camel: true,
+      donkey: { min: x, max, leftAt: -1e9, ridden: false },
     });
   }
   if (L.meta.board) {
@@ -334,7 +349,10 @@ export function updateSiwaWorld(s: Alley, time: number, dt: number) {
       Math.abs(vx) > 8 ? 'camel' + (Math.floor(time / 160) % 2) : 'camel0',
     );
     if (Math.abs(s.hero.x - (c.img.x + 60)) < 50 && s.riding)
-      s.hint('camel', 'الجمل ماشي! اركب ضهره يعدّي بك الرمل');
+      s.hint(
+        'camel',
+        'اركب ضهر الجمل وسيب الحركة يعدّيك. نطّ للشط، والجمل بيرجع يستناك',
+      );
   }
   // Mirages shimmer; fakes drop the hero after a short stand.
   for (const m of w.mirages) {
