@@ -43,13 +43,7 @@ import {
 } from './level-parse';
 import { sound } from './audio';
 import { bindUI, bossBar, ending, renderMap, screen, toast, touch } from './ui';
-import {
-  clearResume,
-  loadProgress,
-  recordClear,
-  recordSecret,
-  saveResume,
-} from './progress';
+import { clearResume, loadProgress, recordClear, saveResume } from './progress';
 import { getPlayer, needsLogin, pullProgress, restoreSession } from './account';
 import {
   buildProps as buildPropsImpl,
@@ -117,6 +111,14 @@ import {
   updateHazards as updateHazardsImpl,
 } from './hazards';
 import { updateEnemy as updateEnemyImpl } from './enemy-update';
+import {
+  findSecret as findSecretImpl,
+  lineAt as lineAtImpl,
+  onOneWay as onOneWayImpl,
+  tryGrab as tryGrabImpl,
+  updateZip as updateZipImpl,
+  useTank as useTankImpl,
+} from './grab';
 import {
   body,
   coarse,
@@ -1718,96 +1720,22 @@ export class Alley extends Phaser.Scene {
     this.updateHud();
   }
   findSecret() {
-    const s = this.secret!;
-    this.secretFound = true;
-    this.score += 1000;
-    recordSecret(this.level);
-    sound.fx('secret');
-    this.burst(s.x, s.y, 0xffd23f, 24);
-    this.popText(s.x, s.y - 20, 'الفانوس الدهبي! +١٠٠٠', '#ffe08a');
-    toast('لقيت الفانوس الدهبي — سرّ المرحلة!');
-    s.destroy();
-    this.secretGlow?.destroy();
-    this.updateHud();
+    findSecretImpl(this);
   }
   useTank() {
-    const t = this.blocks
-      .getChildren()
-      .find((s) => (s as Sprite).getData('kind') === 'tank') as
-      Sprite | undefined;
-    if (
-      !t ||
-      t.getData('used') ||
-      Math.abs(t.x - this.hero.x) > 24 ||
-      body(this.hero).bottom > t.y - 20
-    )
-      return;
-    t.setData('used', true);
-    toast('خزان الفكة! لمّ بسرعة');
-    sound.fx('secret');
-    for (let i = 0; i < 10; i++) {
-      const c = this.items.create(t.x, t.y - 34, this.skin('coin1')) as Sprite;
-      c.setData('kind', 'coin')
-        .setData('settled', true)
-        .setVelocity((i - 4.5) * 34, -330 - (i % 3) * 40)
-        .setDepth(6);
-    }
+    useTankImpl(this);
   }
   onOneWay() {
-    const b = body(this.hero);
-    const ch = this.L.at(
-      Math.floor(b.center.x / TILE),
-      Math.floor((b.bottom + 2) / TILE),
-    );
-    return ch === '-' || ch === '~';
+    return onOneWayImpl(this);
   }
   lineAt(i: number) {
-    const ln = this.L.lines[i];
-    return { ax: ln.a.x, ay: ln.a.y - 10, bx: ln.b.x, by: ln.b.y - 10 };
+    return lineAtImpl(this, i);
   }
   tryGrab() {
-    const b = body(this.hero);
-    const hand = b.top - 2;
-    for (let i = 0; i < this.L.lines.length; i++) {
-      const { ax, ay, bx, by } = this.lineAt(i);
-      const x = this.hero.x;
-      if (x < Math.min(ax, bx) + 4 || x > Math.max(ax, bx) - 4) continue;
-      const ly = ay + ((by - ay) * (x - ax)) / (bx - ax);
-      if (Math.abs(hand - ly) < 14) {
-        this.zip = { line: i, dir: Math.sign(bx - ax) };
-        b.setAllowGravity(false);
-        this.facing = this.zip.dir;
-        sound.fx('zip');
-        return;
-      }
-    }
+    tryGrabImpl(this);
   }
   updateZip(time: number, jump: boolean) {
-    const zip = this.zip!,
-      b = body(this.hero);
-    const { ax, ay, bx, by } = this.lineAt(zip.line);
-    const slope = (by - ay) / (bx - ax);
-    const vx = zip.dir * 235;
-    const ly = ay + slope * (this.hero.x - ax);
-    // Hands stay on the rope: the body top hangs just under the line.
-    b.setVelocity(vx, slope * vx + (ly + 2 - b.top) * 12);
-    if (Math.floor(time / 50) % 3 === 0)
-      this.burst(this.hero.x, b.top, 0xffffff, 1);
-    const release = (vy: number) => {
-      this.zip = null;
-      this.zipCooldown = time + 380;
-      b.setAllowGravity(true);
-      b.setVelocity(vx * 0.85, vy);
-    };
-    if (jump && !this.jumpWas) {
-      release(-PHYSICS.jump * 0.85);
-      sound.fx('jump');
-    } else if (
-      (zip.dir > 0 && this.hero.x >= bx - 6) ||
-      (zip.dir < 0 && this.hero.x <= bx + 6)
-    )
-      release(0);
-    else if (b.blocked.left || b.blocked.right || b.blocked.down) release(0);
+    updateZipImpl(this, time, jump);
   }
   updateEnemy(e: Sprite, time: number) {
     updateEnemyImpl(this, e, time);
