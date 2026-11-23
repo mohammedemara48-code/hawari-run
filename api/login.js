@@ -7,7 +7,7 @@ import {
   nameKey,
   newSalt,
   normalizeName,
-  pinMatches,
+  checkPlayerPin,
   rateLimit,
   readBody,
   setSession,
@@ -42,19 +42,13 @@ export default async function handler(req, res) {
       const progress = normalizeProgress(incoming);
       const made =
         await sql`INSERT INTO players (name, name_key, pin_salt, pin_hash, progress)
-        VALUES (${name}, ${key}, ${salt}, ${hashPin(pin, salt)}, ${JSON.stringify(progress)}::jsonb) RETURNING id`;
+        VALUES (${name}, ${key}, ${salt}, ${await hashPin(pin, salt)}, ${JSON.stringify(progress)}::jsonb) RETURNING id`;
       setSession(res, made[0].id);
       return json(res, 200, { name, created: true, progress });
     }
-    if (row.locked_until && new Date(row.locked_until).getTime() > Date.now())
-      return json(res, 429, { error: 'استنى شوية وجرّب تاني' });
-    if (!pinMatches(pin, row.pin_salt, row.pin_hash)) {
-      const fails = (row.failed_attempts || 0) + 1;
-      const lock =
-        fails >= 8 ? new Date(Date.now() + 60_000).toISOString() : null;
-      await sql`UPDATE players SET failed_attempts = ${fails}, locked_until = ${lock} WHERE id = ${row.id}`;
-      return json(res, 401, { error: 'الرقم السري غلط' });
-    }
+    const checked = await checkPlayerPin(sql, row, pin);
+    if (checked.error)
+      return json(res, checked.error, { error: checked.message });
     const progress = await storeProgress(sql, row.id, incoming);
     await sql`UPDATE players SET failed_attempts = 0, locked_until = NULL WHERE id = ${row.id}`;
     setSession(res, row.id);

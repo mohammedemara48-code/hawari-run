@@ -7,9 +7,32 @@ import {
   type Progress,
 } from './progress';
 const PLAYER_KEY = 'hawari-player';
+let legacyCredential: { name: string; pin: string } | null = null;
+export type SyncState =
+  'local' | 'syncing' | 'synced' | 'offline' | 'login-required' | 'error';
+let syncState: SyncState = 'local';
+const syncListeners = new Set<(state: SyncState) => void>();
+export function onSyncState(fn: (state: SyncState) => void) {
+  syncListeners.add(fn);
+  fn(syncState);
+  return () => {
+    syncListeners.delete(fn);
+  };
+}
+export function getSyncState() {
+  return syncState;
+}
+function status(state: SyncState) {
+  syncState = state;
+  syncListeners.forEach((fn) => fn(state));
+}
+function legacyPin(name: string) {
+  return legacyCredential?.name === name ? legacyCredential.pin : undefined;
+}
+
 export interface Player {
   name: string;
-  /** Kept on this device; absent when restored from the server session. */
+  /** Input-only legacy migration. Never persisted by this build. */
   pin?: string;
 }
 export function normalizeName(name: string) {
@@ -58,13 +81,19 @@ export function getPlayer(): Player | null {
     if (!p || typeof p.name !== 'string') return null;
     const name = normalizeName(p.name);
     if (name.length < 2) return null;
-    return validPin(p.pin) ? { name, pin: p.pin } : { name };
+    if (validPin(p.pin)) {
+      legacyCredential = { name, pin: p.pin };
+      setPlayer({ name });
+    }
+    return { name };
   } catch {
     return null;
   }
 }
 export function setPlayer(p: Player) {
-  const v = JSON.stringify({ name: normalizeName(p.name), pin: p.pin });
+  const name = normalizeName(p.name);
+  if (validPin(p.pin || '')) legacyCredential = { name, pin: p.pin! };
+  const v = JSON.stringify({ name });
   writeCookie(v);
   void idbSet(v);
   try {
@@ -74,6 +103,8 @@ export function setPlayer(p: Player) {
   }
 }
 export function clearPlayer() {
+  legacyCredential = null;
+  status('local');
   writeCookie(null);
   void idbSet(null);
   void fetch('/api/me', { method: 'DELETE' }).catch(() => {});
@@ -104,6 +135,8 @@ async function idbSet(v: string | null) {
     const st = db.transaction('kv', 'readwrite').objectStore('kv');
     if (v) st.put(v, 'player');
     else st.delete('player');
+    st.transaction.oncomplete = () => db.close();
+    st.transaction.onerror = () => db.close();
   } catch {
     /* ignore */
   }
@@ -114,8 +147,10 @@ async function idbGet(): Promise<string | null> {
   return new Promise((resolve) => {
     try {
       const r = db.transaction('kv').objectStore('kv').get('player');
-      r.onsuccess = () =>
+      r.onsuccess = () => {
+        db.close();
         resolve(typeof r.result === 'string' ? r.result : null);
+      };
       r.onerror = () => resolve(null);
     } catch {
       resolve(null);
@@ -140,6 +175,7 @@ export async function restoreSession(): Promise<boolean> {
     }
   }
   const local = getPlayer();
+  if (local) setPlayer(local); // Scrub legacy copies in cookie and IndexedDB too.
   try {
     const res = await withTimeout(
       fetch('/api/me', { credentials: 'same-origin', cache: 'no-store' }),
@@ -155,7 +191,9 @@ export async function restoreSession(): Promise<boolean> {
         const same =
           local && normalizeName(local.name) === normalizeName(data.name);
         if (!local || same) {
-          setPlayer({ name: data.name, pin: same ? local?.pin : undefined });
+          setPlayer({ name: data.name });
+          legacyCredential = null;
+          status('synced');
           if (data.progress && typeof data.progress === 'object') {
             saveProgress(mergeProgress(loadProgress(), data.progress), false);
             void pushProgress();
@@ -163,13 +201,17 @@ export async function restoreSession(): Promise<boolean> {
           return true;
         }
       }
-    } else if (res && res.status === 401 && local?.pin) {
+    } else if (res && res.status === 401 && local && legacyPin(local.name)) {
       // Logged in on this device but never got a server session (offline
       // at the time, or an older build): log in quietly now.
-      await login(local.name, local.pin);
+      await login(local.name, legacyPin(local.name)!);
+    } else if (res && res.status === 401) {
+      status('login-required');
+    } else {
+      status(res ? 'error' : 'offline');
     }
   } catch {
-    /* Offline: play on the local copy. */
+    status('offline'); /* Offline: play on the local copy. */
   }
   return !!getPlayer();
 }
@@ -229,7 +271,8 @@ export async function login(name: string, pin: string): Promise<LoginResult> {
       // API missing or down: play with a local account.
       if (previous && !same)
         return { ok: false, error: 'مفيش شبكة، مش هقدر أغيّر اللاعب دلوقتي' };
-      setPlayer({ name: n, pin });
+      setPlayer({ name: n });
+      status('local');
       return { ok: true };
     }
     const server = data.progress as Progress | undefined;
@@ -249,13 +292,16 @@ export async function login(name: string, pin: string): Promise<LoginResult> {
         false,
       );
     }
-    setPlayer({ name: String(data.name || n), pin });
+    setPlayer({ name: String(data.name || n) });
+    legacyCredential = null;
+    status('synced');
     return { ok: true, created: !!data.created };
   } catch {
     // Offline: keep playing locally on first login, but don't swap players blindly.
     if (previous && !same)
       return { ok: false, error: 'مفيش شبكة، مش هقدر أغيّر اللاعب دلوقتي' };
-    setPlayer({ name: n, pin });
+    setPlayer({ name: n });
+    status('offline');
     return { ok: true };
   }
 }
@@ -276,6 +322,7 @@ async function pushProgress() {
     return;
   }
   pushing = true;
+  status('syncing');
   try {
     do {
       pushAgain = false;
@@ -288,15 +335,21 @@ async function pushProgress() {
           credentials: 'same-origin',
           body: JSON.stringify({
             name: p.name,
-            pin: p.pin,
+            pin: legacyPin(p.name),
             progress: loadProgress(),
           }),
         });
-        if (!res.ok) break;
+        if (!res.ok) {
+          status(res.status === 401 ? 'login-required' : 'error');
+          break;
+        }
         const data = await res.json();
+        legacyCredential = null;
+        status('synced');
         if (getPlayer()?.name === p.name && data.progress)
           saveProgress(mergeProgress(loadProgress(), data.progress), false);
       } catch {
+        status('offline');
         break; /* Stay on the local cache. */
       }
     } while (pushAgain);
@@ -310,14 +363,24 @@ export async function pullProgress() {
   try {
     const { res, data } = await post('/api/progress', {
       name: p.name,
-      pin: p.pin,
+      pin: legacyPin(p.name),
     });
-    if (!res.ok || !data.progress || typeof data.progress !== 'object') return;
+    if (!res.ok) {
+      status(res.status === 401 ? 'login-required' : 'error');
+      return;
+    }
+    if (!data.progress || typeof data.progress !== 'object') return;
+    legacyCredential = null;
+    status('synced');
     const merged = mergeProgress(loadProgress(), data.progress as Progress);
     saveProgress(merged, false);
     void pushProgress();
   } catch {
-    /* Offline: keep the local cache. */
+    status('offline'); /* Offline: keep the local cache. */
   }
 }
 onProgressSave(syncProgress);
+if (typeof window !== 'undefined')
+  window.addEventListener('online', () => {
+    void restoreSession().then(() => pushProgress());
+  });
