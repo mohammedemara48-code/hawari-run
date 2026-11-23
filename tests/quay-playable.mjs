@@ -23,6 +23,7 @@ try {
         b = s.hero.body,
         k = s.crane.hooks[0];
       return {
+        time: s.time.now,
         x: s.hero.x,
         y: s.hero.y,
         feet: b.bottom,
@@ -47,13 +48,22 @@ try {
         movers: s.moverList.map((m) => ({ x: m.img.x, y: m.img.y })),
       };
     });
-  const key = async (k, on) =>
-    on ? page.keyboard.down(k) : page.keyboard.up(k);
+  const held = new Set();
+  const key = async (k, on) => {
+    if (held.has(k) === on) return;
+    if (on) {
+      await page.keyboard.down(k);
+      held.add(k);
+    } else {
+      await page.keyboard.up(k);
+      held.delete(k);
+    }
+  };
   let lastJump = -10000,
     lastShot = 0,
     ferryBoard = false,
     ferryLeft = false;
-  for (let i = 0; i < 440; i++) {
+  for (let i = 0; i < 2200; i++) {
     const s = await state();
     if (i % 20 === 0 || (s.x > 1090 && s.x < 1300))
       console.log(i, JSON.stringify(s));
@@ -86,8 +96,8 @@ try {
         jump = s.ground;
       }
     } else if (s.x > 3780 && s.x < 4090 && s.hp > 0) {
-      dir = s.x < 3940 ? 1 : s.x > 3960 ? -1 : 0;
-      jump = s.ground;
+      dir = s.x < 3945 ? 1 : s.x > 3951 ? -1 : 0;
+      jump = s.ground && Math.abs(s.x - 3948) < 18;
     } else if (s.x > 500 && s.x < 985 && !ferryLeft) {
       const ferry = s.movers[0];
       if (!ferryBoard) {
@@ -122,10 +132,10 @@ try {
           (s.x > 1800 && s.x < 1970) ||
           (s.x > 2700 && s.x < 2920));
     }
-    const hold = s.x > 1450 && s.x < 1810 ? 8 : 4;
-    if (jump && i - lastJump < hold + 2) jump = false;
-    if (jump) lastJump = i;
-    if (i - lastJump < hold) jump = true;
+    const hold = s.x > 1450 && s.x < 1810 ? 1000 : 430;
+    if (jump && s.time - lastJump < hold + 130) jump = false;
+    if (jump) lastJump = s.time;
+    if (s.time - lastJump < hold) jump = true;
     await key(
       'Shift',
       !((s.x > 500 && s.x < 985) || (s.x > 1400 && s.x < 1810) || s.x > 3780),
