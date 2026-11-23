@@ -1,3 +1,4 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Landscape phone: analog stick + jump + chili, with real multi-touch via CDP.
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
@@ -268,7 +269,7 @@ await p.waitForTimeout(40);
 await down(3, cx, cy); // chili with the other thumb
 await p.waitForTimeout(110);
 const multi = await st();
-await p.screenshot({ path: '/workspace/hawari-shots/09-joystick.png' });
+await p.screenshot({ path: `${SHOTS_DIR}/09-joystick.png` });
 assert.ok(
   !multi.grounded && multi.y < 275,
   'jumped from the stick while moving',
@@ -346,7 +347,7 @@ await move(1, sx - R * 0.9, sy);
 await p.waitForTimeout(900);
 assert.ok((await st()).x <= 22, 'hero reached the street start');
 await up(1);
-await p.screenshot({ path: '/workspace/hawari-shots/10-joystick-small.png' });
+await p.screenshot({ path: `${SHOTS_DIR}/10-joystick-small.png` });
 console.log('overlap samples with controls:', overlaps.length);
 assert.deepEqual(
   overlaps.slice(0, 3),

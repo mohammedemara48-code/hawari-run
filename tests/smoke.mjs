@@ -1,3 +1,4 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 import { chromium } from '@playwright/test';
 const browser = await chromium.launch({
   headless: true,
@@ -13,7 +14,7 @@ await page.goto(process.env.GAME_URL || 'http://localhost:5173/');
 await page.waitForFunction(() => window.hawari?.scene.getScene('alley')?.hero);
 await page.evaluate(() => document.fonts.ready);
 await page.screenshot({
-  path: '/workspace/hawari-shots/01-title.png',
+  path: `${SHOTS_DIR}/01-title.png`,
   fullPage: true,
 });
 await page.locator('[data-screen="title"] [data-action="start"]').click();
@@ -31,7 +32,7 @@ console.log(
   }),
 );
 await page.screenshot({
-  path: '/workspace/hawari-shots/02-alley.png',
+  path: `${SHOTS_DIR}/02-alley.png`,
   fullPage: true,
 });
 console.log('Errors:', errors);

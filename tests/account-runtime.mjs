@@ -1,3 +1,4 @@
+import { shotPath } from './browser-paths.mjs';
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 const browser = await chromium.launch({ args: ['--no-sandbox'] });
@@ -57,7 +58,7 @@ try {
     true,
   );
   await page.screenshot({
-    path: process.env.SHOT_PATH || '/downloads/hawari-sync-status.png',
+    path: process.env.SHOT_PATH || shotPath('sync-status.png'),
   });
   console.log('PIN copies scrubbed, local-only status visible');
 } finally {

@@ -1,10 +1,11 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Runtime check of Aswan's felucca voyage (شلال أسوان): the boat runs
 // forward on its own once you step aboard; left/right only trim the speed;
 // jump hops to the other bank to dodge; a rock bump slides you past (never
 // aground); a crocodile bubbles then bites on its side; a gust shows an
 // arrow and bursts the speed by itself; an autopilot that only hops at
 // hazards finishes the cataract in about a minute. Screenshot:
-// /workspace/hawari-shots/28-felucca-fast.png.
+// test-results/screenshots/28-felucca-fast.png.
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 const browser = await chromium.launch({
@@ -83,8 +84,7 @@ await ev(() => {
     },
   };
 });
-const shot = (name) =>
-  page.screenshot({ path: `/workspace/hawari-shots/${name}` });
+const shot = (name) => page.screenshot({ path: `${SHOTS_DIR}/${name}` });
 const log = (...a) => console.log('✔', ...a);
 
 const IDX = 23; // شلال أسوان

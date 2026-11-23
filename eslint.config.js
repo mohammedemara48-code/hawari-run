@@ -1,7 +1,7 @@
 import js from '@eslint/js';
 import ts from 'typescript-eslint';
 export default ts.config(
-  { ignores: ['dist/**', 'tests/fixtures/**', 'api/**'] },
+  { ignores: ['dist/**', 'tests/fixtures/**'] },
   js.configs.recommended,
   ...ts.configs.recommended,
   {
@@ -19,6 +19,8 @@ export default ts.config(
         setTimeout: 'readonly',
         console: 'readonly',
         process: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
         Buffer: 'readonly',
         URL: 'readonly',
         fetch: 'readonly',

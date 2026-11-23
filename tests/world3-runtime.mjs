@@ -1,3 +1,4 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Runtime check of World 3 (دمياط): conveyor belts, toppling furniture,
 // swinging lamps, the tide, boats, nets, the sea, the five new enemies and
 // the crab boss, driven in the real scene.
@@ -93,8 +94,7 @@ const sample = async (ms, fn) => {
   }
   return out;
 };
-const shot = (name) =>
-  page.screenshot({ path: `/workspace/hawari-shots/${name}` });
+const shot = (name) => page.screenshot({ path: `${SHOTS_DIR}/${name}` });
 const log = (...a) => console.log('✔', ...a);
 const jumpPeak = async () => {
   await page.keyboard.down('Space');

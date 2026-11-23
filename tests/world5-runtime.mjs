@@ -1,8 +1,9 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 // Runtime check of World 5 (الأقصر): the road opens after ريّس النوة, the
 // Luxor throwing stick (start pickup, throw, spin), the three health tiers,
 // telegraphed pillars and sand, the stick crate before the ram, and a fair
 // stomp on «الكبش الحارس», driven in the real scene. Screenshots go to
-// /workspace/hawari-shots/19-luxor-*.png.
+// test-results/screenshots/19-luxor-*.png.
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 const browser = await chromium.launch({
@@ -78,8 +79,7 @@ await ev(() => {
     },
   };
 });
-const shot = (name) =>
-  page.screenshot({ path: `/workspace/hawari-shots/${name}` });
+const shot = (name) => page.screenshot({ path: `${SHOTS_DIR}/${name}` });
 const log = (...a) => console.log('✔', ...a);
 
 /* Map: Luxor is open and selected, its first level playable. */

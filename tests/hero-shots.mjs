@@ -1,3 +1,4 @@
+import { SHOTS as SHOTS_DIR } from './browser-paths.mjs';
 import { chromium } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 const b = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
@@ -75,10 +76,7 @@ const png = await p.evaluate(() => {
   }
   return c.toDataURL().split(',')[1];
 });
-await writeFile(
-  '/workspace/hawari-shots/04-hero-sheet.png',
-  Buffer.from(png, 'base64'),
-);
+await writeFile(`${SHOTS_DIR}/04-hero-sheet.png`, Buffer.from(png, 'base64'));
 await p.locator('[data-screen="title"] [data-action="start"]').click();
 await p.locator('.map-node[data-node="0"]').click();
 await p.evaluate(() => {
@@ -93,7 +91,7 @@ await p.evaluate(() => {
 await p.waitForTimeout(800);
 await p
   .locator('#game-wrap')
-  .screenshot({ path: '/workspace/hawari-shots/05-gameplay-new.png' });
+  .screenshot({ path: `${SHOTS_DIR}/05-gameplay-new.png` });
 const crop = await p.evaluate(
   () =>
     new Promise((resolve) => {
@@ -114,7 +112,7 @@ const crop = await p.evaluate(
     }),
 );
 await writeFile(
-  '/workspace/hawari-shots/06-hero-closeup.png',
+  `${SHOTS_DIR}/06-hero-closeup.png`,
   Buffer.from(crop, 'base64'),
 );
 await b.close();
