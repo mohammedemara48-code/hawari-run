@@ -1,3 +1,4 @@
+import { isAdminPlayer } from './_admin.js';
 // GET: who is remembered by the session cookie (name + saved progress).
 // DELETE: forget this device (used when switching player).
 import {
@@ -37,6 +38,7 @@ export default async function handler(req, res) {
     setSession(res, rows[0].id);
     return json(res, 200, {
       name: rows[0].name,
+      admin: isAdminPlayer(rows[0].id),
       progress: normalizeProgress(rows[0].progress),
     });
   } catch (err) {

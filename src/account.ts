@@ -1,3 +1,4 @@
+import { clearAdminAccess, acceptServerRole } from './admin';
 // Player name + PIN, with a server copy when /api is reachable.
 import {
   loadProgress,
@@ -103,6 +104,7 @@ export function setPlayer(p: Player) {
   }
 }
 export function clearPlayer() {
+  clearAdminAccess();
   legacyCredential = null;
   status('local');
   writeCookie(null);
@@ -163,6 +165,7 @@ const withTimeout = <T>(p: Promise<T>, ms: number, fallback: T) =>
  * (httpOnly cookie) when page storage was wiped, and make sure a device
  * that only ever logged in locally gets a server session. */
 export async function restoreSession(): Promise<boolean> {
+  clearAdminAccess();
   if (!getPlayer()) {
     const raw = await withTimeout(idbGet(), 800, null);
     if (raw) {
@@ -185,6 +188,7 @@ export async function restoreSession(): Promise<boolean> {
     if (res && res.ok) {
       const data = (await res.json()) as {
         name?: string;
+        admin?: boolean;
         progress?: Progress;
       };
       if (typeof data.name === 'string') {
@@ -192,6 +196,7 @@ export async function restoreSession(): Promise<boolean> {
           local && normalizeName(local.name) === normalizeName(data.name);
         if (!local || same) {
           setPlayer({ name: data.name });
+          acceptServerRole(data.admin);
           legacyCredential = null;
           status('synced');
           if (data.progress && typeof data.progress === 'object') {
@@ -257,6 +262,7 @@ async function post(url: string, body: unknown) {
   return { res, data };
 }
 export async function login(name: string, pin: string): Promise<LoginResult> {
+  clearAdminAccess();
   const n = normalizeName(name);
   if (n.length < 2) return { ok: false, error: 'الاسم قصّر أوي' };
   if (!validPin(pin)) return { ok: false, error: 'الرقم السري لازم ٤ أرقام' };
@@ -278,7 +284,7 @@ export async function login(name: string, pin: string): Promise<LoginResult> {
       };
     if (res.status === 401)
       return { ok: false, error: String(data.error || 'الرقم السري غلط') };
-    if (res.status === 400)
+    if (res.status === 400 || res.status === 403)
       return { ok: false, error: String(data.error || 'حصل خطأ، جرّب تاني') };
     if (!res.ok || typeof data.name !== 'string') {
       // API missing or down: play with a local account.
@@ -307,6 +313,7 @@ export async function login(name: string, pin: string): Promise<LoginResult> {
     }
     setPlayer({ name: String(data.name || n) });
     legacyCredential = null;
+    acceptServerRole(data.admin);
     status('synced');
     return { ok: true, created: !!data.created };
   } catch {
@@ -353,11 +360,13 @@ async function pushProgress() {
           }),
         });
         if (!res.ok) {
+          clearAdminAccess();
           status(res.status === 401 ? 'login-required' : 'error');
           break;
         }
         const data = await res.json();
         legacyCredential = null;
+        if (getPlayer()?.name === p.name) acceptServerRole(data.admin);
         status('synced');
         if (getPlayer()?.name === p.name && data.progress)
           saveProgress(mergeProgress(loadProgress(), data.progress), false);
@@ -379,11 +388,14 @@ export async function pullProgress() {
       pin: legacyPin(p.name),
     });
     if (!res.ok) {
+      clearAdminAccess();
       status(res.status === 401 ? 'login-required' : 'error');
       return;
     }
     if (!data.progress || typeof data.progress !== 'object') return;
     legacyCredential = null;
+    if (getPlayer()?.name !== p.name) return;
+    acceptServerRole(data.admin);
     status('synced');
     const merged = mergeProgress(loadProgress(), data.progress as Progress);
     saveProgress(merged, false);

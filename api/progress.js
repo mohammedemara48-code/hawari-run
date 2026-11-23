@@ -1,3 +1,4 @@
+import { isAdminPlayer } from './_admin.js';
 import { normalizeProgress } from '../shared/progress.js';
 import { storeProgress } from './_progress.js';
 import {
@@ -54,13 +55,18 @@ export default async function handler(req, res) {
       await sql`UPDATE players SET failed_attempts = 0, locked_until = NULL WHERE id = ${found.row.id}`;
       return json(res, 200, {
         name: found.row.name,
+        admin: isAdminPlayer(found.row.id),
         progress: normalizeProgress(found.row.progress),
       });
     }
     if (!isProgress(body.progress))
       return json(res, 400, { error: 'بيانات ناقصة' });
     const progress = await storeProgress(sql, found.row.id, body.progress);
-    return json(res, 200, { name: found.row.name, progress });
+    return json(res, 200, {
+      name: found.row.name,
+      progress,
+      admin: isAdminPlayer(found.row.id),
+    });
   } catch (err) {
     console.error('progress failed', err?.message || err);
     return json(res, 500, { error: 'حصل خطأ، جرّب تاني' });

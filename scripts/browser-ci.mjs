@@ -55,6 +55,7 @@ try {
         'siwa-lighting',
         'salt-touch-playable',
         'sync-feedback',
+        'admin-ui',
         'world8-runtime',
         'account-landscape',
       ]
