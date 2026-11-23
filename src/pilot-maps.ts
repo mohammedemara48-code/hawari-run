@@ -190,10 +190,10 @@ export function plateauPilot() {
     g.run(x, x + 3, 13, '#');
   }
   g.put(104, 5, 'G');
-  g.put(48, 14, '5');
-  g.put(116, 14, '5');
-  g.put(227, 14, '5');
-  g.put(323, 14, '5');
+  g.put(41, 11, '5');
+  g.put(114, 8, '5');
+  g.put(224, 5, '5');
+  g.put(320, 8, '5');
   g.put(161, 11, '?');
   g.put(285, 10, '?');
   return g.rows();
