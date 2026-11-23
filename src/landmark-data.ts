@@ -1,3 +1,4 @@
+import { plateauPilot } from './pilot-maps';
 import type { LevelMeta, WorldMeta } from './level-data';
 
 export const LANDMARK_WORLDS: WorldMeta[] = [
@@ -132,7 +133,7 @@ export const LANDMARK_LEVELS: LevelMeta[] = Array.from(
       name: names[group][variant],
       subtitle: subtitles[group],
       theme: (['giza', 'citadel', 'rashid'] as const)[group],
-      time: 260 + variant * 20,
+      time: i === 0 ? 320 : 260 + variant * 20,
       dark: 0,
       track: 40 + i,
       timeOfDay: `landmark-${i}`,
@@ -148,26 +149,30 @@ export const LANDMARK_LEVELS: LevelMeta[] = Array.from(
         kind: (['light', 'stealth', 'balance'] as const)[group],
         variant,
         stations:
-          variant === 3
-            ? group === 0
-              ? [115, 120, 125]
-              : group === 1
-                ? [116, 122]
-                : [118]
-            : group === 0
-              ? [56, 66, 76].slice(0, Math.min(3, variant + 1))
-              : group === 1
-                ? [58, 76, 91].slice(0, Math.min(3, variant + 1))
-                : [59],
-        gate: variant === 3 ? 136 : 101 + variant * 8,
+          i === 0
+            ? [56, 158, 270]
+            : variant === 3
+              ? group === 0
+                ? [115, 120, 125]
+                : group === 1
+                  ? [116, 122]
+                  : [118]
+              : group === 0
+                ? [56, 66, 76].slice(0, Math.min(3, variant + 1))
+                : group === 1
+                  ? [58, 76, 91].slice(0, Math.min(3, variant + 1))
+                  : [59],
+        gate: i === 0 ? 291 : variant === 3 ? 136 : 101 + variant * 8,
         target:
-          group === 0
-            ? [1, 3, 2].slice(0, Math.min(3, variant + 1))
-            : group === 2
-              ? [variant + 1]
-              : [],
+          i === 0
+            ? [1, 3, 2]
+            : group === 0
+              ? [1, 3, 2].slice(0, Math.min(3, variant + 1))
+              : group === 2
+                ? [variant + 1]
+                : [],
       },
-      rows: map(group, variant),
+      rows: i === 0 ? plateauPilot() : map(group, variant),
     };
   },
 );
