@@ -23,6 +23,16 @@ let serveOldWorker = false;
 let liveVersion = null;
 const server = createServer(async (req, res) => {
   const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  if (path.startsWith('/api/')) {
+    // This is an isolated static/offline harness, not a production account server.
+    res
+      .writeHead(200, {
+        'content-type': 'application/json',
+        'cache-control': 'no-store',
+      })
+      .end('{}');
+    return;
+  }
   try {
     let body;
     let file = path === '/' ? '/index.html' : path;
