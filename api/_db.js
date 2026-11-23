@@ -75,9 +75,7 @@ export function pinMatches(pin, salt, expected) {
   return got.length === want.length && timingSafeEqual(got, want);
 }
 
-export function isProgress(p) {
-  return !!p && typeof p === 'object' && typeof p.unlocked === 'number';
-}
+export { isProgress } from '../shared/progress.js';
 
 export function getSql() {
   const url = process.env.DATABASE_URL;

@@ -8,12 +8,14 @@ import { TILE } from './level-data';
 import { parseLevel } from './level-parse';
 import { bossBar } from './ui';
 import { sound } from './audio';
+import { releaseLevelTextures } from './level-textures';
 
 export function loadLevel(scene: Alley) {
   scene.tweens.killAll();
   scene.time.removeAllEvents();
   scene.physics.world.colliders.destroy();
   scene.children.removeAll(true);
+  releaseLevelTextures(scene.textures);
   scene.layers = [];
   scene.lanterns = [];
   scene.moverList = [];

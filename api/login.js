@@ -14,31 +14,8 @@ import {
   validPin,
 } from './_db.js';
 
-function merge(a, b) {
-  if (!isProgress(a))
-    return isProgress(b)
-      ? b
-      : { unlocked: 0, best: {}, coins: {}, secrets: {}, cleared: {} };
-  if (!isProgress(b)) return a;
-  const best = { ...(a.best || {}) };
-  for (const [k, v] of Object.entries(b.best || {}))
-    best[k] = Math.max(best[k] || 0, v);
-  const coins = { ...(a.coins || {}) };
-  for (const [k, v] of Object.entries(b.coins || {}))
-    coins[k] = Math.max(coins[k] || 0, v);
-  const ar = a.resume && typeof a.resume === 'object' ? a.resume : null;
-  const br = b.resume && typeof b.resume === 'object' ? b.resume : null;
-  const resume = ar && br ? ((br.at || 0) >= (ar.at || 0) ? br : ar) : ar || br;
-  return {
-    unlocked: Math.max(a.unlocked || 0, b.unlocked || 0),
-    best,
-    coins,
-    secrets: { ...(a.secrets || {}), ...(b.secrets || {}) },
-    cleared: { ...(a.cleared || {}), ...(b.cleared || {}) },
-    resume,
-    updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0, Date.now()),
-  };
-}
+import { normalizeProgress } from '../shared/progress.js';
+import { storeProgress } from './_progress.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
@@ -62,13 +39,7 @@ export default async function handler(req, res) {
     const incoming = isProgress(body.progress) ? body.progress : null;
     if (!row) {
       const salt = newSalt();
-      const progress = incoming || {
-        unlocked: 0,
-        best: {},
-        coins: {},
-        secrets: {},
-        cleared: {},
-      };
+      const progress = normalizeProgress(incoming);
       const made =
         await sql`INSERT INTO players (name, name_key, pin_salt, pin_hash, progress)
         VALUES (${name}, ${key}, ${salt}, ${hashPin(pin, salt)}, ${JSON.stringify(progress)}::jsonb) RETURNING id`;
@@ -84,8 +55,8 @@ export default async function handler(req, res) {
       await sql`UPDATE players SET failed_attempts = ${fails}, locked_until = ${lock} WHERE id = ${row.id}`;
       return json(res, 401, { error: 'الرقم السري غلط' });
     }
-    const progress = merge(row.progress || {}, incoming || {});
-    await sql`UPDATE players SET failed_attempts = 0, locked_until = NULL, progress = ${JSON.stringify(progress)}::jsonb, updated_at = now() WHERE id = ${row.id}`;
+    const progress = await storeProgress(sql, row.id, incoming);
+    await sql`UPDATE players SET failed_attempts = 0, locked_until = NULL WHERE id = ${row.id}`;
     setSession(res, row.id);
     return json(res, 200, { name: row.name, created: false, progress });
   } catch (err) {

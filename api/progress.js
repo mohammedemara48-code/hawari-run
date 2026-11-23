@@ -1,3 +1,5 @@
+import { normalizeProgress } from '../shared/progress.js';
+import { storeProgress } from './_progress.js';
 import {
   clientIp,
   getSql,
@@ -57,13 +59,13 @@ export default async function handler(req, res) {
       await sql`UPDATE players SET failed_attempts = 0, locked_until = NULL WHERE id = ${found.row.id}`;
       return json(res, 200, {
         name: found.row.name,
-        progress: found.row.progress || {},
+        progress: normalizeProgress(found.row.progress),
       });
     }
     if (!isProgress(body.progress))
       return json(res, 400, { error: 'بيانات ناقصة' });
-    await sql`UPDATE players SET failed_attempts = 0, locked_until = NULL, progress = ${JSON.stringify(body.progress)}::jsonb, updated_at = now() WHERE id = ${found.row.id}`;
-    return json(res, 200, { name: found.row.name, progress: body.progress });
+    const progress = await storeProgress(sql, found.row.id, body.progress);
+    return json(res, 200, { name: found.row.name, progress });
   } catch (err) {
     console.error('progress failed', err?.message || err);
     return json(res, 500, { error: 'حصل خطأ، جرّب تاني' });
