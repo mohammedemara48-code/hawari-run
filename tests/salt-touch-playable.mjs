@@ -80,7 +80,14 @@ try {
         }),
         pans: s.moverList
           .filter((m) => !m.camel && m.axis === 'x')
-          .map((m) => ({ x: m.img.x, top: m.img.body.top, min: m.min, max: m.max, left: m.img.body.left, right: m.img.body.right }))
+          .map((m) => ({
+            x: m.img.x,
+            top: m.img.body.top,
+            min: m.min,
+            max: m.max,
+            left: m.img.body.left,
+            right: m.img.body.right,
+          })),
       };
     });
     if (tick % 80 === 0 || s.mode !== 'play')
@@ -98,9 +105,7 @@ try {
     // the pan slides home, stand still mid-brine, then walk off.
     const ferry = s.pans.find(
       (p) =>
-        Math.abs(p.top - s.feet) < 12 &&
-        s.x > p.x - 8 * 24 &&
-        s.x < p.max + 60,
+        Math.abs(p.top - s.feet) < 12 && s.x > p.x - 8 * 24 && s.x < p.max + 60,
     );
     let stickDir = dir;
     if (ferry) {

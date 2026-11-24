@@ -117,7 +117,12 @@ try {
             : null,
           pans: s.moverList
             .filter((m) => !m.camel && m.axis === 'x')
-            .map((m) => ({ x: m.img.x, top: m.img.body.top, min: m.min, max: m.max })),
+            .map((m) => ({
+              x: m.img.x,
+              top: m.img.body.top,
+              min: m.min,
+              max: m.max,
+            })),
           camels:
             s.siwa?.camels.map((c) => ({
               x: c.img.x,
@@ -242,18 +247,19 @@ try {
         run = false;
         jump = false;
         const fmin = ferry.min;
-        const onPan =
+        const riding =
+          s.abyss[0] &&
           Math.abs(s.feet - ferry.top) < 6 &&
           s.x > ferry.x - 20 &&
           s.x < ferry.x + 56;
-        if (onPan) {
+        if (riding) {
           // Docked at the far bank: walk off. Otherwise hold the pan's center.
           if (ferry.x > ferry.max - 3) dir = 1;
           else {
             const c = ferry.x + 24;
             dir = Math.abs(s.x - c) < 8 ? 0 : Math.sign(c - s.x);
           }
-        } else if ((s.abyss[1] || s.abyss[2]) && s.x < ferry.x) {
+        } else if (s.abyss[1] || s.abyss[2]) {
           // On the bank over the brine: board only once it has docked.
           dir = ferry.x < fmin + 4 ? 1 : 0;
         } else {
@@ -261,8 +267,7 @@ try {
           if (s.ground && (s.wall || enemy)) jump = true;
         }
       }
-      if (ci < 0 && !ferry && s.ground && (s.wall || enemy || gap))
-        jump = true;
+      if (ci < 0 && !ferry && s.ground && (s.wall || enemy || gap)) jump = true;
 
       const route = process.env.PILOT_SECRETS === '1' ? detour[waypoint] : null;
       if (route && s.x > (detour[0].x - 6) * 24) {

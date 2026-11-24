@@ -34,7 +34,8 @@ describe('Salt Mirage redesigned crossings', () => {
     for (let c = l.start.col; c <= l.exit.col; c++) {
       if (SOLID.has(l.at(c, 13))) run++;
       else {
-        if (run > 0) expect(run, `crust run ending at ${c - 1}`).toBeGreaterThanOrEqual(3);
+        if (run > 0)
+          expect(run, `crust run ending at ${c - 1}`).toBeGreaterThanOrEqual(3);
         run = 0;
       }
     }
