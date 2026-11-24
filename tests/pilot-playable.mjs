@@ -39,6 +39,7 @@ try {
     let jumpUntil = 0,
       lastJump = -1000,
       lastDown = -1000,
+      lastShot = -1000,
       reachedFlag = index === 29;
     const detour =
       index === 0
@@ -130,6 +131,19 @@ try {
               max: c.max,
               top: c.img.body.top,
             })) || [],
+          boss:
+            s.boss && s.boss.active
+              ? {
+                  x: s.boss.x,
+                  y: s.boss.y,
+                  state: s.bossState.state,
+                  hp: s.bossState.hp,
+                }
+              : null,
+          waves: s.hazards
+            .getChildren()
+            .filter((h) => h.active)
+            .map((h) => ({ x: h.x })),
         };
       });
       if (tick % 40 === 0 || s.mode === 'dead')
@@ -289,6 +303,33 @@ try {
         run = false;
         jump = false;
         jumpUntil = 0;
+      }
+      // Qibli: salt the charge to drop him, then stomp the exposed tail.
+      if (s.boss && s.boss.hp > 0) {
+        const dx = s.boss.x - s.x,
+          toward = Math.sign(dx) || 1;
+        if (s.boss.state === 'stunned') {
+          dir = toward;
+          run = true;
+          if (Math.abs(dx) < 52 && s.ground) jump = true;
+        } else if (s.boss.state === 'tell') {
+          // Face him and throw; walking keeps the facing honest.
+          dir = Math.abs(dx) > 70 ? toward : 0;
+          run = false;
+          if (Math.abs(dx) < 240 && s.now - lastShot > 320) {
+            await key('X', true);
+            await key('X', false);
+            lastShot = s.now;
+          }
+        } else {
+          // Keep a readable gap while he hovers, slams or buries.
+          dir = Math.abs(dx) < 96 ? -toward : Math.abs(dx) > 170 ? toward : 0;
+          run = Math.abs(dx) < 96;
+        }
+        const w = s.waves.find(
+          (w) => Math.abs(w.x - s.x) < 64 && Math.sign(w.x - s.x) === toward,
+        );
+        if (w && s.ground) jump = true;
       }
       if (s.vy > 0) jumpUntil = 0;
       if (jump && s.ground && !held.has('Space') && s.now - lastJump > 450) {
