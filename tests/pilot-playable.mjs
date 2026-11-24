@@ -39,6 +39,7 @@ try {
     let jumpUntil = 0,
       lastJump = -1000,
       lastDown = -1000,
+      lastShot = -1000,
       reachedFlag = index === 29;
     const detour =
       index === 0
@@ -117,7 +118,12 @@ try {
             : null,
           pans: s.moverList
             .filter((m) => !m.camel && m.axis === 'x')
-            .map((m) => ({ x: m.img.x, top: m.img.body.top, max: m.max })),
+            .map((m) => ({
+              x: m.img.x,
+              top: m.img.body.top,
+              min: m.min,
+              max: m.max,
+            })),
           camels:
             s.siwa?.camels.map((c) => ({
               x: c.img.x,
@@ -125,6 +131,19 @@ try {
               max: c.max,
               top: c.img.body.top,
             })) || [],
+          boss:
+            s.boss && s.boss.active
+              ? {
+                  x: s.boss.x,
+                  y: s.boss.y,
+                  state: s.bossState.state,
+                  hp: s.bossState.hp,
+                }
+              : null,
+          waves: s.hazards
+            .getChildren()
+            .filter((h) => h.active)
+            .map((h) => ({ x: h.x })),
         };
       });
       if (tick % 40 === 0 || s.mode === 'dead')
@@ -229,16 +248,41 @@ try {
           e.y > s.feet - 36 &&
           e.y < s.feet + 18,
       );
-      if (ci < 0 && s.ground && (s.wall || enemy || gap)) jump = true;
+      // Ferry crossings (Salt Mirage): the pans float at crust level.
+      // Wait on the bank, walk aboard when one slides in, stand for the
+      // ride, then walk off onto the far crust.
+      const ferry = s.pans.find(
+        (p) =>
+          Math.abs(p.top - s.feet) < 12 &&
+          s.x > p.x - 8 * 24 &&
+          s.x < p.max + 60,
+      );
+      if (ferry) {
+        run = false;
+        jump = false;
+        const fmin = ferry.min;
+        const riding =
+          s.abyss[0] &&
+          Math.abs(s.feet - ferry.top) < 6 &&
+          s.x > ferry.x - 20 &&
+          s.x < ferry.x + 56;
+        if (riding) {
+          // Docked at the far bank: walk off. Otherwise hold the pan's center.
+          if (ferry.x > ferry.max - 3) dir = 1;
+          else {
+            const c = ferry.x + 24;
+            dir = Math.abs(s.x - c) < 8 ? 0 : Math.sign(c - s.x);
+          }
+        } else if (s.abyss[1] || s.abyss[2]) {
+          // On the bank over the brine: board only once it has docked.
+          dir = ferry.x < fmin + 4 ? 1 : 0;
+        } else {
+          dir = 1;
+          if (s.ground && (s.wall || enemy)) jump = true;
+        }
+      }
+      if (ci < 0 && !ferry && s.ground && (s.wall || enemy || gap)) jump = true;
 
-      if (index === 29 && s.x > 26 * 24 && s.x < 44 * 24) {
-        run = true;
-        dir = 1;
-        jump = s.ground && s.x > 28.5 * 24;
-      }
-      if (index === 29 && s.x > 74 * 24 && s.x < 89 * 24) {
-        jump = s.ground && s.x > 78 * 24;
-      }
       const route = process.env.PILOT_SECRETS === '1' ? detour[waypoint] : null;
       if (route && s.x > (detour[0].x - 6) * 24) {
         const tx = route.x * 24 + 12;
@@ -259,6 +303,33 @@ try {
         run = false;
         jump = false;
         jumpUntil = 0;
+      }
+      // Qibli: salt the charge to drop him, then stomp the exposed tail.
+      if (s.boss && s.boss.hp > 0) {
+        const dx = s.boss.x - s.x,
+          toward = Math.sign(dx) || 1;
+        if (s.boss.state === 'stunned') {
+          dir = toward;
+          run = true;
+          if (Math.abs(dx) < 52 && s.ground) jump = true;
+        } else if (s.boss.state === 'tell') {
+          // Face him and throw; walking keeps the facing honest.
+          dir = Math.abs(dx) > 70 ? toward : 0;
+          run = false;
+          if (Math.abs(dx) < 240 && s.now - lastShot > 320) {
+            await key('X', true);
+            await key('X', false);
+            lastShot = s.now;
+          }
+        } else {
+          // Keep a readable gap while he hovers, slams or buries.
+          dir = Math.abs(dx) < 96 ? -toward : Math.abs(dx) > 170 ? toward : 0;
+          run = Math.abs(dx) < 96;
+        }
+        const w = s.waves.find(
+          (w) => Math.abs(w.x - s.x) < 64 && Math.sign(w.x - s.x) === toward,
+        );
+        if (w && s.ground) jump = true;
       }
       if (s.vy > 0) jumpUntil = 0;
       if (jump && s.ground && !held.has('Space') && s.now - lastJump > 450) {

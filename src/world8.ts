@@ -618,10 +618,12 @@ export function updateQibliBoss(s: Alley, time: number) {
     (s.hazards.getChildren() as Sprite[]).some(
       (h) => h.active && h.getData('kind') === 'sandwave',
     );
-  if (st.state !== 'hurt') boss.setFlipX(toHero > 0);
-  // Float just above the dune.
+  if (st.state !== 'hurt' && st.state !== 'stunned') boss.setFlipX(toHero > 0);
+  // Float just above the dune; while stunned he lies low on the sand.
   const floor = (s.L.rows - 2) * TILE;
-  if (boss.y > floor - 90) boss.y = floor - 90;
+  if (st.state === 'stunned') {
+    if (boss.y < floor - 48) boss.y = Math.min(floor - 48, boss.y + 3);
+  } else if (boss.y > floor - 90) boss.y = floor - 90;
   switch (st.state) {
     case 'walk':
     case 'hover':
@@ -704,6 +706,18 @@ export function updateQibliBoss(s: Alley, time: number) {
         st.until = time + 700;
       }
       break;
+    case 'stunned':
+      // Salt dropped him mid-charge: low on the sand, tail exposed,
+      // one good stomp before he pulls himself together.
+      tex('hurt');
+      boss.setVelocityX(0);
+      boss.setTint(Math.floor(time / 120) % 2 ? 0xbfe8ff : 0xffffff);
+      if (over) {
+        boss.clearTint();
+        st.state = 'hover';
+        st.until = time + 700;
+      }
+      break;
   }
 }
 
@@ -748,6 +762,22 @@ export function qibliPhase(phase: number) {
 export function qibliContact(s: Alley, fromAbove: boolean) {
   const boss = s.boss!,
     st = s.bossState;
+  if (st.state === 'stunned') {
+    if (fromAbove) {
+      // The readable counter: salt the charge, stomp the tail.
+      s.bossDamage(1);
+      s.burst(boss.x, boss.y + 16, 0xe8f0f4, 12);
+      s.hero.setVelocity(s.hero.x < boss.x ? -200 : 200, -420);
+      boss.clearTint().setTexture('boss8-hurt');
+      st.state = 'hurt';
+      st.until = s.time.now + 900;
+      s.hint('qibli-tail', 'ضربة على الديل! كمّل: شتّته بالملح ونطّ تاني');
+    } else {
+      // Shouldering a downed storm just bounces you off.
+      s.hero.setVelocity(s.hero.x < boss.x ? -160 : 160, -300);
+    }
+    return;
+  }
   if (st.state === 'hurt') {
     s.hero.setVelocityX(s.hero.x < boss.x ? -140 : 140);
     return;
@@ -756,7 +786,7 @@ export function qibliContact(s: Alley, fromAbove: boolean) {
     s.hero.setVelocity(s.hero.x < boss.x ? -220 : 220, -420);
     s.hint(
       'qibli-roof',
-      'العاصفة مش بتتحمل نطّة! افتح العين بالملح وجرّه يضرب فوقها',
+      'العاصفة مش بتتحمل نطّة! شتّته بالملح وهو بيلمّ، وبعدين نطّ على ديله',
     );
     return;
   }
@@ -775,15 +805,20 @@ export function qibliSalt(s: Alley) {
   const st = s.bossState;
   s.burst(s.boss!.x, s.boss!.y, 0xe8f0f4, 6);
   if (st.state === 'tell') {
-    st.state = 'hurt';
-    st.until = s.time.now + 700;
-    s.boss!.setTexture('boss8-hurt').clearTint();
+    // Salt mid-charge drops him: stunned, low, tail exposed and stompable.
+    st.state = 'stunned';
+    st.until = s.time.now + 2400;
+    s.boss!.setVelocity(0, 0).setTexture('boss8-hurt').clearTint();
     sound.fx('crumble');
-    toast('الملح شتت العاصفة! العين لسه هي اللي بتجيبه');
+    toast('الملح شتت هجومته! ديله مكشوف… نطّ عليه بسرعة');
+    return;
+  }
+  if (st.state === 'stunned') {
+    s.hint('qibli-tail2', 'هو واقع خلاص! نطّ على ديله قبل ما يقوم');
     return;
   }
   s.hint(
     'qibli-salt',
-    'الملح لوحده مش بيجيب القِبْلي… شتّته وهو بيلمّ، أو افتح العين وجرّه',
+    'الملح لوحده مش بيجيب القِبْلي… شتّته وهو بيلمّ ونطّ على ديله، أو افتح العين وجرّه',
   );
 }

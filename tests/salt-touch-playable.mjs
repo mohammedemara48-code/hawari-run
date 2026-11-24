@@ -78,6 +78,16 @@ try {
             if ('#=سل'.includes(s.L.at(col + d, r))) return false;
           return true;
         }),
+        pans: s.moverList
+          .filter((m) => !m.camel && m.axis === 'x')
+          .map((m) => ({
+            x: m.img.x,
+            top: m.img.body.top,
+            min: m.min,
+            max: m.max,
+            left: m.img.body.left,
+            right: m.img.body.right,
+          })),
       };
     });
     if (tick % 80 === 0 || s.mode !== 'play')
@@ -91,15 +101,50 @@ try {
     }
     assert.equal(s.mode, 'play', 'touch journey has no deaths');
     const dir = s.x > s.exit ? -1 : 1;
+    // Ferry pans float at crust level: hold on the bank, walk aboard as
+    // the pan slides home, stand still mid-brine, then walk off.
+    const ferry = s.pans.find(
+      (p) =>
+        Math.abs(p.top - s.feet) < 12 && s.x > p.x - 8 * 24 && s.x < p.max + 60,
+    );
+    let stickDir = dir;
+    if (ferry) {
+      const fmin = ferry.min;
+      const onPan =
+        Math.abs(s.feet - ferry.top) < 6 &&
+        s.x > ferry.x - 20 &&
+        s.x < ferry.x + 56;
+      if (onPan) {
+        // Docked at the far bank: walk off. Otherwise hold the pan's center.
+        if (ferry.x > ferry.max - 3) stickDir = 1;
+        else {
+          const c = ferry.x + 24;
+          stickDir = Math.abs(s.x - c) < 8 ? 0 : Math.sign(c - s.x);
+        }
+      } else if (s.gap && s.x < ferry.x) {
+        // On the home bank over brine: board only once it has docked.
+        stickDir = ferry.x < fmin + 4 ? 1 : 0;
+      }
+    }
     // Half stick gives walking speed, no run flag. Tap the actual small jump
     // button for 120 simulated ms, not a held keyboard/run-jump shortcut.
-    await set(1, [start[0] + dir * base.width * 0.2, start[1]]);
+    if (stickDir === 0) {
+      // Park by sliding to neutral: lifting and re-pressing recenters the
+      // stick on the touch point and reads as zero deflection.
+      if (points.has(1)) await set(1, start);
+    } else {
+      await set(1, [start[0] + stickDir * base.width * 0.2, start[1]]);
+    }
+    const dockedFar = ferry && ferry.x > ferry.max - 3;
     if (
       !held &&
       s.ground &&
+      (!ferry || (dockedFar && s.wall)) &&
       (s.gap || s.enemy || s.wall) &&
       s.elapsed - previous > 0.3
     ) {
+      if (!points.has(1))
+        await set(1, [start[0] + dir * base.width * 0.2, start[1]]);
       await set(2, jp);
       held = true;
       jumpUntil = s.elapsed + 0.12;
@@ -111,7 +156,7 @@ try {
       await set(1, start);
       held = false;
     }
-    for (const col of [28, 78, 120, 167])
+    for (const col of [30, 90, 119, 139])
       if (!shots.has(col) && s.x > col * 24 && s.x < (col + 7) * 24) {
         shots.add(col);
         await p.screenshot({ path: SHOTS + `/salt-touch-gap-${col}.png` });

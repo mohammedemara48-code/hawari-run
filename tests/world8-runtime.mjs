@@ -290,7 +290,8 @@ assert.ok(boardSpeed > 90, `board is brisk (${boardSpeed.toFixed(0)} px/s)`);
 await shot('29-siwa-board.png');
 log('sandboard: auto-forward at', boardSpeed.toFixed(0), 'px/s');
 
-/* Qibli: stomp bounces, salt cancels a tell, a spring hit damages, then the ending. */
+/* Qibli: stomp bounces, salt stuns a charge, the tail stomp takes a heart,
+   his hits never strip your salt, a spring hit deals two, then the ending. */
 await ev(() => {
   const s = window.T.s;
   s.siwa.thirst = 100;
@@ -324,7 +325,27 @@ assert.equal(afterStomp.hp, hp0, 'a stomp does not chip the Qibli');
 assert.ok(afterStomp.vy < 0, 'the stomp bounces off');
 log('boss: stomp bounces, no damage');
 
-// Force a tell and cancel it with salt.
+// His hits knock you back but never strip the salt you brought.
+await ev(() => {
+  const s = window.T.s;
+  s.power = 2;
+  s.hurtUntil = 0;
+  s.invincible = 0;
+  s.bossState.state = 'hover';
+  s.bossState.until = s.time.now + 3000;
+  const b = s.boss.body;
+  window.T.place(b.left + 2, b.bottom, 0);
+});
+await wait(300);
+const kept = await ev(() => ({
+  power: window.T.s.power,
+  mode: window.T.s.mode,
+}));
+assert.equal(kept.power, 2, 'a Qibli hit never strips the salt');
+assert.equal(kept.mode, 'play', 'a powered hit is not fatal');
+log('boss: hits knock back, salt stays armed');
+
+// Force a tell, then salt drops him: stunned, low, tail exposed.
 await ev(() => {
   const s = window.T.s;
   s.bossState.state = 'tell';
@@ -334,10 +355,28 @@ await ev(() => {
 await wait(200);
 assert.equal(
   await ev(() => window.T.s.bossState.state),
-  'hurt',
-  'salt interrupts the slam',
+  'stunned',
+  'salt mid-charge drops the Qibli',
 );
-log('boss: salt interrupts a tell');
+log('boss: salt during the charge stuns him');
+
+// A stomp on the exposed tail takes one heart.
+const hpBeforeTail = await ev(() => window.T.s.bossState.hp);
+await ev(() => {
+  const s = window.T.s;
+  const b = s.boss;
+  s.hero.setVelocity(0, 200);
+  window.T.place(b.x, b.body.top, 240);
+});
+await wait(300);
+const afterTail = await ev(() => ({
+  hp: window.T.s.bossState.hp,
+  state: window.T.s.bossState.state,
+}));
+assert.equal(afterTail.hp, hpBeforeTail - 1, 'the tail stomp takes a heart');
+assert.equal(afterTail.state, 'hurt', 'he reels after the stomp');
+await shot('29-siwa-boss-stunned.png');
+log('boss: tail stomp during the stun deals 1');
 
 // Ground him on an open spring (twice per heart is not used; spring deals 2).
 await ev(() => {
@@ -363,7 +402,7 @@ log('boss: slam on an open spring deals damage');
 await ev(() => {
   const s = window.T.s;
   s.bossState.invuln = 0;
-  s.bossDamage(s.bossState.hp);
+  if (s.bossState.hp > 0) s.bossDamage(s.bossState.hp);
 });
 await wait(2500);
 await ev(() => {

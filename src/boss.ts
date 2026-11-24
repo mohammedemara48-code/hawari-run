@@ -20,6 +20,8 @@ import { qibliContact, qibliPhase, qibliSalt, updateQibliBoss } from './world8';
 export function bossPhase(scene: Alley) {
   const hp = scene.bossState.hp;
   if (scene.bossKind === 'ram') return hp > 6 ? 1 : hp > 4 ? 2 : hp > 2 ? 3 : 4;
+  // The Qibli has three hearts: one per salt-stun stomp, or a spring and a stomp.
+  if (scene.bossKind === 'qibli') return hp > 2 ? 1 : hp > 1 ? 2 : 3;
   return hp > 4 ? 1 : hp > 2 ? 2 : 3;
 }
 export function bossSet(scene: Alley, state: string, ms: number) {
@@ -361,7 +363,7 @@ export function updateBoss(scene: Alley, time: number) {
           captain:
             'ريّس الميناء: «محدّش يرسى في ميناي!» — ابعد عن علامة الحاوية، اتشعبط في خطّاف الونش الكبير اللي فوق ونزّل الحاوية على كابينته',
           qibli:
-            'القِبْلي: «الواحة دي في ريحي!» — نطّ فوق موجة الرمل، افتح العين بالملح، وجرّه يضرب فوقها',
+            'القِبْلي: «الواحة دي في ريحي!» — نطّ فوق موجة الرمل، شتّته بالملح وهو بيلمّ ونطّ على ديله، أو افتح العين وجرّه يضرب فوقها',
           ram: 'الكبش الحارس: «محدّش يعدّي الكرنك!» — لما يخبط الأرض ويوطّي راسه اتنطّ على الجوهرة، وحجر واحد بينزل وظلّه بيبان قبله',
           buffalo:
             'أبو قرون: «مين داس على جرني؟!» — خلّيه يخبط ويدوخ واتنطّ على ضهره',

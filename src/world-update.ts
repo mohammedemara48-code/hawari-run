@@ -233,8 +233,17 @@ export function updateWorld(scene: Alley, time: number, dt: number) {
       continue;
     }
     if (m.axis === 'x') {
-      if (m.img.x <= m.min && b.velocity.x <= 0) b.setVelocityX(m.speed);
-      if (m.img.x >= m.max && b.velocity.x >= 0) b.setVelocityX(-m.speed);
+      if (m.dwellUntil && time < m.dwellUntil) {
+        // A ferry pan rests at the bank for a beat, then turns back.
+        b.setVelocityX(0);
+      } else if (m.img.x <= m.min && b.velocity.x < 0) {
+        b.setVelocityX(m.speed);
+        if (m.dwell) m.dwellUntil = time + m.dwell;
+      } else if (m.img.x >= m.max && b.velocity.x > 0) {
+        b.setVelocityX(-m.speed);
+        if (m.dwell) m.dwellUntil = time + m.dwell;
+      } else if (b.velocity.x === 0)
+        b.setVelocityX(m.img.x >= m.max ? -m.speed : m.speed);
     } else {
       if (m.img.y <= m.min && b.velocity.y <= 0) b.setVelocityY(m.speed);
       if (m.img.y >= m.max && b.velocity.y >= 0) b.setVelocityY(-m.speed);

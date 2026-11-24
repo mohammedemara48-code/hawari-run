@@ -2171,6 +2171,8 @@ function siwaGrove() {
   g.set(69, 7, 'ن');
   g.set(74, 7, 'ن');
   g.text(64, 6, 'o o o o');
+  // A scorpion patrols under the dates terrace — the shortcut is guarded.
+  g.set(66, 12, 'ق');
   g.set(80, 12, 'ق');
   g.text(83, 9, 'B?B');
   // Camel ride over a sink pit.
@@ -2197,55 +2199,62 @@ function siwaGrove() {
   g.run(185, 190, 5, '-');
   g.set(188, 4, 'G');
   g.text(185, 4, 'ooo');
+  // …and the secret stair has its own guard.
+  g.set(186, 12, 'ق');
   g.set(194, 12, 'E');
   return g.rows();
 }
 
-/* سراب الملح: slippery salt crust, floating pans, glare, and mirages
- * (fakes vanish underfoot; salt reveals the real ones). */
+/* سراب الملح: slippery salt crust, glare, and mirages (fakes vanish
+ * underfoot; salt reveals the real ones). Three deliberate crossings —
+ * floating pans ferry you over open brine — no hopscotch patching. */
 function siwaSalt() {
   const g = new Grid(210, 15);
-  g.rect(0, 13, 28, 14, 'ل');
+  // Shore one: crust underfoot, the salt crystal, a spring, a first scorpion.
+  g.rect(0, 13, 30, 14, 'ل');
   g.set(3, 12, 'P');
   g.set(7, 12, '@');
   g.set(12, 12, 'ع');
   g.text(16, 9, 'BFB');
-  g.set(24, 12, 'ق');
-  // Salt islands keep every required jump within a short, walk-speed hop.
-  // The moving pan and upper mirages remain optional routes.
-  g.rect(29, 13, 29, 14, 'ل');
-  for (const col of [31, 35, 39, 43]) g.rect(col, 13, col + 2, 14, 'ل');
-  g.set(32, 12, 'M');
-  g.run(36, 42, 9, 'غ');
-  g.text(36, 8, 'oooo');
-  g.rect(44, 13, 70, 14, 'ل');
+  g.set(18, 12, 'ق');
+  // Crossing one — the ferry pan: open brine, one pan carries you over,
+  // sliding home onto both banks so you walk on and off. An optional
+  // mirage balcony rides above it; salt shows the real pans.
+  g.set(30, 13, 'M');
+  g.set(30, 14, '.'); // no stray tile under the pan's home cell
+  g.run(31, 37, 9, 'غ');
+  g.text(31, 8, 'oooo');
+  // Shore two: the long glare walk. Springs, guards, one rare shade palm.
+  g.rect(35, 13, 120, 14, 'ل');
+  g.set(45, 12, 'ق');
   g.set(48, 12, 'ع');
-  g.set(56, 12, 'ق');
   g.text(60, 9, 'B?B');
-  // Glare stretch: little shade, a fake-looking spring mid-path, a real one in a dip.
-  g.rect(71, 13, 78, 14, 'ل');
-  g.run(80, 86, 12, 'غ'); // optional mirage route, with safe salt islands below
-  for (const col of [80, 84]) g.rect(col, 13, col + 2, 14, 'ل');
-  g.rect(88, 13, 120, 14, 'ل');
-  g.set(92, 12, 'ع');
+  g.set(64, 12, 'ق');
+  g.run(80, 86, 9, 'غ'); // optional high mirage walk over the glare
+  g.text(80, 8, 'oooo');
+  g.set(88, 12, 'ع');
+  g.set(96, 12, 'ق');
   g.set(100, 12, 'c');
-  g.set(108, 12, 'ق');
+  g.set(108, 12, 'ع');
   g.set(114, 10, 'ش'); // rare shade
   g.set(114, 12, 'ع');
-  // Floating pans and an upper mirage path to the secret.
-  g.set(122, 10, 'M');
-  g.rect(122, 13, 122, 14, 'ل');
-  g.run(130, 148, 7, 'غ');
-  g.run(150, 156, 5, '-');
-  g.set(154, 4, 'G');
-  g.text(150, 4, 'ooo');
-  g.rect(124, 13, 168, 14, 'ل');
-  g.set(128, 12, 'ق');
-  g.text(140, 9, 'B?B');
-  g.set(150, 12, 'ع');
-  g.set(160, 12, 'M');
-  g.rect(170, 13, 170, 14, 'ل');
-  g.rect(172, 13, 209, 14, 'ل');
+  // Crossings two and three — two ferry pans with a guarded shelf between.
+  g.set(120, 13, 'M');
+  g.set(120, 14, '.');
+  g.rect(125, 13, 140, 14, 'ل');
+  g.set(132, 12, 'ق');
+  g.text(136, 9, 'B?B');
+  g.set(140, 13, 'M');
+  g.set(140, 14, '.');
+  // Final shore: a step-pan up to the high mirage route and the secret.
+  g.rect(145, 13, 209, 14, 'ل');
+  g.set(152, 12, 'ع');
+  g.set(152, 10, 'M');
+  g.run(154, 166, 7, 'غ');
+  g.run(162, 168, 5, '-');
+  g.set(165, 4, 'G');
+  g.text(162, 4, 'ooo');
+  g.set(168, 12, 'ق');
   g.set(176, 12, 'ع');
   g.set(184, 12, 'ق');
   g.set(200, 12, 'E');
@@ -2266,6 +2275,8 @@ function siwaShali() {
   g.rect(25, 13, 36, 14, 'س');
   g.ground(37, 60);
   g.set(40, 12, 'ع');
+  // The fortress is guarded: a scorpion holds the courtyard before the climb.
+  g.set(44, 12, 'ق');
   // Climb: crumbling floors and solid ledges, shade under roofs.
   g.run(46, 58, 10, 'X');
   g.rect(59, 5, 64, 8, '#');
@@ -2274,6 +2285,8 @@ function siwaShali() {
   g.text(50, 3, 'ooo');
   g.set(56, 12, 'ق');
   g.run(62, 70, 10, '-');
+  // …and another paces the mid ledge.
+  g.set(66, 9, 'ق');
   g.run(72, 82, 8, 'X');
   g.run(74, 82, 5, '-');
   g.rect(84, 3, 88, 6, '#');
@@ -2288,6 +2301,7 @@ function siwaShali() {
   g.rect(112, 1, 124, 3, '#');
   g.set(114, 8, 'ع');
   g.set(118, 12, 'ق');
+  g.set(124, 12, 'ق');
   g.ground(101, 128);
   // Crumbling bridge over a sink courtyard; a spring waits in the shade.
   g.run(129, 148, 9, 'X');
@@ -2296,6 +2310,8 @@ function siwaShali() {
   g.rect(142, 5, 150, 7, '#');
   g.ground(151, 189);
   g.set(154, 12, 'ع');
+  // A guard waits past the crumbling bridge, before the blocks.
+  g.set(160, 12, 'ق');
   g.text(158, 9, 'B?B');
   g.set(166, 12, 'ق');
   // Secret in a high attic of the last tower.
@@ -2318,21 +2334,40 @@ function siwaQibli() {
   g.set(6, 12, '@');
   g.text(10, 9, 'BFB');
   g.text(16, 9, 'ooo o oo');
-  // Sandboard run: solid ground the whole way (the board is the hook,
-  // not a missing floor). Coins in the air for jump tricks.
+  // Sandboard run: rocks to hop and dune mouths to clear at speed —
+  // the coins draw the safe line through every obstacle.
   g.rect(8, 13, 110, 14, 'س');
   for (const x of [18, 28, 40, 52, 64, 76, 88, 100]) {
     g.text(x, 9, 'ooo');
     if (x % 40 === 18) g.set(x + 8, 8, 'o');
   }
+  // Sandstone teeth: two-high rocks you hop on the board.
+  for (const x of [34, 60, 86]) {
+    g.set(x, 12, '#');
+    g.set(x, 11, '#');
+    g.set(x - 1, 10, 'o');
+    g.set(x, 9, 'o');
+    g.set(x + 1, 10, 'o');
+  }
+  // Dune mouths: two-wide open pits, coins arcing over the lip.
+  for (const x of [46, 47, 96, 97]) {
+    g.set(x, 13, '.');
+    g.set(x, 14, '.');
+  }
+  g.text(44, 9, 'oooo');
+  g.text(94, 9, 'oooo');
   g.set(48, 10, 'ش');
   g.set(80, 12, 'ع');
-  // Storm approach, lanterns punch holes in the veil.
+  // Storm approach: lanterns punch holes in the veil, scorpions in the dust.
   g.set(112, 12, 'L');
+  g.set(118, 12, 'ق');
   g.set(120, 12, 'c');
   g.set(124, 12, 'ع');
   g.set(128, 9, '!');
+  g.set(130, 12, 'ق');
   g.set(132, 12, 'L');
+  // A salt crystal waits by the arena gate, so you never fight barehanded.
+  g.set(134, 12, '@');
   // Arena lock wall, two springs the boss buries, sink patches, the Qibli.
   g.rect(136, 0, 136, 8, '#');
   g.rect(148, 13, 170, 14, 'س');
