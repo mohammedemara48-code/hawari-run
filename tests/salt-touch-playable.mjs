@@ -80,7 +80,7 @@ try {
         }),
         pans: s.moverList
           .filter((m) => !m.camel && m.axis === 'x')
-          .map((m) => ({ x: m.img.x, top: m.img.body.top, max: m.max })),
+          .map((m) => ({ x: m.img.x, top: m.img.body.top, min: m.min, max: m.max, left: m.img.body.left, right: m.img.body.right }))
       };
     });
     if (tick % 80 === 0 || s.mode !== 'play')
@@ -104,31 +104,33 @@ try {
     );
     let stickDir = dir;
     if (ferry) {
-      const fmin = ferry.max - 96;
+      const fmin = ferry.min;
       const onPan =
         Math.abs(s.feet - ferry.top) < 6 &&
-        s.x > ferry.x - 4 &&
-        s.x < ferry.x + 52;
+        s.x > ferry.x - 20 &&
+        s.x < ferry.x + 56;
       if (onPan) {
         // Docked at the far bank: walk off. Otherwise hold the pan's center.
-        if (ferry.x > ferry.max - 12) stickDir = 1;
+        if (ferry.x > ferry.max - 3) stickDir = 1;
         else {
           const c = ferry.x + 24;
           stickDir = Math.abs(s.x - c) < 8 ? 0 : Math.sign(c - s.x);
         }
-      } else if (s.gap) {
+      } else if (s.gap && s.x < ferry.x) {
         // On the home bank over brine: board only once it has docked.
-        stickDir = ferry.x < fmin + 12 ? 1 : 0;
+        stickDir = ferry.x < fmin + 4 ? 1 : 0;
       }
     }
     // Half stick gives walking speed, no run flag. Tap the actual small jump
     // button for 120 simulated ms, not a held keyboard/run-jump shortcut.
     if (stickDir === 0) {
-      if (points.has(1)) await set(1, null);
+      // Park by sliding to neutral: lifting and re-pressing recenters the
+      // stick on the touch point and reads as zero deflection.
+      if (points.has(1)) await set(1, start);
     } else {
       await set(1, [start[0] + stickDir * base.width * 0.2, start[1]]);
     }
-    const dockedFar = ferry && ferry.x > ferry.max - 12;
+    const dockedFar = ferry && ferry.x > ferry.max - 3;
     if (
       !held &&
       s.ground &&

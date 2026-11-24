@@ -117,7 +117,7 @@ try {
             : null,
           pans: s.moverList
             .filter((m) => !m.camel && m.axis === 'x')
-            .map((m) => ({ x: m.img.x, top: m.img.body.top, max: m.max })),
+            .map((m) => ({ x: m.img.x, top: m.img.body.top, min: m.min, max: m.max })),
           camels:
             s.siwa?.camels.map((c) => ({
               x: c.img.x,
@@ -241,21 +241,21 @@ try {
       if (ferry) {
         run = false;
         jump = false;
-        const fmin = ferry.max - 96;
+        const fmin = ferry.min;
         const onPan =
           Math.abs(s.feet - ferry.top) < 6 &&
-          s.x > ferry.x - 4 &&
-          s.x < ferry.x + 52;
+          s.x > ferry.x - 20 &&
+          s.x < ferry.x + 56;
         if (onPan) {
           // Docked at the far bank: walk off. Otherwise hold the pan's center.
-          if (ferry.x > ferry.max - 12) dir = 1;
+          if (ferry.x > ferry.max - 3) dir = 1;
           else {
             const c = ferry.x + 24;
             dir = Math.abs(s.x - c) < 8 ? 0 : Math.sign(c - s.x);
           }
-        } else if (s.abyss[1] || s.abyss[2]) {
+        } else if ((s.abyss[1] || s.abyss[2]) && s.x < ferry.x) {
           // On the bank over the brine: board only once it has docked.
-          dir = ferry.x < fmin + 12 ? 1 : 0;
+          dir = ferry.x < fmin + 4 ? 1 : 0;
         } else {
           dir = 1;
           if (s.ground && (s.wall || enemy)) jump = true;

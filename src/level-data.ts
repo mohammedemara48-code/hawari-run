@@ -2221,6 +2221,7 @@ function siwaSalt() {
   // sliding home onto both banks so you walk on and off. An optional
   // mirage balcony rides above it; salt shows the real pans.
   g.set(30, 13, 'M');
+  g.set(30, 14, '.'); // no stray tile under the pan's home cell
   g.run(31, 37, 9, 'غ');
   g.text(31, 8, 'oooo');
   // Shore two: the long glare walk. Springs, guards, one rare shade palm.
@@ -2239,10 +2240,12 @@ function siwaSalt() {
   g.set(114, 12, 'ع');
   // Crossings two and three — two ferry pans with a guarded shelf between.
   g.set(120, 13, 'M');
+  g.set(120, 14, '.');
   g.rect(125, 13, 140, 14, 'ل');
   g.set(132, 12, 'ق');
   g.text(136, 9, 'B?B');
   g.set(140, 13, 'M');
+  g.set(140, 14, '.');
   // Final shore: a step-pan up to the high mirage route and the secret.
   g.rect(145, 13, 209, 14, 'ل');
   g.set(152, 12, 'ع');
