@@ -128,7 +128,16 @@ export function hurt(scene: Alley, source = 'hit', soft = false) {
     scene.die();
     return;
   }
-  scene.setPower(powerAfterHit(scene.power), false);
+  // Fighting the Qibli never strips the salt you brought: his hits knock
+  // you back, but the crystal stays in your hand for the whole duel.
+  const keepSalt =
+    scene.bossKind === 'qibli' &&
+    !!scene.boss?.active &&
+    !scene.bossState.defeated &&
+    scene.power >= 2;
+  if (keepSalt)
+    scene.hint('qibli-armor', 'الملح ثابت في إيدك طول المعركة… ردّه له!');
+  scene.setPower(keepSalt ? scene.power : powerAfterHit(scene.power), false);
   scene.grantIframes();
   sound.fx('powerdown');
   scene.burst(scene.hero.x, scene.hero.y, 0xe6b17a, 16);

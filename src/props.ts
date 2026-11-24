@@ -164,6 +164,8 @@ export function buildProps(scene: Alley) {
             max: (p.col + m.range) * TILE,
             speed: m.speed,
             carry: true,
+            // Ferry pans wait at each bank, so boarding never needs luck.
+            ...(isW8(theme) && kind === 'plank' ? { dwell: 1100 } : {}),
           };
     if (kind === 'lift') {
       let r = p.row - m.range - 1;

@@ -229,16 +229,41 @@ try {
           e.y > s.feet - 36 &&
           e.y < s.feet + 18,
       );
-      if (ci < 0 && s.ground && (s.wall || enemy || gap)) jump = true;
+      // Ferry crossings (Salt Mirage): the pans float at crust level.
+      // Wait on the bank, walk aboard when one slides in, stand for the
+      // ride, then walk off onto the far crust.
+      const ferry = s.pans.find(
+        (p) =>
+          Math.abs(p.top - s.feet) < 12 &&
+          s.x > p.x - 8 * 24 &&
+          s.x < p.max + 60,
+      );
+      if (ferry) {
+        run = false;
+        jump = false;
+        const fmin = ferry.max - 96;
+        const onPan =
+          Math.abs(s.feet - ferry.top) < 6 &&
+          s.x > ferry.x - 4 &&
+          s.x < ferry.x + 52;
+        if (onPan) {
+          // Docked at the far bank: walk off. Otherwise hold the pan's center.
+          if (ferry.x > ferry.max - 12) dir = 1;
+          else {
+            const c = ferry.x + 24;
+            dir = Math.abs(s.x - c) < 8 ? 0 : Math.sign(c - s.x);
+          }
+        } else if (s.abyss[1] || s.abyss[2]) {
+          // On the bank over the brine: board only once it has docked.
+          dir = ferry.x < fmin + 12 ? 1 : 0;
+        } else {
+          dir = 1;
+          if (s.ground && (s.wall || enemy)) jump = true;
+        }
+      }
+      if (ci < 0 && !ferry && s.ground && (s.wall || enemy || gap))
+        jump = true;
 
-      if (index === 29 && s.x > 26 * 24 && s.x < 44 * 24) {
-        run = true;
-        dir = 1;
-        jump = s.ground && s.x > 28.5 * 24;
-      }
-      if (index === 29 && s.x > 74 * 24 && s.x < 89 * 24) {
-        jump = s.ground && s.x > 78 * 24;
-      }
       const route = process.env.PILOT_SECRETS === '1' ? detour[waypoint] : null;
       if (route && s.x > (detour[0].x - 6) * 24) {
         const tx = route.x * 24 + 12;

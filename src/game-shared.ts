@@ -95,6 +95,9 @@ export interface Mover {
   steam?: Phaser.GameObjects.Particles.ParticleEmitter;
   /** Platforms that carry a rider sideways with their own motion. */
   carry?: boolean;
+  /** Siwa ferry pans: pause this long at each bank so boarding is readable. */
+  dwell?: number;
+  dwellUntil?: number;
   /** Siwa camel: waits for its rider and returns to the boarding bank. */
   camel?: boolean;
   /** Saqia bucket: wheel centre and its angular offset on the wheel. */

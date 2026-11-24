@@ -86,9 +86,11 @@ export function walkSpeed(scene: Alley, type: string) {
 export function bossKind(scene: Alley) {
   return scene.L.meta.bossKind ?? 'fatwa';
 }
-/** Hearts: the final boss has four phases of two. */
+/** Hearts: the final boss has four phases of two; the Qibli fights in three. */
 export function bossMax(scene: Alley) {
-  return scene.L?.meta.bossKind === 'ram' ? 8 : 6;
+  if (scene.L?.meta.bossKind === 'ram') return 8;
+  if (scene.L?.meta.bossKind === 'qibli') return 3;
+  return 6;
 }
 export function bossName(scene: Alley) {
   return BOSS_NAMES[bossKind(scene)];
