@@ -9,7 +9,7 @@ import type { Alley } from './game';
 import { TILE } from './level-data';
 import { sound } from './audio';
 import { hash } from './art-kit';
-import { toast, setThirst } from './ui';
+import { fightCue, toast, setThirst } from './ui';
 import { isW8 } from './world8-art';
 
 type Sprite = Phaser.Physics.Arcade.Sprite;
@@ -611,6 +611,36 @@ export function updateQibliBoss(s: Alley, time: number) {
   if (!w) return;
   const phase = s.bossPhase();
   const P = (a: number[]) => a[phase - 1];
+  // The fight must teach itself: say what to press and when, in big letters.
+  if (!st.defeated) {
+    if (s.power < 2) {
+      s.setPower(2, false);
+      toast('بلورة ملح جديدة في إيدك!');
+    }
+    const born = (boss.getData('born') as number | undefined) ?? time;
+    boss.setData('born', born);
+    if (st.state === 'tell') fightCue('القِبْلي بيلمع! دوس زرار الملح ◀', true);
+    else if (st.state === 'stunned') fightCue('وقع! نطّ على ديله من فوق ▼');
+    else if (time - born < 7000)
+      fightCue(
+        'الملح سلاحك: لما القِبْلي يلمع ارمي الملح، وبعدين نطّ على ديله ×٣',
+      );
+  }
+  // A dark rim behind the sandstorm: gold-on-sand backdrops hid him on phones.
+  let halo = boss.getData('halo') as Phaser.GameObjects.Image | undefined;
+  if (!halo || !halo.active) {
+    halo = s.add.image(boss.x, boss.y, boss.texture.key).setDepth(8);
+    boss.setData('halo', halo);
+    boss.once('destroy', () => halo?.destroy());
+  }
+  halo
+    .setTexture(boss.texture.key)
+    .setPosition(boss.x, boss.y)
+    .setFlipX(boss.flipX)
+    .setScale(boss.scaleX * 1.1, boss.scaleY * 1.1)
+    .setTint(0x2a1208)
+    .setAlpha(0.85)
+    .setVisible(boss.visible);
   const over = time > st.until;
   const toHero = Math.sign(s.hero.x - boss.x) || 1;
   const tex = (pose: string) => boss.setTexture('boss8-' + pose);
@@ -624,6 +654,12 @@ export function updateQibliBoss(s: Alley, time: number) {
   if (st.state === 'stunned') {
     if (boss.y < floor - 48) boss.y = Math.min(floor - 48, boss.y + 3);
   } else if (boss.y > floor - 90) boss.y = floor - 90;
+  // The shared hit knock-back launches bosses upward; this one used to fly
+  // off the top of the screen after the first hit and never come back.
+  if (boss.y < floor - 150) {
+    boss.y = floor - 150;
+    boss.setVelocityY(0);
+  }
   switch (st.state) {
     case 'walk':
     case 'hover':
@@ -632,7 +668,10 @@ export function updateQibliBoss(s: Alley, time: number) {
       boss.setVelocityY(Math.sin(time / 280) * 20);
       if (over && !waving()) {
         boss.setVelocityX(0);
-        if (
+        if (Math.abs(s.hero.x - boss.x) > 300) {
+          // Too far for the salt to reach: close in before telling.
+          boss.setVelocityX(toHero * P([60, 80, 100]));
+        } else if (
           phase >= 2 &&
           w.springs.some((p) => !p.buried) &&
           Math.random() > 0.45
@@ -644,7 +683,8 @@ export function updateQibliBoss(s: Alley, time: number) {
           s.hint('qibli-bury', 'القِبْلي بيدفن العين! ارمي الملح على الكوم');
         } else {
           st.state = 'tell';
-          st.until = time + P([800, 680, 540]);
+          st.until = time + P([1500, 1300, 1100]);
+          boss.setData('tellStart', time);
           tex('charge');
           sound.fx('roar');
           s.hint(
@@ -660,6 +700,7 @@ export function updateQibliBoss(s: Alley, time: number) {
       boss.setTint(Math.floor(time / 80) % 2 ? 0xffe080 : 0xffffff);
       if (over) {
         boss.clearTint();
+        boss.setData('tellEnd', time);
         st.state = 'slam';
         st.until = time + 420;
         tex('slam');
@@ -700,7 +741,7 @@ export function updateQibliBoss(s: Alley, time: number) {
       break;
     case 'hurt':
       tex('hurt');
-      boss.setVelocityX(0);
+      boss.setVelocity(0, 0);
       if (over) {
         st.state = 'hover';
         st.until = time + 700;
@@ -804,7 +845,18 @@ export function qibliContact(s: Alley, fromAbove: boolean) {
 export function qibliSalt(s: Alley) {
   const st = s.bossState;
   s.burst(s.boss!.x, s.boss!.y, 0xe8f0f4, 6);
-  if (st.state === 'tell') {
+  // A shot thrown during the tell still lands if it is in the air when the
+  // tell ends (the flight takes about a second on a phone).
+  const tellStart = (s.boss!.getData('tellStart') as number | undefined) ?? -1;
+  const tellEnd = (s.boss!.getData('tellEnd') as number | undefined) ?? 0;
+  const lateHit =
+    st.state === 'slam' &&
+    s.lastShot >= tellStart &&
+    s.lastShot <= tellEnd &&
+    s.time.now - tellEnd < 1100;
+  if (st.state === 'tell' || lateHit) {
+    for (const h of s.hazards.getChildren() as Sprite[])
+      if (h.active && h.getData('kind') === 'sandwave') h.destroy();
     // Salt mid-charge drops him: stunned, low, tail exposed and stompable.
     st.state = 'stunned';
     st.until = s.time.now + 2400;

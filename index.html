@@ -182,6 +182,14 @@
               كمّل ◀
             </button>
             <p class="resume-line" data-resume-label hidden></p>
+            <button
+              type="button"
+              class="ghost-btn"
+              data-action="switch-player"
+              data-guest-only
+            >
+              تسجيل الدخول
+            </button>
             <p class="player-line" data-player-wrap hidden>
               بتلعب باسم <strong data-player-name></strong>
               <button
@@ -190,6 +198,9 @@
                 data-action="switch-player"
               >
                 تغيير اللاعب
+              </button>
+              <button type="button" class="text-btn" data-action="logout">
+                تسجيل الخروج
               </button>
             </p>
             <p class="title-note">
@@ -223,6 +234,9 @@
                 data-action="switch-player"
               >
                 تغيير اللاعب
+              </button>
+              <button type="button" class="text-btn" data-action="logout">
+                تسجيل الخروج
               </button>
             </p>
           </div>
@@ -278,6 +292,7 @@
             <button class="ghost-btn" data-action="switch-player">
               تغيير اللاعب
             </button>
+            <button class="ghost-btn" data-action="logout">تسجيل الخروج</button>
           </div>
         </div>
         <div class="screen modal" data-screen="clear" hidden>

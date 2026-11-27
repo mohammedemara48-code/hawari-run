@@ -280,6 +280,12 @@ export function updateGame(scene: Alley, time: number, delta: number) {
     const w = scene.weapon();
     scene.lastShot = time;
     scene.throwUntil = time + 220;
+    // Phone aim assist for the Qibli: the salt flies at him if he is near.
+    const qb =
+      scene.bossKind === 'qibli' && scene.boss?.active ? scene.boss : null;
+    const qdx = qb ? qb.x - scene.hero.x : 0;
+    const assist = !!qb && !scene.bossState.defeated && Math.abs(qdx) < 460;
+    if (assist) scene.facing = qdx < 0 ? -1 : 1;
     const shot = scene.shots.create(
       scene.hero.x + scene.facing * 18,
       scene.hero.y - 3,
@@ -293,6 +299,13 @@ export function updateGame(scene: Alley, time: number, delta: number) {
       .setData('splat', w.splat ?? (w.bounce ? 0xf5a34d : 0x8a4a2a))
       .setDepth(9);
     body(shot).setAllowGravity(true).setGravityY(w.gravityY);
+    if (assist && qb) {
+      const ax = qb.x - shot.x,
+        ay = qb.y - shot.y,
+        len = Math.hypot(ax, ay) || 1;
+      shot.setVelocity((ax / len) * 380, (ay / len) * 380);
+      body(shot).setAllowGravity(false);
+    }
     sound.fx(w.sfx);
   }
   for (const s of scene.shots.getChildren() as Sprite[]) {
