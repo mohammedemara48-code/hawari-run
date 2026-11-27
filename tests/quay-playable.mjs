@@ -16,6 +16,13 @@ try {
     window.hawari.scene.getScene('alley').startLevel(27),
   );
   await page.waitForTimeout(300);
+  // Deterministic pacing: stop the real-time loop and advance fixed 60 fps
+  // frames per bot decision, so runner speed cannot change the outcome.
+  await page.evaluate(() => {
+    const g = window.hawari;
+    g.loop.sleep();
+    window.__t = Date.now();
+  });
   await page.keyboard.down('Shift');
   const state = () =>
     page.evaluate(() => {
@@ -159,7 +166,13 @@ try {
       await page.screenshot({ path: `${SHOTS}/quay-${i}.png` });
       lastShot = i;
     }
-    await page.waitForTimeout(50);
+    await page.evaluate(() => {
+      const g = window.hawari;
+      for (let f = 0; f < 3; f++) {
+        window.__t += 1000 / 60;
+        g.step(window.__t, 1000 / 60);
+      }
+    });
     if (s.lives < 3) throw Error('lost life');
   }
   const final = await state();
