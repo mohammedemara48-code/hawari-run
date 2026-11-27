@@ -1,10 +1,16 @@
-import { clearAdminAccess, acceptServerRole } from './admin';
+import {
+  clearAdminAccess,
+  acceptServerRole,
+  forgetAdminHint,
+  hadAdminBefore,
+} from './admin';
 // Player name + PIN, with a server copy when /api is reachable.
 import {
   loadProgress,
   mergeProgress,
   onProgressSave,
   saveProgress,
+  emptyProgress,
   type Progress,
 } from './progress';
 const PLAYER_KEY = 'hawari-player';
@@ -12,6 +18,13 @@ let legacyCredential: { name: string; pin: string } | null = null;
 export type SyncState =
   'local' | 'syncing' | 'synced' | 'offline' | 'login-required' | 'error';
 let syncState: SyncState = 'local';
+let sessionLost = false;
+/** True once per page load when a remembered player has no live server session. */
+export function takeSessionLost() {
+  const v = sessionLost;
+  sessionLost = false;
+  return v;
+}
 const syncListeners = new Set<(state: SyncState) => void>();
 export function onSyncState(fn: (state: SyncState) => void) {
   syncListeners.add(fn);
@@ -101,6 +114,18 @@ export function setPlayer(p: Player) {
     localStorage.setItem(PLAYER_KEY, v);
   } catch {
     /* Private browsing can disable storage. */
+  }
+}
+/** Sign out for real: forget the player, the server session and the local
+ * copy of the journey, so the next login never uploads it to another name. */
+export function logout() {
+  clearPlayer();
+  forgetAdminHint();
+  saveProgress(emptyProgress(), false);
+  try {
+    localStorage.removeItem('hawari-local-play');
+  } catch {
+    /* ignore */
   }
 }
 export function clearPlayer() {
@@ -212,6 +237,7 @@ export async function restoreSession(): Promise<boolean> {
       await login(local.name, legacyPin(local.name)!);
     } else if (res && res.status === 401) {
       status('login-required');
+      if (local && hadAdminBefore()) sessionLost = true;
     } else {
       status(res ? 'error' : 'offline');
     }

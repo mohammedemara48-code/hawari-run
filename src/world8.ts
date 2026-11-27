@@ -611,6 +611,21 @@ export function updateQibliBoss(s: Alley, time: number) {
   if (!w) return;
   const phase = s.bossPhase();
   const P = (a: number[]) => a[phase - 1];
+  // A dark rim behind the sandstorm: gold-on-sand backdrops hid him on phones.
+  let halo = boss.getData('halo') as Phaser.GameObjects.Image | undefined;
+  if (!halo || !halo.active) {
+    halo = s.add.image(boss.x, boss.y, boss.texture.key).setDepth(8);
+    boss.setData('halo', halo);
+    boss.once('destroy', () => halo?.destroy());
+  }
+  halo
+    .setTexture(boss.texture.key)
+    .setPosition(boss.x, boss.y)
+    .setFlipX(boss.flipX)
+    .setScale(boss.scaleX * 1.1, boss.scaleY * 1.1)
+    .setTint(0x2a1208)
+    .setAlpha(0.85)
+    .setVisible(boss.visible);
   const over = time > st.until;
   const toHero = Math.sign(s.hero.x - boss.x) || 1;
   const tex = (pose: string) => boss.setTexture('boss8-' + pose);

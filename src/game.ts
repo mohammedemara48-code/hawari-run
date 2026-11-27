@@ -27,7 +27,16 @@ import {
   type Parsed,
 } from './level-parse';
 import { sound } from './audio';
-import { bindUI, bossBar, ending, renderMap, screen, toast, touch } from './ui';
+import {
+  bindUI,
+  bossBar,
+  ending,
+  refreshJourney,
+  renderMap,
+  screen,
+  toast,
+  touch,
+} from './ui';
 import { clearResume, loadProgress, recordClear, saveResume } from './progress';
 import {
   getPlayer,
@@ -35,6 +44,8 @@ import {
   pullProgress,
   restoreSession,
   continueLocally,
+  logout,
+  takeSessionLost,
 } from './account';
 import {
   buildProps as buildPropsImpl,
@@ -361,6 +372,21 @@ export class Alley extends Phaser.Scene {
           ?.setAttribute('data-switching', '1');
         break;
       }
+      case 'logout': {
+        if (this.mode === 'play') break;
+        if (this.mode === 'pause') this.stashRun();
+        this.physics.pause();
+        logout();
+        const input = document.getElementById(
+          'player-name-input',
+        ) as HTMLInputElement | null;
+        if (input) input.value = '';
+        this.mode = 'title';
+        refreshJourney();
+        screen('login');
+        toast('خرجت من الحساب');
+        break;
+      }
       case 'login-cancel':
         continueLocally();
         this.showTitle();
@@ -422,6 +448,22 @@ export class Alley extends Phaser.Scene {
     // IndexedDB and the server session before showing the login screen.
     const hadLocal = !!getPlayer();
     await restoreSession();
+    if (takeSessionLost() && getPlayer()) {
+      // The server forgot this phone (cookie lost). Ask for the PIN again so
+      // progress syncs and admin access comes back, instead of staying local.
+      refreshJourney();
+      screen('login');
+      document
+        .getElementById('login-form')
+        ?.setAttribute('data-switching', '1');
+      const err = document.getElementById('login-error');
+      if (err) {
+        err.hidden = false;
+        err.textContent =
+          'الجلسة خلصت على الجهاز ده. ادخل برقمك السري عشان يرجع تقدمك وصلاحياتك';
+      }
+      return;
+    }
     if (needsLogin()) {
       if (this.mode === 'title') screen('login');
       return;

@@ -577,6 +577,9 @@ export function refreshJourney() {
   document.querySelectorAll<HTMLElement>('[data-player-wrap]').forEach((el) => {
     el.hidden = !name;
   });
+  document.querySelectorAll<HTMLElement>('[data-guest-only]').forEach((el) => {
+    el.hidden = !!name;
+  });
   const cancel = document.getElementById('login-cancel');
   if (cancel) {
     cancel.hidden = false;

@@ -2281,3 +2281,21 @@ html.form-upright .login-form .primary {
 .game-wrap.playing > .journey-sync-status {
   display: none;
 }
+
+/* Account buttons must be real, tappable buttons on a phone. */
+.player-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.player-line .text-btn {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  text-decoration: none;
+}

@@ -58,6 +58,7 @@ try {
         'admin-ui',
         'world8-runtime',
         'account-landscape',
+        'account-logout',
       ]
     : ['account-runtime'];
   const chosen = process.env.BROWSER_TESTS
