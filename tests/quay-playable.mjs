@@ -133,7 +133,18 @@ try {
           (s.x > 2700 && s.x < 2920));
     }
     const hold = s.x > 1450 && s.x < 1810 ? 1000 : 430;
-    if (jump && s.time - lastJump < hold + 130) jump = false;
+    // A close enemy overrides the jump cooldown, so a slower or faster runner
+    // than the one this bot was tuned on still clears barrels and pelicans.
+    const urgent =
+      s.ground &&
+      s.enemies.some(
+        (e) => e.x > s.x - 10 && e.x < s.x + 70 && Math.abs(e.y - s.y) < 65,
+      );
+    if (jump && !urgent && s.time - lastJump < hold + 130) jump = false;
+    if (urgent && s.time - lastJump > 250) {
+      jump = true;
+      lastJump = s.time - 0;
+    }
     if (jump) lastJump = s.time;
     if (s.time - lastJump < hold) jump = true;
     await key(
