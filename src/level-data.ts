@@ -2370,7 +2370,7 @@ function siwaQibli() {
   g.set(134, 12, '@');
   // Arena lock wall, two springs the boss buries, sink patches, the Qibli.
   g.rect(136, 0, 136, 8, '#');
-  g.rect(148, 13, 170, 14, 'س');
+  g.rect(148, 13, 158, 14, 'س');
   g.set(152, 12, 'ع');
   g.set(166, 12, 'ع');
   g.set(158, 12, 'L');

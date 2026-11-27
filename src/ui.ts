@@ -612,3 +612,24 @@ onSyncState((state) => {
   el.dataset.state = state;
   el.title = 'اضغط لتسجيل الدخول أو تغيير اللاعب';
 });
+
+/** Big readable cue during the Qibli fight; clears itself when not refreshed. */
+let cueTimer = 0;
+export function fightCue(text: string, saltButton = false) {
+  let el = document.getElementById('fight-cue');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'fight-cue';
+    el.setAttribute('aria-live', 'polite');
+    document.querySelector('#game-wrap')?.appendChild(el);
+  }
+  el.textContent = text;
+  el.dataset.show = '1';
+  const btn = document.querySelector<HTMLElement>('[data-touch="throw"]');
+  btn?.classList.toggle('salt-cue', saltButton);
+  window.clearTimeout(cueTimer);
+  cueTimer = window.setTimeout(() => {
+    el!.dataset.show = '0';
+    btn?.classList.remove('salt-cue');
+  }, 350);
+}

@@ -2299,3 +2299,38 @@ html.form-upright .login-form .primary {
   font-size: 13px;
   text-decoration: none;
 }
+
+#fight-cue {
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  transform: translateX(-50%);
+  max-width: 80%;
+  padding: 8px 16px;
+  border: 2px solid #ffe2ad;
+  border-radius: 10px;
+  background: rgba(20, 12, 8, 0.82);
+  color: #fff6c8;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  pointer-events: none;
+  z-index: 40;
+  opacity: 0;
+}
+#fight-cue[data-show='1'] {
+  opacity: 1;
+}
+.salt-cue {
+  animation: saltPulse 0.35s ease-in-out infinite alternate;
+  outline: 4px solid #fff6c8;
+  box-shadow: 0 0 22px 8px rgba(255, 246, 200, 0.9);
+}
+@keyframes saltPulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.18);
+  }
+}
