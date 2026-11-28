@@ -99,7 +99,7 @@ function open(s: Alley, w: LandmarkState) {
   }
   sound.fx('secret');
   if (!s.L.meta.boss) toast('الطريق اتفتح!');
-  w.vulnerableUntil = s.time.now + 4000;
+  w.vulnerableUntil = s.time.now + 6500;
 }
 export function updateLandmark(s: Alley, time: number, dt: number) {
   const w = s.landmark,
@@ -333,7 +333,7 @@ export function updateLandmarkBoss(s: Alley, time: number) {
   const left = ` (باقي ${st.hp})`;
   if (w.solved) {
     fightCue('الدرع اتفتح! انطّ عليها أو اضرب' + left, true);
-  } else if (time % 2800 < 600) {
+  } else if (time % (3400 - phase * 250) < 800) {
     fightCue('هتهجم! انطّ فوقها');
   } else {
     fightCue(
@@ -350,14 +350,14 @@ export function updateLandmarkBoss(s: Alley, time: number) {
     boss.clearTint();
     st.state = 'guard';
     // Three distinct attacks with a visible wind-up, then a dodge window.
-    const t = time % (2800 - phase * 250);
-    if (t < 600) {
+    const t = time % (3400 - phase * 250);
+    if (t < 800) {
       boss.setVelocityX(0);
       boss.setTint(0xffc26e);
-    } else if (t < 1050) {
+    } else if (t < 1250) {
       boss.setVelocityX(
         (s.hero.x < boss.x ? -1 : 1) *
-          (w.kind === 'stealth' ? 145 : w.kind === 'balance' ? 110 : 80),
+          (w.kind === 'stealth' ? 145 : w.kind === 'balance' ? 110 : 62),
       );
     } else boss.setVelocityX(0);
   }
