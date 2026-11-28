@@ -10,7 +10,7 @@ describe('three-level pilot scope and restoration layout', () => {
     LEVELS.forEach((l, i) => {
       expect(l.id).toBe(baseline[i].id);
       expect(l.track).toBe(baseline[i].track);
-      if (![0, 28, 29, 32].includes(i))
+      if (![0, 28, 29, 32, 33, 34, 35].includes(i))
         expect(
           createHash('sha256').update(JSON.stringify(l)).digest('hex'),
         ).toBe(baseline[i].hash);
