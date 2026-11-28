@@ -305,7 +305,24 @@ try {
         jumpUntil = 0;
       }
       // Qibli: salt the charge to drop him, then stomp the exposed tail.
-      if (s.boss && s.boss.hp > 0) {
+      // Prism scarab: solve the mirrors (puzzle code above), then stomp it
+      // while its shield is open.
+      if (s.boss && s.boss.hp > 0 && s.boss.state === 'exposed') {
+        const dx = s.boss.x - s.x;
+        dir = Math.abs(dx) < 20 ? 0 : Math.sign(dx);
+        run = false;
+        if (Math.abs(dx) < 85 && Math.abs(dx) > 30 && s.ground) jump = true;
+      }
+      // Guarded: hop over the lunge (landing on it just bounces off).
+      if (s.boss && s.boss.hp > 0 && s.boss.state === 'guard') {
+        const dx = s.boss.x - s.x;
+        if (Math.abs(dx) < 95 && Math.abs(dx) > 10 && s.ground) jump = true;
+      }
+      if (
+        s.boss &&
+        s.boss.hp > 0 &&
+        !['guard', 'exposed', 'idle'].includes(s.boss.state)
+      ) {
         const dx = s.boss.x - s.x,
           toward = Math.sign(dx) || 1;
         if (s.boss.state === 'stunned') {

@@ -303,7 +303,10 @@ export function landmarkBossContact(s: Alley, above: boolean) {
     return;
   }
   if (above) s.hero.setVelocityY(-380);
-  else s.hurt();
+  else if (s.time.now < w.vulnerableUntil) {
+    // A stunned scarab is harmless: shove the hero clear instead of hurting.
+    s.hero.setVelocity(s.hero.x < s.boss.x ? -240 : 240, -220);
+  } else s.hurt();
 }
 export function landmarkBossShot(s: Alley) {
   if (s.landmark && s.time.now < s.landmark.vulnerableUntil) {
@@ -331,7 +334,7 @@ export function updateLandmarkBoss(s: Alley, time: number) {
   if (w.solved) {
     fightCue('الدرع اتفتح! انطّ عليها أو اضرب' + left, true);
   } else if (time % 2800 < 600) {
-    fightCue('هتهجم! ابعد');
+    fightCue('هتهجم! انطّ فوقها');
   } else {
     fightCue(
       w.kind === 'light'

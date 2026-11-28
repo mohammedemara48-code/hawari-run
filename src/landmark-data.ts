@@ -1,4 +1,12 @@
 import { plateauPilot } from './pilot-maps';
+import {
+  gizaValley,
+  gizaGallery,
+  gizaHorizon,
+  VALLEY,
+  GALLERY,
+  HORIZON,
+} from './giza-maps';
 import type { LevelMeta, WorldMeta } from './level-data';
 
 export const LANDMARK_WORLDS: WorldMeta[] = [
@@ -122,6 +130,17 @@ function map(group: number, variant: number) {
   if (variant === 3) put(width - 12, 14, 'Z');
   return cells.map((row) => row.join(''));
 }
+const authored: Record<number, () => string[]> = {
+  0: plateauPilot,
+  1: gizaValley,
+  2: gizaGallery,
+  3: gizaHorizon,
+};
+const custom: Record<number, Partial<LandmarkPuzzle>> = {
+  1: VALLEY,
+  2: GALLERY,
+  3: HORIZON,
+};
 export const LANDMARK_LEVELS: LevelMeta[] = Array.from(
   { length: 12 },
   (_, i) => {
@@ -133,7 +152,7 @@ export const LANDMARK_LEVELS: LevelMeta[] = Array.from(
       name: names[group][variant],
       subtitle: subtitles[group],
       theme: (['giza', 'citadel', 'rashid'] as const)[group],
-      time: i === 0 ? 320 : 260 + variant * 20,
+      time: i === 0 ? 320 : [0, 340, 380, 440][variant],
       dark: 0,
       track: 40 + i,
       timeOfDay: `landmark-${i}`,
@@ -171,8 +190,9 @@ export const LANDMARK_LEVELS: LevelMeta[] = Array.from(
               : group === 2
                 ? [variant + 1]
                 : [],
+        ...custom[i],
       },
-      rows: i === 0 ? plateauPilot() : map(group, variant),
+      rows: authored[i] ? authored[i]() : map(group, variant),
     };
   },
 );

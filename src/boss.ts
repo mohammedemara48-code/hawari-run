@@ -36,7 +36,12 @@ export function bossContact(scene: Alley) {
     bb = body(boss);
   const fromAbove = b.velocity.y > 0 && b.prev.y + b.height <= bb.top + 16;
   if (scene.landmark) {
-    landmarkBossContact(scene, fromAbove);
+    // Forgiving stomp window, Mario style: a descending hero whose feet are
+    // near the top of the scarab counts as landing on it.
+    landmarkBossContact(
+      scene,
+      fromAbove || (b.velocity.y > 0 && b.bottom <= bb.top + 34),
+    );
     return;
   }
   if (scene.bossKind === 'crab') {
