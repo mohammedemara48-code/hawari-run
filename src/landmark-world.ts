@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import type { Alley } from './game';
 import { body } from './game-shared';
 import { TILE } from './level-data';
-import { touch, toast } from './ui';
+import { touch, toast, fightCue } from './ui';
 import { sound } from './audio';
 
 type Img = Phaser.Physics.Arcade.Image;
@@ -125,6 +125,11 @@ export function updateLandmark(s: Alley, time: number, dt: number) {
       g.fillStyle(0x8df7df);
       g.fillRect(x - 8, 326, 16, 4);
     }
+  }
+  if (s.boss && s.L.meta.boss) {
+    // Shield ring: cyan when open, gold when locked, so the state is readable.
+    g.lineStyle(4, w.solved ? 0x8df7df : 0xffc26e, w.solved ? 1 : 0.8);
+    g.strokeCircle(s.boss.x, s.boss.y - 8, w.solved ? 58 : 52);
   }
   const feet = body(s.hero).bottom;
   const near = p.stations.findIndex(
@@ -274,9 +279,16 @@ export function updateLandmark(s: Alley, time: number, dt: number) {
         : 'اضبط الأكياس على علامة الميزان';
   }
   if (!s.L.meta.boss && s.exitDoor) s.exitDoor.setVisible(w.solved);
-  w.label
-    .setPosition(p.stations[Math.max(0, near)] * TILE - 55, 178)
-    .setText(message);
+  w.label.setText(message).setVisible(!s.L.meta.boss);
+  const cam = s.cameras.main.worldView;
+  w.label.setPosition(
+    Phaser.Math.Clamp(
+      p.stations[Math.max(0, near)] * TILE - 55,
+      cam.x + 8,
+      cam.right - w.label.width - 8,
+    ),
+    178,
+  );
 }
 export function landmarkBossContact(s: Alley, above: boolean) {
   const w = s.landmark;
@@ -314,6 +326,18 @@ export function updateLandmarkBoss(s: Alley, time: number) {
     if (w.kind === 'light') w.values = w.values.map((v) => (v + phase) % 4);
     else if (w.kind === 'stealth') w.disabled = w.disabled.map(() => false);
     else w.values[0] = (p.target[0] + 1) % 6;
+  }
+  const left = ` (باقي ${st.hp})`;
+  if (w.solved) {
+    fightCue('الدرع اتفتح! انطّ عليها أو اضرب' + left, true);
+  } else if (time % 2800 < 600) {
+    fightCue('هتهجم! ابعد');
+  } else {
+    fightCue(
+      w.kind === 'light'
+        ? 'الدرع مقفول: دوّر العواكس بزرار ▼'
+        : 'الدرع مقفول: حل لغز الساحة',
+    );
   }
   if (w.solved) {
     boss.setTint(0x8bffe2);
