@@ -98,7 +98,7 @@ function open(s: Alley, w: LandmarkState) {
     gate.setAlpha(0.18);
   }
   sound.fx('secret');
-  toast('الطريق اتفتح!');
+  if (!s.L.meta.boss) toast('الطريق اتفتح!');
   w.vulnerableUntil = s.time.now + 4000;
 }
 export function updateLandmark(s: Alley, time: number, dt: number) {
