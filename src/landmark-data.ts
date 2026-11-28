@@ -152,7 +152,12 @@ export const LANDMARK_LEVELS: LevelMeta[] = Array.from(
       name: names[group][variant],
       subtitle: subtitles[group],
       theme: (['giza', 'citadel', 'rashid'] as const)[group],
-      time: i === 0 ? 320 : [0, 340, 380, 440][variant],
+      time:
+        i === 0
+          ? 320
+          : i < 4
+            ? [0, 340, 380, 440][variant]
+            : 260 + variant * 20,
       dark: 0,
       track: 40 + i,
       timeOfDay: `landmark-${i}`,
