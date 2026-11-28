@@ -66,7 +66,7 @@ try {
     shot = new Set(),
     deaths = 0,
     lastLives = 3;
-  for (let tick = 0; tick < 2600; tick++) {
+  for (let tick = 0; tick < 3000; tick++) {
     const s = await p.evaluate(() => {
       const s = window.hawari.scene.getScene('alley'),
         b = s.hero.body;
