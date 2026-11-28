@@ -44,10 +44,10 @@ export function gizaValley() {
   pit(g, 66, 68);
   pit(g, 73, 75);
   g.put(58, 14, '5');
-  // Lesson 3: a wall to climb in steps, scorpion waits behind it.
+  // Lesson 3: a wall to climb in steps, scarab waits behind it.
   stack(g, 84, 2, 1);
   stack(g, 88, 2, 2);
-  g.put(96, 14, 'ق');
+  g.put(96, 14, '5');
   // Optional high road with the hidden lantern.
   ledge(g, 60, 12, 6);
   ledge(g, 66, 9, 8);
@@ -81,7 +81,7 @@ export function gizaGallery() {
   ledge(g, 36, 10, 7);
   // Mixed enemies in a row with space to react.
   g.put(55, 14, 'b');
-  g.put(66, 14, 'ق');
+  g.put(66, 14, '5');
   row(g, 58, 10, 'B?B');
   pit(g, 78, 81);
   pit(g, 86, 89);
@@ -120,19 +120,17 @@ export function gizaHorizon() {
   for (const x of [30, 70, 110]) pit(g, x, x + 3);
   for (const x of [50, 90, 128]) stack(g, x, 3, 2);
   g.put(40, 14, '5');
-  g.put(60, 14, 'ق');
   g.put(80, 14, '6');
   g.put(100, 14, 'b');
   // A choice: the lower road with enemies, or a ledge route over a cobra.
   ledge(g, 145, 10, 12);
   g.put(150, 9, '7');
   g.put(162, 14, 'b');
-  g.put(170, 14, 'ق');
+  g.put(170, 14, 'b');
   pit(g, 178, 181);
   pit(g, 188, 191);
   ledge(g, 185, 11, 4);
   g.put(196, 14, 'b');
-  g.put(206, 14, 'ق');
   stack(g, 214, 3, 2);
   // Optional lantern climb.
   ledge(g, 222, 12, 5);
